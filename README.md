@@ -9,6 +9,8 @@ Gemma Martini
 # The folder ```report```
 Contains all the files needed for the report
 
-# The folder ```code``` contains the source code of the project
+# The folder ```code```
+Contains the source code of the project
 
-# The folder ```example``` contains some running examples
+# The folder ```example```
+Contains some running examples
