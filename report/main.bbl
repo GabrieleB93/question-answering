@@ -1,0 +1,21 @@
+\begin{thebibliography}{1}
+
+\bibitem{Collobert}
+Ronan Collobert, Jason Weston, L{\'e}on Bottou, Michael Karlen, Koray
+  Kavukcuoglu, and Pavel Kuksa.
+\newblock Natural language processing (almost) from scratch.
+\newblock {\em J. Mach. Learn. Res.}, 12:2493--2537, November 2011.
+
+\bibitem{kbqa}
+Wanyun Cui, Yanghua Xiao, Haixun Wang, Yangqiu Song, Seung-won Hwang, and Wei
+  Wang.
+\newblock Kbqa: Learning question answering over qa corpora and knowledge
+  bases.
+\newblock {\em Proceedings of the VLDB Endowment}, 10:565--576, 01 2017.
+
+\bibitem{coqa}
+Siva Reddy, Danqi Chen, and Christoper Manning.
+\newblock Coqa: A conversational question answering challenge.
+\newblock 08 2018.
+
+\end{thebibliography}
