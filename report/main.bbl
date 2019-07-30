@@ -18,4 +18,12 @@ Siva Reddy, Danqi Chen, and Christoper Manning.
 \newblock Coqa: A conversational question answering challenge.
 \newblock 08 2018.
 
+\bibitem{vaswani}
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,
+  Aidan~N Gomez, \L~ukasz Kaiser, and Illia Polosukhin.
+\newblock Attention is all you need.
+\newblock In I.~Guyon, U.~V. Luxburg, S.~Bengio, H.~Wallach, R.~Fergus,
+  S.~Vishwanathan, and R.~Garnett, editors, {\em Advances in Neural Information
+  Processing Systems 30}, pages 5998--6008. Curran Associates, Inc., 2017.
+
 \end{thebibliography}
