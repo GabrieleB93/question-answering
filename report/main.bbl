@@ -1,5 +1,10 @@
 \begin{thebibliography}{1}
 
+\bibitem{weston-reading}
+Danqi Chen, Adam Fisch, Jason Weston, and Antoine Bordes.
+\newblock Reading wikipedia to answer open-domain questions.
+\newblock 03 2017.
+
 \bibitem{Collobert}
 Ronan Collobert, Jason Weston, L{\'e}on Bottou, Michael Karlen, Koray
   Kavukcuoglu, and Pavel Kuksa.
@@ -12,6 +17,11 @@ Wanyun Cui, Yanghua Xiao, Haixun Wang, Yangqiu Song, Seung-won Hwang, and Wei
 \newblock Kbqa: Learning question answering over qa corpora and knowledge
   bases.
 \newblock {\em Proceedings of the VLDB Endowment}, 10:565--576, 01 2017.
+
+\bibitem{weston-tracking}
+Mikael Henaff, Jason Weston, Arthur Szlam, Antoine Bordes, and Yann Lecun.
+\newblock Tracking the world state with recurrent entity networks.
+\newblock 12 2016.
 
 \bibitem{coqa}
 Siva Reddy, Danqi Chen, and Christoper Manning.
