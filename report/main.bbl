@@ -28,6 +28,15 @@ Mikael Henaff, Jason Weston, Arthur Szlam, Antoine Bordes, and Yann Lecun.
 \newblock Tracking the world state with recurrent entity networks.
 \newblock 12 2016.
 
+\bibitem{kwiatowski}
+Tom Kwiatkowski, Jennimaria Palomaki, Olivia Redfield, Michael Collins, Ankur
+  Parikh, Chris Alberti, Danielle Epstein, Illia Polosukhin, Matthew Kelcey,
+  Jacob Devlin, Kenton Lee, Kristina~N. Toutanova, Llion Jones, Ming-Wei Chang,
+  Andrew Dai, Jakob Uszkoreit, Quoc Le, and Slav Petrov.
+\newblock Natural questions: a benchmark for question answering research.
+\newblock {\em Transactions of the Association of Computational Linguistics},
+  2019.
+
 \bibitem{coqa}
 Siva Reddy, Danqi Chen, and Christoper Manning.
 \newblock Coqa: A conversational question answering challenge.
