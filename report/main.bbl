@@ -1,4 +1,4 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{10}
 
 \bibitem{alberti}
 Chris Alberti, Kenton Lee, and Michael Collins.
@@ -42,6 +42,17 @@ Tom Kwiatkowski, Jennimaria Palomaki, Olivia Redfield, Michael Collins, Ankur
 \newblock Natural questions: a benchmark for question answering research.
 \newblock {\em Transactions of the Association of Computational Linguistics},
   2019.
+
+\bibitem{liu-yellow}
+Xiaodong Liu, Pengcheng He, Weizhu Chen, and Jianfeng Gao.
+\newblock Improving multi-task deep neural networks via knowledge distillation
+  for natural language understanding.
+\newblock 04 2019.
+
+\bibitem{liu-purple}
+Xiaodong Liu, Pengcheng He, Weizhu Chen, and Jianfeng Gao.
+\newblock Multi-task deep neural networks for natural language understanding.
+\newblock 01 2019.
 
 \bibitem{coqa}
 Siva Reddy, Danqi Chen, and Christoper Manning.
