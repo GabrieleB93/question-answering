@@ -1,5 +1,10 @@
 \begin{thebibliography}{1}
 
+\bibitem{alberti}
+Chris Alberti, Kenton Lee, and Michael Collins.
+\newblock A bert baseline for the natural questions.
+\newblock 01 2019.
+
 \bibitem{weston-reading}
 Danqi Chen, Adam Fisch, Jason Weston, and Antoine Bordes.
 \newblock Reading wikipedia to answer open-domain questions.

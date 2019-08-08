@@ -1,13 +1,13 @@
 # Fdb version 3
-["bibtex main"] 1564998721 "main.aux" "main.bbl" "main" 1564998722
+["bibtex main"] 1565248400 "main.aux" "main.bbl" "main" 1565248402
   "/usr/share/texmf-dist/bibtex/bst/base/plain.bst" 1557554374 20613 bd3fbfa9f64872b81ac57a0dd2ed855f ""
-  "main.aux" 1564998722 1887 f52bcec4f66705eed694f7e4a4f0fa01 "pdflatex"
-  "references.bib" 1564998648 2025 4a1e29c7b9de34613794a10e87f4536b ""
+  "main.aux" 1565248402 1939 b9854344ee3c975bcb00bd461f6635d3 "pdflatex"
+  "references.bib" 1565248369 2203 77f9afc00ca0311576a53aa145d0dc1f ""
   (generated)
   "main.bbl"
   "main.blg"
-["pdflatex"] 1564998721 "main.tex" "main.pdf" "main" 1564998722
-  "/dev/null" 1564599067 0 d41d8cd98f00b204e9800998ecf8427e ""
+["pdflatex"] 1565248400 "main.tex" "main.pdf" "main" 1565248402
+  "/dev/null" 1565000243 0 d41d8cd98f00b204e9800998ecf8427e ""
   "/usr/share/texmf-dist/fonts/enc/dvips/base/8r.enc" 1557554374 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texmf-dist/fonts/map/fontname/texfonts.map" 1557554374 3332 103109f5612ad95229751940c61aada0 ""
   "/usr/share/texmf-dist/fonts/tfm/adobe/palatino/pplb8r.tfm" 1557554374 2532 9ad73cf4dd2173a847f2a5f5608e0b9a ""
@@ -310,15 +310,15 @@
   "/usr/share/texmf-dist/web2c/texmf.cnf" 1557554374 33301 a3134070eacafb10b1f371612ce2650d ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1562663513 3106380 436fef8c2e0ca660ce1dd89198cfa583 ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1562663506 7979415 fa54e385ef5c1bf24a0d47ef30257cc8 ""
-  "main.aux" 1564998722 1887 f52bcec4f66705eed694f7e4a4f0fa01 "pdflatex"
-  "main.bbl" 1564998721 1470 59a97344e48d1a2e8c3c1c4723e685ba "bibtex main"
-  "main.out" 1564998722 189 8fda293bc944d595103fa21045ddfd89 "pdflatex"
-  "main.tex" 1564998711 4467 8a5d47ca031fcbdafb95172723fa86b5 ""
-  "main.toc" 1564998722 296 19e35b70ecdf138dea091256e7a5d0d1 "pdflatex"
+  "main.aux" 1565248402 1939 b9854344ee3c975bcb00bd461f6635d3 "pdflatex"
+  "main.bbl" 1565248400 1609 3f9943f33fe570b0d887a959bb08f7fc "bibtex main"
+  "main.out" 1565248402 189 8fda293bc944d595103fa21045ddfd89 "pdflatex"
+  "main.tex" 1565248393 4503 91aa4d02552ed9c9e92f18fac818886c ""
+  "main.toc" 1565248402 296 19e35b70ecdf138dea091256e7a5d0d1 "pdflatex"
   "pics/Cherubino.jpg" 1510853075 300361 2a978db3b38401e164097cd24a310154 ""
   (generated)
-  "main.toc"
   "main.out"
+  "main.toc"
   "main.log"
   "main.aux"
   "main.pdf"
