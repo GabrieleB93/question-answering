@@ -10,6 +10,12 @@ Danqi Chen, Adam Fisch, Jason Weston, and Antoine Bordes.
 \newblock Reading wikipedia to answer open-domain questions.
 \newblock 03 2017.
 
+\bibitem{chen}
+Yu~Chen, Lingfei Wu, and Mohammed J.~Zaki.
+\newblock Bidirectional attentive memory networks for question answering over
+  knowledge bases.
+\newblock pages 2913--2923, 01 2019.
+
 \bibitem{Collobert}
 Ronan Collobert, Jason Weston, L{\'e}on Bottou, Michael Karlen, Koray
   Kavukcuoglu, and Pavel Kuksa.

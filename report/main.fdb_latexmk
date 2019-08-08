@@ -1,12 +1,12 @@
 # Fdb version 3
-["bibtex main"] 1565248570 "main.aux" "main.bbl" "main" 1565248572
+["bibtex main"] 1565255535 "main.aux" "main.bbl" "main" 1565255537
   "/usr/share/texmf-dist/bibtex/bst/base/plain.bst" 1557554374 20613 bd3fbfa9f64872b81ac57a0dd2ed855f ""
-  "main.aux" 1565248571 1997 e096656e47245a5cb47fc4df0aaac644 "pdflatex"
-  "references.bib" 1565248538 2841 89d2cf10bef6ec6bb0e06224ea7cc471 ""
+  "main.aux" 1565255536 2043 9db22f0eee482406f670ea461d39f22c "pdflatex"
+  "references.bib" 1565255510 3096 c25a2fbea306f4947e939b58970a943e ""
   (generated)
-  "main.bbl"
   "main.blg"
-["pdflatex"] 1565248570 "main.tex" "main.pdf" "main" 1565248572
+  "main.bbl"
+["pdflatex"] 1565255535 "main.tex" "main.pdf" "main" 1565255537
   "/dev/null" 1565000243 0 d41d8cd98f00b204e9800998ecf8427e ""
   "/usr/share/texmf-dist/fonts/enc/dvips/base/8r.enc" 1557554374 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texmf-dist/fonts/map/fontname/texfonts.map" 1557554374 3332 103109f5612ad95229751940c61aada0 ""
@@ -310,15 +310,15 @@
   "/usr/share/texmf-dist/web2c/texmf.cnf" 1557554374 33301 a3134070eacafb10b1f371612ce2650d ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1562663513 3106380 436fef8c2e0ca660ce1dd89198cfa583 ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1562663506 7979415 fa54e385ef5c1bf24a0d47ef30257cc8 ""
-  "main.aux" 1565248571 1997 e096656e47245a5cb47fc4df0aaac644 "pdflatex"
-  "main.bbl" 1565248570 2083 9608847eefe7471871de5d3f94217943 "bibtex main"
-  "main.out" 1565248571 189 8fda293bc944d595103fa21045ddfd89 "pdflatex"
-  "main.tex" 1565248562 4545 3039f2de7914c310cda099f61bd42c24 ""
-  "main.toc" 1565248571 296 19e35b70ecdf138dea091256e7a5d0d1 "pdflatex"
+  "main.aux" 1565255536 2043 9db22f0eee482406f670ea461d39f22c "pdflatex"
+  "main.bbl" 1565255535 2276 6db225fd97162f3dd285a18fba971912 "bibtex main"
+  "main.out" 1565255536 189 8fda293bc944d595103fa21045ddfd89 "pdflatex"
+  "main.tex" 1565255527 4570 f5c809b07bf127a3d519af6f7f2ca388 ""
+  "main.toc" 1565255536 296 19e35b70ecdf138dea091256e7a5d0d1 "pdflatex"
   "pics/Cherubino.jpg" 1510853075 300361 2a978db3b38401e164097cd24a310154 ""
   (generated)
-  "main.aux"
-  "main.log"
   "main.toc"
-  "main.pdf"
   "main.out"
+  "main.aux"
+  "main.pdf"
+  "main.log"
