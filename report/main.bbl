@@ -54,6 +54,12 @@ Xiaodong Liu, Pengcheng He, Weizhu Chen, and Jianfeng Gao.
 \newblock Multi-task deep neural networks for natural language understanding.
 \newblock 01 2019.
 
+\bibitem{roberta}
+Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du, Mandar Joshi, Danqi Chen, Omer
+  Levy, Mike Lewis, Luke Zettlemoyer, and Veselin Stoyanov.
+\newblock Roberta: A robustly optimized bert pretraining approach.
+\newblock 07 2019.
+
 \bibitem{coqa}
 Siva Reddy, Danqi Chen, and Christoper Manning.
 \newblock Coqa: A conversational question answering challenge.

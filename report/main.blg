@@ -9,46 +9,47 @@ Warning--empty booktitle in chen
 Warning--empty journal in weston-tracking
 Warning--empty journal in liu-yellow
 Warning--empty journal in liu-purple
+Warning--empty journal in roberta
 Warning--empty journal in coqa
-You've used 11 entries,
+You've used 12 entries,
             2118 wiz_defined-function locations,
-            552 strings with 6175 characters,
-and the built_in function-call counts, 4764 in all, are:
-= -- 414
-> -- 376
+            556 strings with 6406 characters,
+and the built_in function-call counts, 5253 in all, are:
+= -- 452
+> -- 429
 < -- 2
-+ -- 147
-- -- 135
-* -- 397
-:= -- 838
-add.period$ -- 34
-call.type$ -- 11
-change.case$ -- 97
++ -- 168
+- -- 155
+* -- 444
+:= -- 930
+add.period$ -- 37
+call.type$ -- 12
+change.case$ -- 110
 chr.to.int$ -- 0
-cite$ -- 18
-duplicate$ -- 142
-empty$ -- 261
-format.name$ -- 135
-if$ -- 930
+cite$ -- 20
+duplicate$ -- 152
+empty$ -- 278
+format.name$ -- 155
+if$ -- 1017
 int.to.chr$ -- 0
-int.to.str$ -- 11
-missing$ -- 11
-newline$ -- 58
-num.names$ -- 24
-pop$ -- 112
+int.to.str$ -- 12
+missing$ -- 12
+newline$ -- 63
+num.names$ -- 26
+pop$ -- 127
 preamble$ -- 1
-purify$ -- 86
+purify$ -- 98
 quote$ -- 0
-skip$ -- 106
+skip$ -- 113
 stack$ -- 0
-substring$ -- 184
+substring$ -- 189
 swap$ -- 27
 text.length$ -- 2
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 44
-warning$ -- 7
-while$ -- 31
-width$ -- 13
-write$ -- 110
-(There were 7 warnings)
+type$ -- 48
+warning$ -- 8
+while$ -- 33
+width$ -- 14
+write$ -- 119
+(There were 8 warnings)
