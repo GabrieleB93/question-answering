@@ -1,0 +1,10 @@
+1. caricare modello con python-trnsformer https://github.com/huggingface/pytorch-transformers e cambiare modelli velocemente
+
+2. Gestire i dati + fare tokenizzazzione https://github.com/google-research/language/tree/master/language/question_answering/bert_joint
+https://mccormickml.com/2019/07/22/BERT-fine-tuning/ 
+! Il modello di google è tokenizzato e molto più piccolo 1GB. Ora bisogna capire come usarlo come input in torch.
+2.1. Leggere il file google e vedere come è fatto e sperimentare come usarlo.
+Gabri -> File -> leggere il file di google e capire formato e come passare da quello ad altri
+Mario -> Codice -> capisco come funziona il codice di google che preprocessa
+Per martedì. 
+Gemma -> potrebbe vedere come è fatto input e output di BERT -> diventa la nostra interfaccia -> studiarsi https://github.com/google-research-datasets/natural-questions in pratica
