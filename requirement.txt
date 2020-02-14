@@ -1,4 +1,9 @@
-torch
-torchvision
-jupyter 
-pytorch-transformers    
+jupyter    
+sentencepiece
+tensorflow
+tqdm
+pandas
+numpy
+input/tokenizers_repo/tokenizers-0.0.11-cp36-cp36m-manylinux1_x86_64.whl
+input/sacremoses_repo/sacremoses-0.0.35-py3-none-any.whl
+input/transformers_repo/transformers-2.3.0-py3-none-any.whl
