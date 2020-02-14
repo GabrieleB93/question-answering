@@ -157,7 +157,9 @@ def main():
     
     mymodel = TFBertForNaturalQuestionAnswering(config)
 
-    
+
+     
+    mymodel.compile(loss = losses, loss_weights = lossWeights)
     mymodel.summary()    
 
 main()
