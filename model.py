@@ -160,6 +160,9 @@ def main():
 
      
     mymodel.compile(loss = losses, loss_weights = lossWeights)
+
+    mymodel.fit(x, y)
     mymodel.summary()    
 
-main()
+if __name__ == "name":
+    main()
