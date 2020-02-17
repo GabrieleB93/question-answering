@@ -1289,16 +1289,17 @@ def getTokenizedDataset():
     #     'type': tf.constant(eval_dataset[5])
     # }
 
+    # ho provato anche con tf.costant e tf.convert_tensor
     x = {
-        'input_ids': tf.convert_to_tensor(eval_dataset[0]),
-        'attention_mask': tf.convert_to_tensor(eval_dataset[1]),
-        'token_type_ids': tf.convert_to_tensor(eval_dataset[2])
+        'input_ids': eval_dataset[0],
+        'attention_mask': eval_dataset[1],
+        'token_type_ids': eval_dataset[2]
     }
 
     y = {
-        'start': tf.convert_to_tensor(eval_dataset[3]),
-        'end': tf.convert_to_tensor(eval_dataset[4]),
-        'type': tf.convert_to_tensor(eval_dataset[5])
+        'start': eval_dataset[3],
+        'end': eval_dataset[4],
+        'type': eval_dataset[5]
     }
 
     print(x)
