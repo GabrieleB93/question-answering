@@ -51,68 +51,68 @@ import os
 import random
 import time
 import pickle
-import gc
 import math
 from collections import namedtuple
-import tensorflow as tf
 import tensorflow as tf
 from transformers import TFBertMainLayer, TFBertPreTrainedModel, TFRobertaMainLayer, TFRobertaPreTrainedModel
 from transformers import BertConfig, BertTokenizer, RobertaConfig, RobertaTokenizer
 from transformers.modeling_tf_utils import get_initializer
-
+import dataset_utils
 
 class TFBertForNaturalQuestionAnswering(TFBertPreTrainedModel):
     def __init__(self, config, *inputs, **kwargs):
         super().__init__(config, *inputs, **kwargs)
-         
+
         self.bert = TFBertMainLayer(config, name='bert')
         self.initializer = get_initializer(config.initializer_range)
 
         # after we have the bert embeddings we calculate the start token with a fully connected 
         self.layer_1 = tf.keras.layers.Dense(512,
-            kernel_initializer=self.initializer, activation = tf.nn.relu)
-        self.layer2 =  tf.keras.layers.Dense(256,
-            kernel_initializer=self.initializer, activation = tf.nn.relu)
+                                             kernel_initializer=self.initializer, activation=tf.nn.relu)
+        self.layer2 = tf.keras.layers.Dense(256,
+                                            kernel_initializer=self.initializer, activation=tf.nn.relu)
         self.start = tf.keras.layers.Dense(1,
-            kernel_initializer=self.initializer, name = "start", activation = tf.nn.softmax)
+                                           kernel_initializer=self.initializer, name="start", activation=tf.nn.softmax)
 
         self.end = tf.keras.layers.Dense(1,
-            kernel_initializer=self.initializer, name = "end", activation = tf.nn.softmax)
+                                         kernel_initializer=self.initializer, name="end", activation=tf.nn.softmax)
 
-        self.Type = tf.keras.layers.Dense(5, kernel_initializer=self.initializer, 
-            activation=tf.nn.softmax, name = "type")
-        
+        self.type = tf.keras.layers.Dense(5, kernel_initializer=self.initializer,
+                                          activation=tf.nn.softmax, name="type")
 
     def call(self, inputs, **kwargs):
         bert_output = self.bert(inputs)
-        presoftmax = self.layer2(self.stlayer1(bert_output))
+        presoftmax = self.layer2(self.layer_1(bert_output[0]))
+
         start = self.start(presoftmax)
         end = self.end(presoftmax)
-        answer_type = self.answer_type(bert_output[0])
+        answer_type = self.type(bert_output[0])
 
         return start, end, answer_type
-    
+
+
 # model.compile(optimizer, loss = losses, loss_weights = lossWeights)
 
 
 MODEL_CLASSES = {
     'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
-    #'roberta': (RobertaConfig, TFRobertaForNaturalQuestionAnswering, RobertaTokenizer),
+    # 'roberta': (RobertaConfig, TFRobertaForNaturalQuestionAnswering, RobertaTokenizer),
 }
 
 losses = {
-	"start": "categorical_crossentropy",
-	"end": "categorical_crossentropy",
+    "start": "categorical_crossentropy",
+    "end": "categorical_crossentropy",
     "type": "categorical_crossentropy",
 }
 
 lossWeights = {"start": 1.0, "end": 1.0, "type": 1.0}
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_type", default="bert", type=str)
     parser.add_argument("--model_config",
-        default="input/transformers_cache/bert_large_uncased_config.json", type=str)
+                        default="input/transformers_cache/bert_large_uncased_config.json", type=str)
     parser.add_argument("--checkpoint_dir", default="input/nq_bert_uncased_68", type=str)
     parser.add_argument("--vocab_txt", default="input/transformers_cache/bert_large_uncased_vocab.txt", type=str)
 
@@ -129,12 +129,11 @@ def main():
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--p_keep_impossible', type=float,
                         default=0.1, help="The fraction of impossible"
-                        " samples to keep.")
+                                          " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
     args, _ = parser.parse_known_args()
     assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
-
 
     # Set cased / uncased
     config_basename = os.path.basename(args.model_config)
@@ -143,7 +142,6 @@ def main():
     elif config_basename.startswith('roberta'):
         # https://github.com/huggingface/transformers/pull/1386/files
         do_lower_case = False
-    
 
     # Set XLA
     # https://github.com/kamalkraj/ALBERT-TF2.0/blob/8d0cc211361e81a648bf846d8ec84225273db0e4/run_classifer.py#L136
@@ -154,15 +152,17 @@ def main():
     args.model_type = args.model_type.lower()
     config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
     config = config_class.from_json_file(args.model_config)
-    
+
     mymodel = TFBertForNaturalQuestionAnswering(config)
 
-
-     
-    mymodel.compile(loss = losses, loss_weights = lossWeights)
-
+    mymodel.compile(loss=losses, loss_weights=lossWeights)
+    # x, y, = dataset_utils.getTokenizedDataset()
+    x,y = dataset_utils.getTokenizedDataset()
+    print("FITTING")
     mymodel.fit(x, y)
-    mymodel.summary()    
+    mymodel.summary()
 
-if __name__ == "name":
+
+if __name__ == "__main__":
     main()
+
