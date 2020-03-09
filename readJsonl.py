@@ -1,10 +1,10 @@
 import pandas as pd
 import json_lines
+import numpy
 
 db_data = []
 db_data1 = []
 db_cols = ['url', 'date']
-
 
 def main():
     with json_lines.open('data1.jsonl.gz') as f:
@@ -24,5 +24,5 @@ def main():
     print(df1)
 
 
-if __name__ == '__main__':
-    main()
+# if __name__ == '__main__':
+#     main()
