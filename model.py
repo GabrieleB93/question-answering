@@ -86,7 +86,7 @@ class TFBertForNaturalQuestionAnswering(TFBertPreTrainedModel):
 
         start = self.start(presoftmax)
         end = self.end(presoftmax)
-        answer_type = self.type(bert_output[0])
+        answer_type = self.type(bert_output[1])
 
         return start, end, answer_type
 
@@ -94,21 +94,27 @@ class TFBertForNaturalQuestionAnswering(TFBertPreTrainedModel):
 # model.compile(optimizer, loss = losses, loss_weights = lossWeights)
 
 
-MODEL_CLASSES = {
-    'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
-    # 'roberta': (RobertaConfig, TFRobertaForNaturalQuestionAnswering, RobertaTokenizer),
-}
 
-losses = {
-    "start": "categorical_crossentropy",
-    "end": "categorical_crossentropy",
-    "type": "categorical_crossentropy",
-}
-
-lossWeights = {"start": 1.0, "end": 1.0, "type": 1.0}
 
 
 def main():
+    MODEL_CLASSES = {
+    'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
+    # 'roberta': (RobertaConfig, TFRobertaForNaturalQuestionAnswering, RobertaTokenizer),
+    }
+    dictionary = False
+    if dictionary:
+        losses = {
+            "start": "categorical_crossentropy",
+            "end": "categorical_crossentropy",
+            "type": "categorical_crossentropy",
+        }
+
+        lossWeights = {"start": 1.0, "end": 1.0, "type": 1.0}
+
+    else:
+        losses = ["categorical_crossentropy","categorical_crossentropy","categorical_crossentropy"]
+        lossWeights = [1.0,1.0,1.0]
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_type", default="bert", type=str)
     parser.add_argument("--model_config",
@@ -159,7 +165,7 @@ def main():
     # x, y, = dataset_utils.getTokenizedDataset()
     x,y = dataset_utils.getTokenizedDataset()
     print("FITTING")
-    mymodel.fit(x, y)
+    mymodel.fit(x, y, verbose = 1)
     mymodel.summary()
 
 

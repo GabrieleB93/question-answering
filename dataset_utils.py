@@ -1296,11 +1296,15 @@ def getTokenizedDataset():
         'token_type_ids': eval_dataset[2]
     }
 
-    y = {
-        'start': eval_dataset[3],
-        'end': eval_dataset[4],
-        'type': eval_dataset[5]
-    }
+    dictionary = False
+    if dictionary:
+        y = {
+            'start': eval_dataset[3],
+            'end': eval_dataset[4],
+            'type': eval_dataset[5]
+        }
+    else:
+        y = [eval_dataset[3], eval_dataset[4], eval_dataset[5]]
 
     print(x)
     print(y)
