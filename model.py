@@ -59,6 +59,7 @@ from transformers import BertConfig, BertTokenizer, RobertaConfig, RobertaTokeni
 from transformers.modeling_tf_utils import get_initializer
 import dataset_utils
 
+
 class TFBertForNaturalQuestionAnswering(TFBertPreTrainedModel):
     def __init__(self, config, *inputs, **kwargs):
         super().__init__(config, *inputs, **kwargs)
@@ -94,13 +95,10 @@ class TFBertForNaturalQuestionAnswering(TFBertPreTrainedModel):
 # model.compile(optimizer, loss = losses, loss_weights = lossWeights)
 
 
-
-
-
 def main():
     MODEL_CLASSES = {
-    'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
-    # 'roberta': (RobertaConfig, TFRobertaForNaturalQuestionAnswering, RobertaTokenizer),
+        'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
+        # 'roberta': (RobertaConfig, TFRobertaForNaturalQuestionAnswering, RobertaTokenizer),
     }
     dictionary = False
     if dictionary:
@@ -113,14 +111,20 @@ def main():
         lossWeights = {"start": 1.0, "end": 1.0, "type": 1.0}
 
     else:
-        losses = ["categorical_crossentropy","categorical_crossentropy","categorical_crossentropy"]
-        lossWeights = [1.0,1.0,1.0]
+        losses = ["categorical_crossentropy", "categorical_crossentropy", "categorical_crossentropy"]
+        lossWeights = [1.0, 1.0, 1.0]
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_type", default="bert", type=str)
-    parser.add_argument("--model_config",
-                        default="input/transformers_cache/bert_large_uncased_config.json", type=str)
-    parser.add_argument("--checkpoint_dir", default="input/nq_bert_uncased_68", type=str)
-    parser.add_argument("--vocab_txt", default="input/transformers_cache/bert_large_uncased_vocab.txt", type=str)
+
+    # BASE BERT //So che non si fa così. ma è più veloce
+    parser.add_argument("--vocab_txt", default="input/transformers_cache/bert_base_uncased_vocab.txt", type=str)
+    parser.add_argument("--model_config", default="input/transformers_cache/bert_base_uncased_config.json", type=str)
+
+    # LARGE BERT
+    # parser.add_argument("--model_config", default="input/transformers_cache/bert_large_uncased_config.json", type=str)
+    # parser.add_argument("--checkpoint_dir", default="input/nq_bert_uncased_68", type=str)
+    # parser.add_argument("--vocab_txt", default="input/transformers_cache/bert_large_uncased_vocab.txt", type=str)
+
 
     # Other parameters
     parser.add_argument('--short_null_score_diff_threshold', type=float, default=0.0)
@@ -163,7 +167,7 @@ def main():
 
     mymodel.compile(loss=losses, loss_weights=lossWeights)
     # x, y, = dataset_utils.getTokenizedDataset()
-    x,y = dataset_utils.getTokenizedDataset()
+    x, y = dataset_utils.getTokenizedDataset()
     print("FITTING")
     mymodel.fit(x, y, verbose = 1)
     mymodel.summary()
@@ -171,4 +175,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
