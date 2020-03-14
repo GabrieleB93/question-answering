@@ -1224,15 +1224,14 @@ def load_and_cache_crops(args, tokenizer, evaluate=False):
     return dataset, crops, entries
 
 
-def getTokenizedDataset():
+def getTokenizedDataset(vocab, do_lower_case):
     parser = argparse.ArgumentParser()
 
     # Required parameters
     parser.add_argument("--model_type", default="bert", type=str)
-    parser.add_argument("--model_config",
-                        default="input/transformers_cache/bert_large_uncased_config.json", type=str)
+    # parser.add_argument("--model_config",default="input/transformers_cache/bert_large_uncased_config.json", type=str)
     parser.add_argument("--checkpoint_dir", default="input/nq_bert_uncased_68", type=str)
-    parser.add_argument("--vocab_txt", default="input/transformers_cache/bert_large_uncased_vocab.txt", type=str)
+    # parser.add_argument("--vocab_txt", default="input/transformers_cache/bert_large_uncased_vocab.txt", type=str)
 
     # Other parameters
     parser.add_argument('--short_null_score_diff_threshold', type=float, default=0.0)
@@ -1253,17 +1252,17 @@ def getTokenizedDataset():
     args, _ = parser.parse_known_args()
     assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
 
-    # Set cased / uncased
-    config_basename = os.path.basename(args.model_config)
-    if config_basename.startswith('bert'):
-        do_lower_case = 'uncased' in config_basename
-    elif config_basename.startswith('roberta'):
-        # https://github.com/huggingface/transformers/pull/1386/files
-        do_lower_case = False
+    # # Set cased / uncased
+    # config_basename = os.path.basename(args.model_config)
+    # if config_basename.startswith('bert'):
+    #     do_lower_case = 'uncased' in config_basename
+    # elif config_basename.startswith('roberta'):
+    #     # https://github.com/huggingface/transformers/pull/1386/files
+    #     do_lower_case = False
 
     args.model_type = args.model_type.lower()
-    config_class, tokenizer_class = MODEL_CLASSES[args.model_type]
-    tokenizer = tokenizer_class(args.vocab_txt, do_lower_case=do_lower_case)
+    _, tokenizer_class = MODEL_CLASSES[args.model_type]
+    tokenizer = tokenizer_class(vocab, do_lower_case=do_lower_case)
     eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, evaluate=False)
 
     do = False
@@ -1276,20 +1275,6 @@ def getTokenizedDataset():
             pad_tensor = tf.repeat(pad_tensor, num_pad, 0)
             eval_dataset[ti] = tf.concat([t, pad_tensor], 0)
 
-    # create eval dataset
-    # x = tf.data.Dataset.from_tensor_slices({
-    #     'input_ids': tf.constant(eval_dataset[0]),
-    #     'attention_mask': tf.constant(eval_dataset[1]),
-    #     'token_type_ids': tf.constant(eval_dataset[2]),
-    # })
-    #
-    # y = tf.data.Dataset.from_tensor_slices({
-    #     'start': tf.constant(eval_dataset[3]),
-    #     'end': tf.constant(eval_dataset[4]),
-    #     'type': tf.constant(eval_dataset[5])
-    # }
-
-    # ho provato anche con tf.costant e tf.convert_tensor
     x = {
         'input_ids': eval_dataset[0],
         'attention_mask': eval_dataset[1],
@@ -1306,6 +1291,6 @@ def getTokenizedDataset():
     else:
         y = [eval_dataset[3], eval_dataset[4], eval_dataset[5]]
 
-    print(x)
-    print(y)
+    # print(x)
+    # print(y)
     return x, y

@@ -151,6 +151,8 @@ def main():
     elif config_basename.startswith('roberta'):
         # https://github.com/huggingface/transformers/pull/1386/files
         do_lower_case = False
+    else:
+        do_lower_case = 'uncased'
 
     # Set XLA
     # https://github.com/kamalkraj/ALBERT-TF2.0/blob/8d0cc211361e81a648bf846d8ec84225273db0e4/run_classifer.py#L136
@@ -165,10 +167,10 @@ def main():
     mymodel = TFBertForNaturalQuestionAnswering(config)
 
     mymodel.compile(loss=losses, loss_weights=lossWeights)
-    # x, y, = dataset_utils.getTokenizedDataset()
-    x, y = dataset_utils.getTokenizedDataset()
+
+    x, y = dataset_utils.getTokenizedDataset(args.vocab_txt, do_lower_case)
     print("FITTING")
-    mymodel.fit(x, y, verbose=8, batch_size=1, epochs=1)
+    mymodel.fit(x, y, verbose=1, batch_size=4, epochs=1)
     mymodel.summary()
 
 
