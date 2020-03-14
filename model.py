@@ -125,7 +125,6 @@ def main():
     # parser.add_argument("--checkpoint_dir", default="input/nq_bert_uncased_68", type=str)
     # parser.add_argument("--vocab_txt", default="input/transformers_cache/bert_large_uncased_vocab.txt", type=str)
 
-
     # Other parameters
     parser.add_argument('--short_null_score_diff_threshold', type=float, default=0.0)
     parser.add_argument('--long_null_score_diff_threshold', type=float, default=0.0)
@@ -169,7 +168,7 @@ def main():
     # x, y, = dataset_utils.getTokenizedDataset()
     x, y = dataset_utils.getTokenizedDataset()
     print("FITTING")
-    mymodel.fit(x, y, verbose = 1)
+    mymodel.fit(x, y, verbose=8, batch_size=1, epochs=1)
     mymodel.summary()
 
 
