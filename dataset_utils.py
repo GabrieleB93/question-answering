@@ -305,7 +305,7 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
         if is_training and not example.long_is_impossible:
             tok_long_position = orig_to_tok_index[example.long_position]
 
-        # For Bert: [CLS] question [SEP] paragraph [SEP] e per ALBERT dovrebbe essere uguale
+        # For Bert: [CLS] question [SEP] paragraph [SEP]
         special_tokens_count = 3
         if sep_token_extra:
             # For Roberta: <s> question </s> </s> paragraph </s>
@@ -1233,7 +1233,7 @@ def load_and_cache_crops(args, tokenizer, evaluate=False):
 def getTokenizedDataset(model_type, vocab, do_lower_case):
     parser = argparse.ArgumentParser()
 
-    # Required parameters dovrebbe essere ignorato per ora
+    # Required parameters per ora inutile
     parser.add_argument("--checkpoint_dir", default="input/nq_bert_uncased_68", type=str)
 
     # Other parameters
@@ -1255,8 +1255,8 @@ def getTokenizedDataset(model_type, vocab, do_lower_case):
     args, _ = parser.parse_known_args()
 
     _, tokenizer_class = MODEL_CLASSES[model_type]
-    print(tokenizer_class)
     tokenizer = tokenizer_class(vocab, do_lower_case=do_lower_case)
+    print(tokenizer_class)
     eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, evaluate=False)
 
     do = False

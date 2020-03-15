@@ -193,8 +193,7 @@ def main(namemodel):
         vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
     elif namemodel == 'albert':
         model_config = 'input/transformers_cache/albert_base_v2.json'
-        vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
-        # vocab = 'input/albert-base-v2-spiece-model' # Dovrei usare questo ma dicono sia equivalente
+        vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
     elif namemodel == 'roberta':
         do_lower_case = False
         model_config = 'lo aggiungerò in futuro'
@@ -220,6 +219,7 @@ def main(namemodel):
     mymodel.compile(loss=losses, loss_weights=lossWeights)
 
     x, y = dataset_utils.getTokenizedDataset(namemodel, vocab, do_lower_case)
+
     print("FITTING")
 
     cb = TimingCallback()  # Callback per il tempo di esecuzione
