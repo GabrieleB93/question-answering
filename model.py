@@ -46,15 +46,6 @@ tensorflow 2.0
   "vocab_size": 30522
 }
 """
-lib = True
-try:
-    from prompt_toolkit.shortcuts import radiolist_dialog
-    lib = True
-except:
-    lib = False
-    from PyInquirer import prompt
-    from examples import custom_style_2
-
 import argparse
 import os
 import random
@@ -150,20 +141,7 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
 # model.compile(optimizer, loss = losses, loss_weights = lossWeights)
 
 
-def main():
-    questions = [
-        {
-            'type': 'list',
-            'name': 'i',
-            'message': 'Scegli modello:',
-            'choices': [
-                'bert',
-                'albert',
-                'roberta'
-            ]
-        },
-    ]
-
+def main(namemodel):
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'albert': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AlbertTokenizer),  # V2
@@ -209,20 +187,6 @@ def main():
     args, _ = parser.parse_known_args()
     # assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
 
-    if lib:
-        namemodel = radiolist_dialog(
-        values=[
-            ("bert", "bert"),
-            ("albert", "albert"),
-            ("roberts", "roberta"),
-        ],
-        title="Elenco modelli orribile",
-        text="Please select a model:"
-
-        ).run()
-    else:
-        namemodel = prompt(questions=questions, style=custom_style_2).get('i')
-
     do_lower_case = 'uncased'
     if namemodel == "bert":
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
@@ -265,4 +229,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main('albert')
