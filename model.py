@@ -46,10 +46,14 @@ tensorflow 2.0
   "vocab_size": 30522
 }
 """
-from prompt_toolkit.shortcuts import radiolist_dialog
-
-# from PyInquirer import prompt
-# from examples import custom_style_2
+lib = True
+try:
+    from prompt_toolkit.shortcuts import radiolist_dialog
+    lib = True
+except:
+    lib = False
+    from PyInquirer import prompt
+    from examples import custom_style_2
 
 import argparse
 import os
@@ -205,8 +209,8 @@ def main():
     args, _ = parser.parse_known_args()
     # assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
 
-    # namemodel = prompt(questions=questions, style=custom_style_2).get('i')
-    namemodel = radiolist_dialog(
+    if lib:
+        namemodel = radiolist_dialog(
         values=[
             ("bert", "bert"),
             ("albert", "albert"),
@@ -215,7 +219,9 @@ def main():
         title="Elenco modelli orribile",
         text="Please select a model:"
 
-    ).run()
+        ).run()
+    else:
+        namemodel = prompt(questions=questions, style=custom_style_2).get('i')
 
     do_lower_case = 'uncased'
     if namemodel == "bert":
