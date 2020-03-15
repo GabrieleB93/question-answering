@@ -46,6 +46,11 @@ tensorflow 2.0
   "vocab_size": 30522
 }
 """
+from prompt_toolkit.shortcuts import radiolist_dialog
+
+# from PyInquirer import prompt
+# from examples import custom_style_2
+
 import argparse
 import os
 import random
@@ -54,10 +59,24 @@ import pickle
 import math
 from collections import namedtuple
 import tensorflow as tf
-from transformers import TFBertMainLayer, TFBertPreTrainedModel, TFRobertaMainLayer, TFRobertaPreTrainedModel
-from transformers import BertConfig, BertTokenizer, RobertaConfig, RobertaTokenizer
+from transformers import TFBertMainLayer, TFBertPreTrainedModel, TFRobertaMainLayer, TFRobertaPreTrainedModel, \
+    TFAlbertPreTrainedModel
+from transformers import BertConfig, BertTokenizer, RobertaConfig, RobertaTokenizer, AlbertTokenizer, AlbertConfig
+from modeling_tf_albert import TFALBertMainLayer
 from transformers.modeling_tf_utils import get_initializer
 import dataset_utils
+from time import time
+
+
+class TimingCallback(tf.keras.callbacks.Callback):
+    def __init__(self):
+        self.logs = []
+
+    def on_epoch_begin(self, epoch, logs={}):
+        self.starttime = time()
+
+    def on_epoch_end(self, epoch, logs={}):
+        self.logs.append(time() - self.starttime)
 
 
 class TFBertForNaturalQuestionAnswering(TFBertPreTrainedModel):
@@ -92,12 +111,58 @@ class TFBertForNaturalQuestionAnswering(TFBertPreTrainedModel):
         return start, end, answer_type
 
 
+class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
+    def __init__(self, config, *inputs, **kwargs):
+        super().__init__(config, *inputs, **kwargs)
+
+        self.albert = TFALBertMainLayer(config, name='albert')
+        self.initializer = get_initializer(config.initializer_range)
+
+        # after we have the bert embeddings we calculate the start token with a fully connected
+        self.layer_1 = tf.keras.layers.Dense(512,
+                                             kernel_initializer=self.initializer, activation=tf.nn.relu)
+        self.layer2 = tf.keras.layers.Dense(256,
+                                            kernel_initializer=self.initializer, activation=tf.nn.relu)
+        self.start = tf.keras.layers.Dense(1,
+                                           kernel_initializer=self.initializer, name="start", activation=tf.nn.softmax)
+
+        self.end = tf.keras.layers.Dense(1,
+                                         kernel_initializer=self.initializer, name="end", activation=tf.nn.softmax)
+
+        self.type = tf.keras.layers.Dense(5, kernel_initializer=self.initializer,
+                                          activation=tf.nn.softmax, name="type")
+
+    def call(self, inputs, **kwargs):
+        bert_output = self.albert(inputs)
+        presoftmax = self.layer2(self.layer_1(bert_output[0]))
+
+        start = self.start(presoftmax)
+        end = self.end(presoftmax)
+        answer_type = self.type(bert_output[1])
+
+        return start, end, answer_type
+
+
 # model.compile(optimizer, loss = losses, loss_weights = lossWeights)
 
 
 def main():
+    questions = [
+        {
+            'type': 'list',
+            'name': 'i',
+            'message': 'Scegli modello:',
+            'choices': [
+                'bert',
+                'albert',
+                'roberta'
+            ]
+        },
+    ]
+
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
+        'albert': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AlbertTokenizer),  # V2
         # 'roberta': (RobertaConfig, TFRobertaForNaturalQuestionAnswering, RobertaTokenizer),
     }
     dictionary = False
@@ -113,12 +178,8 @@ def main():
     else:
         losses = ["categorical_crossentropy", "categorical_crossentropy", "categorical_crossentropy"]
         lossWeights = [1.0, 1.0, 1.0]
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model_type", default="bert", type=str)
 
-    # BASE BERT //So che non si fa così. ma è più veloce
-    parser.add_argument("--vocab_txt", default="input/transformers_cache/bert_base_uncased_vocab.txt", type=str)
-    parser.add_argument("--model_config", default="input/transformers_cache/bert_base_uncased_config.json", type=str)
+    parser = argparse.ArgumentParser()
 
     # LARGE BERT
     # parser.add_argument("--model_config", default="input/transformers_cache/bert_large_uncased_config.json", type=str)
@@ -142,17 +203,37 @@ def main():
     parser.add_argument('--do_enumerate', action='store_true')
 
     args, _ = parser.parse_known_args()
-    assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
+    # assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
 
-    # Set cased / uncased
-    config_basename = os.path.basename(args.model_config)
-    if config_basename.startswith('bert'):
-        do_lower_case = 'uncased' in config_basename
-    elif config_basename.startswith('roberta'):
-        # https://github.com/huggingface/transformers/pull/1386/files
+    # namemodel = prompt(questions=questions, style=custom_style_2).get('i')
+    namemodel = radiolist_dialog(
+        values=[
+            ("bert", "bert"),
+            ("albert", "albert"),
+            ("roberts", "roberta"),
+        ],
+        title="Elenco modelli orribile",
+        text="Please select a model:"
+
+    ).run()
+
+    do_lower_case = 'uncased'
+    if namemodel == "bert":
+        model_config = 'input/transformers_cache/bert_base_uncased_config.json'
+        vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
+    elif namemodel == 'albert':
+        model_config = 'input/transformers_cache/albert_base_v2.json'
+        vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
+        # vocab = 'input/albert-base-v2-spiece-model' # Dovrei usare questo ma dicono sia equivalente
+    elif namemodel == 'roberta':
         do_lower_case = False
+        model_config = 'lo aggiungerò in futuro'
+        vocab = 'lo aggiungerò in futuro'
     else:
-        do_lower_case = 'uncased'
+        # di default metto il base bert
+        model_config = 'input/transformers_cache/bert_base_uncased_config.json'
+        vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
+        print("sei impazzuto?")
 
     # Set XLA
     # https://github.com/kamalkraj/ALBERT-TF2.0/blob/8d0cc211361e81a648bf846d8ec84225273db0e4/run_classifer.py#L136
@@ -160,18 +241,21 @@ def main():
     tf.config.optimizer.set_experimental_options({'pin_to_host_optimization': False})
 
     print("Training / evaluation parameters %s", args)
-    args.model_type = args.model_type.lower()
-    config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
-    config = config_class.from_json_file(args.model_config)
+    config_class, model_class, tokenizer_class = MODEL_CLASSES[namemodel]
+    config = config_class.from_json_file(model_config)
 
-    mymodel = TFBertForNaturalQuestionAnswering(config)
+    print(model_class)
+    mymodel = model_class(config)
 
     mymodel.compile(loss=losses, loss_weights=lossWeights)
 
-    x, y = dataset_utils.getTokenizedDataset(args.vocab_txt, do_lower_case)
+    x, y = dataset_utils.getTokenizedDataset(namemodel, vocab, do_lower_case)
     print("FITTING")
-    mymodel.fit(x, y, verbose=1, batch_size=4, epochs=1)
+
+    cb = TimingCallback()  # Callback per il tempo di esecuzione
+    mymodel.fit(x, y, verbose=1, batch_size=4, epochs=1, callbacks=[cb])
     mymodel.summary()
+    print("Time: " + str(cb.logs))
 
 
 if __name__ == "__main__":

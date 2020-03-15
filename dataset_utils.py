@@ -6,7 +6,7 @@ import time
 import pickle
 import math
 from collections import namedtuple
-from transformers import BertConfig, BertTokenizer, RobertaConfig, RobertaTokenizer
+from transformers import BertConfig, BertTokenizer, RobertaConfig, RobertaTokenizer, AlbertTokenizer, AlbertConfig
 import json
 import logging
 import os
@@ -17,7 +17,9 @@ from tqdm.notebook import tqdm
 import numpy as np
 from transformers.tokenization_bert import whitespace_tokenize
 import tensorflow as tf
-from transformers import TFBertMainLayer, TFBertPreTrainedModel, TFRobertaMainLayer, TFRobertaPreTrainedModel
+from modeling_tf_albert import TFALBertMainLayer
+from transformers import TFBertMainLayer, TFBertPreTrainedModel, TFRobertaMainLayer, TFRobertaPreTrainedModel, \
+    TFAlbertPreTrainedModel
 from transformers.modeling_tf_utils import get_initializer
 
 tqdm.monitor_interval = 0  # noqa
@@ -303,7 +305,7 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
         if is_training and not example.long_is_impossible:
             tok_long_position = orig_to_tok_index[example.long_position]
 
-        # For Bert: [CLS] question [SEP] paragraph [SEP]
+        # For Bert: [CLS] question [SEP] paragraph [SEP] e per ALBERT dovrebbe essere uguale
         special_tokens_count = 3
         if sep_token_extra:
             # For Roberta: <s> question </s> </s> paragraph </s>
@@ -1125,11 +1127,15 @@ def convert_nq_to_squad(args=None):
     return entries
 
 
-ALL_MODELS = sum((tuple(conf.pretrained_config_archive_map.keys())
-                  for conf in (BertConfig,)), ())
+# ALL_MODELS = sum((tuple(conf.pretrained_config_archive_map.keys())
+#                   for conf in (BertConfig,)), ())
+
+# ALL_MODELS = sum((tuple(conf.pretrained_config_archive_map.keys())
+#                   for conf in (AlbertConfig,)), ())
 
 MODEL_CLASSES = {
-    'bert': (BertConfig,BertTokenizer),
+    'bert': (BertConfig, BertTokenizer),
+    'albert': (AlbertConfig, AlbertTokenizer),
     'roberta': (RobertaConfig, RobertaTokenizer),
 }
 
@@ -1224,14 +1230,11 @@ def load_and_cache_crops(args, tokenizer, evaluate=False):
     return dataset, crops, entries
 
 
-def getTokenizedDataset(vocab, do_lower_case):
+def getTokenizedDataset(model_type, vocab, do_lower_case):
     parser = argparse.ArgumentParser()
 
-    # Required parameters
-    parser.add_argument("--model_type", default="bert", type=str)
-    # parser.add_argument("--model_config",default="input/transformers_cache/bert_large_uncased_config.json", type=str)
+    # Required parameters dovrebbe essere ignorato per ora
     parser.add_argument("--checkpoint_dir", default="input/nq_bert_uncased_68", type=str)
-    # parser.add_argument("--vocab_txt", default="input/transformers_cache/bert_large_uncased_vocab.txt", type=str)
 
     # Other parameters
     parser.add_argument('--short_null_score_diff_threshold', type=float, default=0.0)
@@ -1250,18 +1253,9 @@ def getTokenizedDataset(vocab, do_lower_case):
     parser.add_argument('--do_enumerate', action='store_true')
 
     args, _ = parser.parse_known_args()
-    assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
 
-    # # Set cased / uncased
-    # config_basename = os.path.basename(args.model_config)
-    # if config_basename.startswith('bert'):
-    #     do_lower_case = 'uncased' in config_basename
-    # elif config_basename.startswith('roberta'):
-    #     # https://github.com/huggingface/transformers/pull/1386/files
-    #     do_lower_case = False
-
-    args.model_type = args.model_type.lower()
-    _, tokenizer_class = MODEL_CLASSES[args.model_type]
+    _, tokenizer_class = MODEL_CLASSES[model_type]
+    print(tokenizer_class)
     tokenizer = tokenizer_class(vocab, do_lower_case=do_lower_case)
     eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, evaluate=False)
 
