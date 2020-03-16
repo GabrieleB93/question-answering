@@ -1052,7 +1052,7 @@ def convert_nq_to_squad(args=None):
                 if verbose: print("QA 1")
                 if verbose: print(qa)
             paragraph = {'qas': [qa], 'context': context}
-            if verbose: print("PARAGRAfo")
+            if verbose: print("PARAGRAFO")
             if verbose: print(paragraph)
             entry = {'title': url, 'paragraphs': [paragraph]}
             entries.append(entry)
@@ -1159,9 +1159,9 @@ def get_convert_args():
     return convert_args
 
 
-def get_convert_args1():
+def get_convert_args1(namefile):
     convert_args = argparse.Namespace()
-    convert_args.fn = 'prova_train.jsonl'
+    convert_args.fn = namefile
     convert_args.version = 'v0.0.2'
     convert_args.prefix = 'nq'
     convert_args.p_val = 0.1
@@ -1184,7 +1184,7 @@ def toMatrixTensor(num, len):
     return tf.convert_to_tensor(m, dtype=tf.int32)
 
 
-def load_and_cache_crops(args, tokenizer, evaluate=False):
+def load_and_cache_crops(args, tokenizer, namefile, evaluate=False):
     # Load data crops from cache or dataset file
     do_cache = False
     cached_crops_fn = 'cached_{}_{}.pkl'.format('test', str(args.max_seq_length))
@@ -1193,7 +1193,7 @@ def load_and_cache_crops(args, tokenizer, evaluate=False):
         with open(cached_crops_fn, "rb") as f:
             crops = pickle.load(f)
     else:
-        entries = convert_nq_to_squad(get_convert_args1())
+        entries = convert_nq_to_squad(get_convert_args1(namefile))
         examples_gen = read_nq_examples(entries, is_training=not evaluate)
         crops = convert_examples_to_crops(examples_gen=examples_gen,
                                           tokenizer=tokenizer,
@@ -1230,7 +1230,7 @@ def load_and_cache_crops(args, tokenizer, evaluate=False):
     return dataset, crops, entries
 
 
-def getTokenizedDataset(model_type, vocab, do_lower_case):
+def getTokenizedDataset(model_type, vocab, do_lower_case, namefile):
     parser = argparse.ArgumentParser()
 
     # Required parameters per ora inutile
@@ -1257,7 +1257,7 @@ def getTokenizedDataset(model_type, vocab, do_lower_case):
     _, tokenizer_class = MODEL_CLASSES[model_type]
     tokenizer = tokenizer_class(vocab, do_lower_case=do_lower_case)
     print(tokenizer_class)
-    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, evaluate=False)
+    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, namefile, evaluate=False)
 
     do = False
     if do:
