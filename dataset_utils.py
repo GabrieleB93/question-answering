@@ -844,8 +844,7 @@ def enumerate_tags(text_split):
     return text_split
 
 
-def convert_nq_to_squad(args=None):
-    verbose = False
+def convert_nq_to_squad(verbose, args=None):
     np.random.seed(123)
     if args is None:
         parser = argparse.ArgumentParser()
@@ -1184,7 +1183,7 @@ def toMatrixTensor(num, len):
     return tf.convert_to_tensor(m, dtype=tf.int32)
 
 
-def load_and_cache_crops(args, tokenizer, namefile, evaluate=False):
+def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate=False):
     # Load data crops from cache or dataset file
     do_cache = False
     cached_crops_fn = 'cached_{}_{}.pkl'.format('test', str(args.max_seq_length))
@@ -1193,7 +1192,7 @@ def load_and_cache_crops(args, tokenizer, namefile, evaluate=False):
         with open(cached_crops_fn, "rb") as f:
             crops = pickle.load(f)
     else:
-        entries = convert_nq_to_squad(get_convert_args1(namefile))
+        entries = convert_nq_to_squad(verbose, get_convert_args1(namefile))
         examples_gen = read_nq_examples(entries, is_training=not evaluate)
         crops = convert_examples_to_crops(examples_gen=examples_gen,
                                           tokenizer=tokenizer,
@@ -1230,7 +1229,7 @@ def load_and_cache_crops(args, tokenizer, namefile, evaluate=False):
     return dataset, crops, entries
 
 
-def getTokenizedDataset(model_type, vocab, do_lower_case, namefile):
+def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose):
     parser = argparse.ArgumentParser()
 
     # Required parameters per ora inutile
@@ -1257,7 +1256,7 @@ def getTokenizedDataset(model_type, vocab, do_lower_case, namefile):
     _, tokenizer_class = MODEL_CLASSES[model_type]
     tokenizer = tokenizer_class(vocab, do_lower_case=do_lower_case)
     print(tokenizer_class)
-    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, namefile, evaluate=False)
+    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate=False)
 
     do = False
     if do:

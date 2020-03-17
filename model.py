@@ -141,7 +141,7 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
 # model.compile(optimizer, loss = losses, loss_weights = lossWeights)
 
 
-def main(namemodel, batch_size, namefile):
+def main(namemodel, batch_size, namefile, verbose):
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'albert': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AlbertTokenizer),  # V2
@@ -219,7 +219,7 @@ def main(namemodel, batch_size, namefile):
 
     mymodel.compile(loss=losses, loss_weights=lossWeights)
 
-    x, y = dataset_utils.getTokenizedDataset(namemodel, vocab, do_lower_case, namefile)
+    x, y = dataset_utils.getTokenizedDataset(namemodel, vocab, do_lower_case, namefile, verbose)
 
     print("FITTING")
 
@@ -230,4 +230,4 @@ def main(namemodel, batch_size, namefile):
 
 
 if __name__ == "__main__":
-    main('albert', 4, 'prova_train.jsonl')
+    main('albert', 4, 'prova_train.jsonl', True)
