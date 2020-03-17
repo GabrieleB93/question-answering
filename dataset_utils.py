@@ -868,7 +868,6 @@ def convert_nq_to_squad(verbose, args=None):
     else:
         test_fn = f'{args.prefix}-test-{args.version}.json'
         print(f'Converting {args.fn} to {test_fn} ... ')
-    if verbose: print("TRAIN_FN: " + train_fn)
     if args.val_ids:
         val_ids = set(str(x) for x in pd.read_csv(args.val_ids)['val_ids'].values)
     else:
