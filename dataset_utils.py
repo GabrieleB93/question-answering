@@ -1056,6 +1056,7 @@ def convert_nq_to_squad(verbose, args=None):
             entries.append(entry)
             if verbose: print("ENTRIES")
             if verbose: print(entries)
+            if verbose: verbose = False
 
     progress.write('  ------------ STATS ------------------')
     progress.write(f'  Found {num_yes_no} yes/no, {num_very_long} very long'
