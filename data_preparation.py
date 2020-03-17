@@ -41,15 +41,16 @@ def split_json(path, dest_folder, batch_size, max_size):
     @param max_size maximum size of each json file
     """
 
-    #If destination folder existing delete and recreate it
+    #If destination folder already exists delete and recreate it
     if os.path.exists(dest_folder):
         shutil.rmtree(dest_folder)
     os.makedirs(dest_folder)
     batch_id = 0
-    iter_batch = 0
-    num_lines = 1
+    iter_batch = 1
+    num_lines = 0
     with open(path) as infile:
         for line in infile:
+            #print(line[0], line[-2])
             line_dict = json.loads(line)
             line_dict_size = dict_size(line_dict)
             if (line_dict_size > max_size):
@@ -61,30 +62,33 @@ def split_json(path, dest_folder, batch_size, max_size):
                 Path(curr_dest).touch()
                 #curr_dest.touch()
             curr_dest_size = os.path.getsize(curr_dest)
-            #If size threshold has been reached before
-            #exhausting the batch_size
             #print("Size of dest file: {}".format(curr_dest_size))
+            #If size threshold has been reached before
+            #exhausting the batch_size or the batch size was reached
+            #set counters to 0 and dump json file
             if (curr_dest_size + line_dict_size >
-                    max_size) or (iter_batch == batch_size - 1):
+                    max_size) or (iter_batch == batch_size):
                 batch_id += 1
                 curr_dest = dest_folder + str(batch_id) + ".jsonl"
                 with open(curr_dest, 'a+') as dest:
                     json.dump(line_dict, dest)
+                    #Add new line
+                    dest.write('\n')
                 if (curr_dest_size + line_dict_size > max_size):
-                    print("------->File of {} rows created".format(iter_batch +
-                                                                   1))
+                    print("------->File of {} rows created".format(iter_batch))
                 else:
-                    print("->File of {} rows created".format(iter_batch + 1))
-                iter_batch = 0
+                    print("->File of {} rows created".format(iter_batch))
+                iter_batch = 1
 
             else:
                 iter_batch += 1
                 #Using write mode, since file already exists (l.51)
                 with open(curr_dest, 'a') as dest:
                     json.dump(line_dict, dest)
+                    dest.write('\n')
             num_lines += 1
         #The last line was written, print #lines of last file
-        print("->File of {} rows created".format(iter_batch + 1))
+        print("->File of {} rows created".format(iter_batch - 1))
 
     print("Total number of lines of original file: {}".format(num_lines))
 
