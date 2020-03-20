@@ -1165,7 +1165,7 @@ def get_convert_args1(namefile):
     convert_args.prefix = 'nq'
     convert_args.p_val = 0.1
     convert_args.crop_len = 2_500
-    convert_args.num_samples = 1_000_000
+    convert_args.num_samples = 1_00
     convert_args.val_ids = None
     convert_args.do_enumerate = 'store_true'
     convert_args.do_not_dump = 'store_true'

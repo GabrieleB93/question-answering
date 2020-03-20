@@ -230,4 +230,4 @@ def main(namemodel, batch_size, namefile, verbose):
 
 
 if __name__ == "__main__":
-    main('albert', 4, 'prova_train.jsonl', True)
+    main('bert', 4, 'prova_train.jsonl', True)
