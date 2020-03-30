@@ -141,7 +141,7 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
 # model.compile(optimizer, loss = losses, loss_weights = lossWeights)
 
 
-def main(namemodel):
+def main(namemodel, batch_size, namefile, verbose):
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'albert': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AlbertTokenizer),  # V2
@@ -188,10 +188,10 @@ def main(namemodel):
     # assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
 
     do_lower_case = 'uncased'
-    if namemodel == "bert":
+    if namemodel == "bert":  # base
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
         vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
-    elif namemodel == 'albert':
+    elif namemodel == 'albert':  # base v2
         model_config = 'input/transformers_cache/albert_base_v2.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
     elif namemodel == 'roberta':
@@ -202,6 +202,7 @@ def main(namemodel):
         # di default metto il base bert
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
         vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
+        namemodel = "bert"
         print("sei impazzuto?")
 
     # Set XLA
@@ -218,15 +219,15 @@ def main(namemodel):
 
     mymodel.compile(loss=losses, loss_weights=lossWeights)
 
-    x, y = dataset_utils.getTokenizedDataset(namemodel, vocab, do_lower_case)
+    x, y = dataset_utils.getTokenizedDataset(namemodel, vocab, do_lower_case, namefile, verbose)
 
     print("FITTING")
 
     cb = TimingCallback()  # Callback per il tempo di esecuzione
-    mymodel.fit(x, y, verbose=1, batch_size=4, epochs=1, callbacks=[cb])
+    mymodel.fit(x, y, verbose=1, batch_size=batch_size, epochs=1, callbacks=[cb])
     mymodel.summary()
     print("Time: " + str(cb.logs))
 
 
 if __name__ == "__main__":
-    main('albert')
+    main('bert', 4, 'prova_train.jsonl', True)
