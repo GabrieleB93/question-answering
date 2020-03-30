@@ -12,6 +12,11 @@ class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
     def __init__(self, list_IDs, labels, batch_size=32, shuffle=True):
         'Initialization'
+        '''
+        Load the files and create the question answer tuple
+        store everithing 
+        '''
+        # quante coppie avremo
         self.dim = dim
         self.batch_size = batch_size
         self.labels = labels
@@ -74,3 +79,30 @@ class DataGenerator(keras.utils.Sequence):
             y[i] = self.labels[ID]
 
         return X, keras.utils.to_categorical(y, num_classes=self.n_classes)
+
+
+'''
+from stackoverflow
+@param files list of files__len__
+@param batch_size number of lines in a batch
+'''
+def generate_batches(files, batch_size):
+    counter = 0
+    while True:
+        fname = files[counter]
+        print(fname)
+        counter = (counter + 1) % len(files)
+        data_bundle = pickle.load(open(fname, "rb"))
+        X_train = data_bundle[0].astype(np.float32)
+        y_train = data_bundle[1].astype(np.float32)
+        y_train = y_train.flatten()
+        for cbatch in range(0, X_train.shape[0], batch_size):
+            yield (X_train[cbatch:(cbatch + batch_size),:,:], y_train[cbatch:(cbatch + batch_size)])
+
+model = Sequential()
+model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+
+train_files = [train_bundle_loc + "bundle_" + cb.__str__() for cb in range(nb_train_bundles)]
+gen = generate_batches(files=train_files, batch_size=batch_size)
+num_epoch = 1
+history = model.fit_generator(gen, samples_per_epoch=samples_per_epoch, nb_epoch=num_epoch, verbose=1)
