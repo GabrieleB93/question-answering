@@ -861,6 +861,7 @@ def convert_nq_to_squad(verbose, args=None):
         args = parser.parse_args()
 
     is_train = 'train' in args.fn
+    is_train = True
     if is_train:
         train_fn = f'{args.prefix}-train-{args.version}.json'
         val_fn = f'{args.prefix}-val-{args.version}.json'

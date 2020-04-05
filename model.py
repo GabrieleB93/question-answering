@@ -46,6 +46,12 @@ tensorflow 2.0
   "vocab_size": 30522
 }
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from datetime import datetime
+
 import argparse
 import os
 import random
@@ -61,6 +67,8 @@ from modeling_tf_albert import TFALBertMainLayer
 from transformers.modeling_tf_utils import get_initializer
 import dataset_utils
 from time import time
+
+
 
 
 class TimingCallback(tf.keras.callbacks.Callback):
@@ -142,6 +150,11 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
 
 
 def main(namemodel, batch_size, namefile, verbose):
+    logs = "logs/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+
+    tboard_callback = tf.keras.callbacks.TensorBoard(log_dir = logs,
+                                                 histogram_freq = 1,
+                                                 profile_batch = '500,520')
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'albert': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AlbertTokenizer),  # V2
@@ -196,8 +209,8 @@ def main(namemodel, batch_size, namefile, verbose):
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
     elif namemodel == 'roberta':
         do_lower_case = False
-        model_config = 'lo aggiungerò in futuro'
-        vocab = 'lo aggiungerò in futuro'
+        model_config = 'lo aggiungero in futuro'
+        vocab = 'lo aggiungero in futuro'
     else:
         # di default metto il base bert
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
@@ -224,10 +237,10 @@ def main(namemodel, batch_size, namefile, verbose):
     print("FITTING")
 
     cb = TimingCallback()  # Callback per il tempo di esecuzione
-    mymodel.fit(x, y, verbose=1, batch_size=batch_size, epochs=1, callbacks=[cb])
+    mymodel.fit(x, y, verbose=1, batch_size=batch_size, epochs=1, callbacks=[cb, tboard_callback])
     mymodel.summary()
     print("Time: " + str(cb.logs))
 
 
 if __name__ == "__main__":
-    main('bert', 4, 'prova_train.jsonl', True)
+    main('bert', 4, 'boh.jsonl', True)
