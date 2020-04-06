@@ -106,8 +106,13 @@ venv.bak/
 # Data for training
 old/
 .vscode/
+.idea
 
 #Json files
 simplified-nq-train.jsonl
 simplified-nq-train.jsonl.zip
 small_jsons/
+
+logs
+log
+Checkpoint

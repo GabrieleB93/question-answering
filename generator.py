@@ -23,11 +23,11 @@ class DataGenerator(tf.keras.utils.Sequence):
         @param vocab the vocabulary
         @param max_num_samples integer for the maximum number of samples
         '''
-        self.files = os.listdir(directory_path) #list of all the files from the directory
+        self.Allfiles = os.listdir(directory_path) #list of all the files from the directory
+        self.files = self.Allfiles.copy()
         print("\n\nthe file we will use for generator are: {}\n\n".format(self.files))
         self.namefile = self.files.pop()
         print(self.namefile)
-        self.done = [self.namefile]
         self.path = directory_path
         self.batch_size = batch_size
         self.namemodel = namemodel
@@ -42,6 +42,10 @@ class DataGenerator(tf.keras.utils.Sequence):
                                                         False,
                                                         self.max_num_samples)
 
+
+    def num_files(self):
+        return len(self.Allfiles)
+        
     def __len__(self):
         'Denotes the number of batches per epoch'
         return int(np.floor(len(self.input['attention_mask']) / self.batch_size))
@@ -61,27 +65,20 @@ class DataGenerator(tf.keras.utils.Sequence):
             'type':         
         }
         '''
-        x = {}
+        x = {k:v[self.batch_size*index:self.batch_size*(index+1)] for k, v in self.input.items()}
 
-        for k, v in self.input.items():
-            print(k, '\n\n')
-            print(v.shape, '\n')
-            x[k] = v[self.batch_size*index:self.batch_size*(index+1)]
-            print(x[k].shape, '\n\n')
 
-        print("Printing x:")
-        print(x)
-        print('y is:')
-        print(self.output)
-        y = self.output[self.batch_size*index:self.batch_size*(index+1)]
-        print(y)
+        y = [v[self.batch_size*index:self.batch_size*(index+1)] for v in self.output]
 
-        return x, self.output[self.batch_size*index:self.batch_size*(index+1)]
+
+        return x, y
 
     def on_epoch_end(self):
         # change the current file and add it to the done list
+        if not self.files:
+            self.files = self.Allfiles
         self.namefile = self.files.pop()
-        self.done.append(self.namefile)
+
         
         # update the input and output tensors for this epoch 
         self.input, self.output = dataset_utils.getTokenizedDataset( self.namemodel, 

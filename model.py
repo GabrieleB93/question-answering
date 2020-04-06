@@ -151,23 +151,21 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
         return start, end, answer_type
 
 
-# model.compile(optimizer, loss = losses, loss_weights = lossWeights)
-
-
-def main(namemodel, batch_size, namefile,  verbose=False, evaluate=False, max_num_samples=1_000_000):
+def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbose=False, evaluate=False, max_num_samples=1_000_000):
     """
 
     :param namemodel: nomde del modello da eseguire
     :param batch_size: dimensione del batch durante il training
-    :param namefile: path del file da allenare/valutare
     :param verbose: fag per stampare informazioni sul primo elemento del dataset
     :param evaluate: Bool per indicare se dobbiamo eseguire Evaluation o Training. Training di Default
     :param max_num_samples: massimo numero di oggetti da prendere in considerazione (1mil Default)
     :return: TUTTO
 
     """
-    logs = "logs/"# + datetime.now().strftime("%Y%m%d-%H%M%S")
+    logs = "logs/" + datetime.now().strftime("%Y%m%d-%H%M%S")
 
+    if not os.path.exists(logs):
+        os.makedirs(logs)
     tboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logs,
                                                      histogram_freq=1,
                                                      update_freq = 'batch',
@@ -193,32 +191,7 @@ def main(namemodel, batch_size, namefile,  verbose=False, evaluate=False, max_nu
         losses = ["categorical_crossentropy", "categorical_crossentropy", "categorical_crossentropy"]
         lossWeights = [1.0, 1.0, 1.0]
 
-    parser = argparse.ArgumentParser()
-
-    # LARGE BERT
-    # parser.add_argument("--model_config", default="input/transformers_cache/bert_large_uncased_config.json", type=str)
-    # parser.add_argument("--checkpoint_dir", default="input/nq_bert_uncased_68", type=str)
-    # parser.add_argument("--vocab_txt", default="input/transformers_cache/bert_large_uncased_vocab.txt", type=str)
-
-    # Other parameters
-    parser.add_argument('--short_null_score_diff_threshold', type=float, default=0.0)
-    parser.add_argument('--long_null_score_diff_threshold', type=float, default=0.0)
-    parser.add_argument("--max_seq_length", default=512, type=int)
-    parser.add_argument("--doc_stride", default=256, type=int)
-    parser.add_argument("--max_query_length", default=64, type=int)
-    parser.add_argument("--per_tpu_eval_batch_size", default=4, type=int)
-    parser.add_argument("--n_best_size", default=10, type=int)
-    parser.add_argument("--max_answer_length", default=30, type=int)
-    parser.add_argument("--verbose_logging", action='store_true')
-    parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--p_keep_impossible', type=float,
-                        default=0.1, help="The fraction of impossible"
-                                          " samples to keep.")
-    parser.add_argument('--do_enumerate', action='store_true')
-
-    args, _ = parser.parse_known_args()
-    # assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
-
+ 
     do_lower_case = 'uncased'
     if namemodel == "bert":  # base
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
@@ -242,7 +215,6 @@ def main(namemodel, batch_size, namefile,  verbose=False, evaluate=False, max_nu
     tf.config.optimizer.set_jit(True)
     tf.config.optimizer.set_experimental_options({'pin_to_host_optimization': False})
 
-    print("Training / evaluation parameters %s", args)
     config_class, model_class, tokenizer_class = MODEL_CLASSES[namemodel]
     config = config_class.from_json_file(model_config)
 
@@ -254,27 +226,79 @@ def main(namemodel, batch_size, namefile,  verbose=False, evaluate=False, max_nu
                     metrics = ['categorical_accuracy']
                     )
 
-    x, y = dataset_utils.getTokenizedDataset(namemodel, vocab, do_lower_case, namefile, verbose, evaluate, max_num_samples)
-    directory_path = 'generatorFile/' 
-    datagen = DataGenerator(directory_path, namemodel, vocab)
+    # data generator creation:
+    # validation 
+    print(val_dir)
+    print(train_dir)
+    validation_generator = DataGenerator(val_dir, namemodel, vocab, batch_size=batch_size)
 
-    print("FITTING")
+    traingenerator = DataGenerator(train_dir, namemodel, vocab, batch_size=batch_size)
+    
 
-    cb = TimingCallback()  # Callback per il tempo di esecuzione
-    cp_folder = "Checkpoints/"
+    # Training data
+    # since we do an epoch for each file eventually we have to do 
+    # epoch*n_files epochs
+    n_files = traingenerator.num_files()
+    epoch = int(epoch)*n_files
+
+
+    cb = TimingCallback()  # execution time callback 
+
     cp_freq = 1000
-    filepath = cp_folder +"weights.{epoch:02d}-{val_loss:.2f}.hdf5"
-    if not os.path.exists(cp_folder):
-        os.makedirs(cp_folder)
+    filepath = checkpoint_dir +"weights.{epoch:02d}-{val_loss:.2f}.hdf5"
+    if not os.path.exists(checkpoint_dir):
+        os.makedirs(checkpoint_dir)
     checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath, 
                                                     monitor='categorical_accuracy', 
                                                     verbose=0, 
                                                     save_freq=cp_freq)
-    callbacks_list = [cb, tboard_callback]
-    mymodel.fit(datagen, verbose=1, epochs=1, callbacks=callbacks_list)
+
+    # callbacks
+    callbacks_list = [cb, tboard_callback, checkpoint]
+
+    # fittin
+    mymodel.fit(traingenerator, validation_data = validation_generator, verbose=1, epochs=epoch, callbacks=callbacks_list)
     mymodel.summary()
     print("Time: " + str(cb.logs))
 
 
 if __name__ == "__main__":
-    main('albert', 4, 'prova.jsonl', evaluate=False, verbose=False)
+    parser = argparse.ArgumentParser()
+
+    # LARGE BERT
+    # parser.add_argument("--model_config", default="input/transformers_cache/bert_large_uncased_config.json", type=str)
+    # parser.add_argument("--vocab_txt", default="input/transformers_cache/bert_large_uncased_vocab.txt", type=str)
+
+    # Other parameters
+
+    parser.add_argument('--short_null_score_diff_threshold', type=float, default=0.0)
+    
+    parser.add_argument('--long_null_score_diff_threshold', type=float, default=0.0)
+    parser.add_argument("--max_seq_length", default=512, type=int)
+    parser.add_argument("--doc_stride", default=256, type=int)
+    parser.add_argument("--max_query_length", default=64, type=int)
+    parser.add_argument("--per_tpu_eval_batch_size", default=4, type=int)
+    parser.add_argument("--n_best_size", default=10, type=int)
+    parser.add_argument("--max_answer_length", default=30, type=int)
+    parser.add_argument("--verbose_logging", action='store_true')
+    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--p_keep_impossible', type=float,
+                        default=0.1, help="The fraction of impossible"
+                                          " samples to keep.")
+    parser.add_argument('--do_enumerate', action='store_true')
+
+    parser.add_argument("--checkpoint_dir", default="input/nq_bert_uncased_68", type=str)
+
+    parser.add_argument('--validation_dir', type=str, default='validationData/',
+             help = 'Directory were all the validation data splitted in smaller junks are stored')
+    parser.add_argument('--train_dir', type=str, default='TrainData/',
+             help = 'Directory were all the traing data splitted in smaller junks are stored')
+
+    parser.add_argument('--epoch', type=int, default=1)
+    parser.add_argument('--batch_size', type=int, default=4)
+
+    args, _ = parser.parse_known_args()
+    # assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
+    print("Training / evaluation parameters %s", args)
+
+    main('albert', args.batch_size, args.train_dir, args.validation_dir, args.epoch, args.checkpoint_dir, evaluate=False, verbose=False)
