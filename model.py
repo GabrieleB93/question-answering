@@ -69,8 +69,6 @@ import dataset_utils
 from time import time
 
 
-
-
 class TimingCallback(tf.keras.callbacks.Callback):
     def __init__(self):
         self.logs = []
@@ -149,12 +147,22 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
 # model.compile(optimizer, loss = losses, loss_weights = lossWeights)
 
 
-def main(namemodel, batch_size, namefile, verbose):
+def main(namemodel, batch_size, namefile,  verbose=False, evaluate=False, max_num_samples=1_000_000):
+    """
+
+    :param namemodel: nomde del modello da eseguire
+    :param batch_size: dimensione del batch durante il training
+    :param namefile: path del file da allenare/valutare
+    :param verbose: fag per stampare informazioni sul primo elemento del dataset
+    :param evaluate: Bool per indicare se dobbiamo eseguire Evaluation o Training. Training di Default
+    :param max_num_samples: massimo numero di oggetti da prendere in considerazione (1mil Default)
+    :return: TUTTO
+    """
     logs = "logs/" + datetime.now().strftime("%Y%m%d-%H%M%S")
 
-    tboard_callback = tf.keras.callbacks.TensorBoard(log_dir = logs,
-                                                 histogram_freq = 1,
-                                                 profile_batch = '500,520')
+    tboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logs,
+                                                     histogram_freq=1,
+                                                     profile_batch='500,520')
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'albert': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AlbertTokenizer),  # V2
@@ -232,7 +240,8 @@ def main(namemodel, batch_size, namefile, verbose):
 
     mymodel.compile(loss=losses, loss_weights=lossWeights)
 
-    x, y = dataset_utils.getTokenizedDataset(namemodel, vocab, do_lower_case, namefile, verbose)
+    x, y = dataset_utils.getTokenizedDataset(namemodel, vocab, do_lower_case, namefile, verbose, evaluate,
+                                             max_num_samples)
 
     print("FITTING")
 
@@ -243,4 +252,4 @@ def main(namemodel, batch_size, namefile, verbose):
 
 
 if __name__ == "__main__":
-    main('bert', 4, 'boh.jsonl', True)
+    main('bert', 4, 'prova.jsonl', evaluate=False, verbose=False)
