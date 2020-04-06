@@ -55,8 +55,15 @@ UNMAPPED = -123
 CLS_INDEX = 0
 
 
-def get_add_tokens(
-        do_enumerate):  # ok, crea array con tutti i tag +  gli speciali se do_enumerate è  TRUE (passato dagli argomenti)
+def get_add_tokens(do_enumerate):
+    """
+       This function crea array con tutti i tag più gli speciali
+
+       @param do_enumerate se è TRUE sono aggiunti anche i flag speciali
+
+       @return array di tokens
+       """
+
     tags = ['Dd', 'Dl', 'Dt', 'H1', 'H2', 'H3', 'Li', 'Ol', 'P', 'Table', 'Td', 'Th', 'Tr', 'Ul']
     opening_tags = [f'<{tag}>' for tag in tags]
     closing_tags = [f'</{tag}>' for tag in tags]
@@ -110,16 +117,29 @@ def is_whitespace(c):  # ok
 
 
 def read_nq_examples(input_file_or_data,
-                     is_training):  # modo diverso per fare questo https://github.com/google/retrieval-qa-eval/blob/master/nq_to_squad.py (?)
-    """Read a NQ json file into a list of NQExample. Refer to `nq_to_squad.py`
-       to convert the `simplified-nq-t*.jsonl` files to NQ json."""
+                     is_training):  # modo diverso per fare questo https://github.com/google/retrieval-qa-eval/blob
+    # /master/nq_to_squad.py (?)
+
+    """
+    Read a NQ json file into a list of NQExample. Refer to `nq_to_squad.py`
+    to convert the `simplified-nq-t*.jsonl` files to NQ json.
+
+       This function returns NQExample
+
+       @param input_file_or_data entries from jsonfile
+       @param is_training boolean to Train or Evaluate
+
+       @return a collection of NQ Examples
+       """
+
     if isinstance(input_file_or_data, str):
+        print("è File")
         with open(input_file_or_data, "r", encoding='utf-8') as f:
             input_data = json.load(f)["data"]
 
     else:
         input_data = input_file_or_data
-
+    print("Dimensione: " + str(len(input_data)))
     for entry_index, entry in enumerate(tqdm(input_data, total=len(input_data))):
         # if entry_index >= 2:
         #     break
@@ -249,7 +269,15 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
                               mask_padding_with_zero=True,
                               p_keep_impossible=None,
                               sep_token_extra=False):
-    """Loads a data file into a list of `InputBatch`s."""
+    """
+           Trasforma gli NQExample in Crops
+
+           @param examples_gen gli example da convertire in crops
+           @param tokenizer
+           @param max_seq_length lunghezza massima (FORSE) fra domanda+risposta
+           @:var
+           @return list of Crops
+           """
     assert p_keep_impossible is not None, '`p_keep_impossible` is required'
     unique_id = 1000000000
     num_short_pos, num_short_neg = 0, 0
@@ -259,6 +287,7 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
     # f = np.zeros((max_N, max_M), dtype=np.float32)
 
     crops = []
+    # print("Dimensione Example: " +str(examples_gen)
     for example_index, example in enumerate(examples_gen):
         if example_index % 1000 == 0 and example_index > 0:
             logger.info('Converting %s: short_pos %s short_neg %s'
@@ -469,7 +498,8 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
 
             crop = Crop(
                 unique_id=unique_id,
-                example_index=example_index,
+                # example_index=example_index,
+                example_index=example.qas_id,
                 doc_span_index=doc_span_index,
                 tokens=tokens,
                 token_to_orig_map=token_to_orig_map,
@@ -490,6 +520,7 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
     return crops
 
 
+# Not used for now
 def check_is_max_context(doc_spans, cur_span_index, position):
     """Check if this is the 'max context' doc span for the token."""
 
@@ -527,6 +558,7 @@ def check_is_max_context(doc_spans, cur_span_index, position):
     return cur_span_index == best_span_index
 
 
+# Not used for now
 def clean_text(tok_text):
     # De-tokenize WordPieces that have been split off.
     tok_text = tok_text.replace(" ##", "")
@@ -538,6 +570,7 @@ def clean_text(tok_text):
     return tok_text
 
 
+# Not used for now
 def get_nbest(prelim_predictions, crops, example, n_best_size):
     seen, nbest = set(), []
     for pred in prelim_predictions:
@@ -589,6 +622,7 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
     return nbest
 
 
+# Not used for now
 def write_predictions(examples_gen, all_crops, all_results, n_best_size,
                       max_answer_length, output_prediction_file,
                       output_nbest_file, output_null_log_odds_file, verbose_logging,
@@ -771,6 +805,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
     return all_predictions
 
 
+# Not used for now
 def convert_preds_to_df(preds, candidates):
     num_found_long, num_searched_long = 0, 0
     df = {'example_id': [], 'PredictionString': []}
@@ -844,7 +879,15 @@ def enumerate_tags(text_split):
     return text_split
 
 
-def convert_nq_to_squad(verbose, args=None):
+def convert_nq_to_squad(verbose, is_train=True, args=None):
+    """
+    Converte il jsonl in un formato compatibile con il Q&A Squad
+
+    :param is_train: flag che indica se siamo in fase di training o evaluation. Training di default
+    :param verbose: flag per stampare o meno varei informazioni durante le trasformazioni(solo la prima)
+    :param args: None di Default, attualmente passati tramite la funzione getParams1(da cambiare?)
+    :return: list of entries
+    """
     np.random.seed(123)
     if args is None:
         parser = argparse.ArgumentParser()
@@ -860,8 +903,6 @@ def convert_nq_to_squad(verbose, args=None):
         parser.add_argument('--num_max_tokens', type=int, default=400_000)
         args = parser.parse_args()
 
-    is_train = 'train' in args.fn
-    is_train = True
     if is_train:
         train_fn = f'{args.prefix}-train-{args.version}.json'
         val_fn = f'{args.prefix}-val-{args.version}.json'
@@ -892,17 +933,18 @@ def convert_nq_to_squad(verbose, args=None):
 
             data = json.loads(line)
             data_cpy = data.copy()
+            print("ID esempio: {}".format(data['example_id']))
             example_id = str(data_cpy.pop('example_id'))
-
             data_cpy['document_text'] = ''
             orig_data[example_id] = data_cpy
+
             url = 'MISSING' if not is_train else data['document_url']
             # progress.write(f'############ {url} ###############')
             document_text = data['document_text']
             document_text_split = document_text.split(' ')
             if verbose: print("DOCUMENT TEXT AND SPLIT")
-            if verbose: print(document_text)
-            if verbose: print(document_text_split)
+            # if verbose: print(document_text)
+            # if verbose: print(document_text_split)
             # trim super long
             if len(document_text_split) > args.num_max_tokens:
                 num_trimmed += 1
@@ -1048,19 +1090,19 @@ def convert_nq_to_squad(verbose, args=None):
                       'id': example_id, 'short_is_impossible': short_is_impossible,
                       'long_is_impossible': long_is_impossible,
                       'crop_start': crop_start}
-                if verbose: print("QA 1")
+                if verbose: print("QA 1 di Example formato Squad")
                 if verbose: print(qa)
             paragraph = {'qas': [qa], 'context': context}
             if verbose: print("PARAGRAFO")
-            if verbose: print(paragraph)
+            # if verbose: print(paragraph)
             entry = {'title': url, 'paragraphs': [paragraph]}
             entries.append(entry)
             if verbose: print("ENTRIES")
-            if verbose: print(entries)
+            # if verbose: print(entries)
             if verbose: verbose = False
 
     progress.write('  ------------ STATS ------------------')
-    progress.write(f'  Found {num_yes_no} yes/no, {num_very_long} very long'
+    progress.write(f'  Number od dropped:  {num_yes_no} yes/no, {num_very_long} very long'
                    f' and {num_short_dropped} short of {kk} and trimmed {num_trimmed}')
     progress.write(f'  #short {num_short_possible} #long {num_long_possible}'
                    f' of {len(entries)}')
@@ -1159,14 +1201,19 @@ def get_convert_args():
     return convert_args
 
 
-def get_convert_args1(namefile):
+def get_convert_args1(namefile, max_num_samples):
+    """
+    :param namefile: path del file per training/evaluation
+    :param max_num_samples: massimo numero di oggetti da prendere in considerazione (1mil Default)
+    :return: args
+    """
     convert_args = argparse.Namespace()
     convert_args.fn = namefile
     convert_args.version = 'v0.0.2'
     convert_args.prefix = 'nq'
     convert_args.p_val = 0.1
     convert_args.crop_len = 2_500
-    convert_args.num_samples = 1_000_000
+    convert_args.num_samples = max_num_samples
     convert_args.val_ids = None
     convert_args.do_enumerate = 'store_true'
     convert_args.do_not_dump = 'store_true'
@@ -1175,17 +1222,41 @@ def get_convert_args1(namefile):
     return convert_args
 
 
-def toMatrixTensor(num, len):
+def toMatrixTensor(crop_or_position, len):
+    """
+    Genera il target per ogni elemento del crop nel giusto formato, compatibile con il modello
+
+    :param crop_or_position: una intera entry del crop oppure direttamente start_position o end_position
+    :param len: dimensione del vettore da restituire
+    :return: singolo vettore Target corrispondente ad una entry
+    """
+
     m = [0] * len
     if len == 5:
-        m[4] = 1
+        if crop_or_position.long_is_impossible and crop_or_position.short_is_impossible:
+            m[4] = 1
+        elif crop_or_position.long_is_impossible and not crop_or_position.short_is_impossible:
+            m[0] = 1
+        elif not crop_or_position.long_is_impossible:
+            m[1] = 1
     else:
-        m[num] = 1
+        m[crop_or_position] = 1
     return tf.convert_to_tensor(m, dtype=tf.int32)
 
 
-def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate=False):
-    # Load data crops from cache or dataset file
+def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_samples):
+    """
+    Load data crops from cache or dataset file
+
+    :param max_num_samples:
+    :param args: variabili varie ed eventuali
+    :param tokenizer: tokenizer(°-°)
+    :param namefile: path del file da prendere in considerazione
+    :param verbose: flag per stampare o meno varei informazioni durante le trasformazioni(solo la prima)
+    :param evaluate: bool False di default. Se True dataset contiene solo gli Input, altrimenti anche i Target
+    :param is_train: uguale come in main
+    :return: lista contenente input e target, lista di crops, lista di entries
+    """
     do_cache = False
     cached_crops_fn = 'cached_{}_{}.pkl'.format('test', str(args.max_seq_length))
     if os.path.exists(cached_crops_fn) and do_cache:
@@ -1193,7 +1264,7 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate=False):
         with open(cached_crops_fn, "rb") as f:
             crops = pickle.load(f)
     else:
-        entries = convert_nq_to_squad(verbose, get_convert_args1(namefile))
+        entries = convert_nq_to_squad(verbose, args=get_convert_args1(namefile, max_num_samples), is_train=not evaluate)
         examples_gen = read_nq_examples(entries, is_training=not evaluate)
         crops = convert_examples_to_crops(examples_gen=examples_gen,
                                           tokenizer=tokenizer,
@@ -1216,6 +1287,8 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate=False):
 
     # cast `tf.bool`
     all_attention_mask = tf.cast(all_attention_mask, tf.int32)
+
+    # old stuff, ma meglio non eliminare
     # all_p_mask = tf.cast(all_p_mask, tf.int32)
     # all_token_type_ids = tf.cast(all_token_type_ids, tf.int32)
     if evaluate:
@@ -1223,14 +1296,27 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate=False):
     else:
         all_start_positions = tf.stack([toMatrixTensor(f.start_position, args.max_seq_length) for f in crops], 0)
         all_end_positions = tf.stack([toMatrixTensor(f.end_position, args.max_seq_length) for f in crops], 0)
-        all_type = tf.stack([toMatrixTensor(f.start_position, 5) for f in crops])
+        all_type = tf.stack([toMatrixTensor(f, 5) for f in crops])
         dataset = [all_input_ids, all_attention_mask, all_token_type_ids,
                    all_start_positions, all_end_positions, all_type]
 
     return dataset, crops, entries
 
 
-def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose):
+def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, evaluate, max_num_samples):
+    """
+    La funzione crea input e target per il modello da allenare
+
+    :param max_num_samples: massimo numero di oggetti da prendere in considerazione (1mil Default)
+    :param evaluate: uno dei due da levare, ovvie ragioni
+    :param is_train:
+    :param model_type: tipo del modello da utilizzare per tokenizzare
+    :param vocab: path del vocabolario del modello
+    :param do_lower_case: flag sfigato
+    :param namefile: path del file da tokenizzare
+    :param verbose: flag per stampare o meno varei informazioni durante le trasformazioni(solo la prima)
+    :return: dizionario degli input x e lista dei target y
+    """
     parser = argparse.ArgumentParser()
 
     # Required parameters per ora inutile
@@ -1257,7 +1343,8 @@ def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose):
     _, tokenizer_class = MODEL_CLASSES[model_type]
     tokenizer = tokenizer_class(vocab, do_lower_case=do_lower_case)
     print(tokenizer_class)
-    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate=False)
+    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate,
+                                                        max_num_samples)
 
     do = False
     if do:
@@ -1285,6 +1372,4 @@ def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose):
     else:
         y = [eval_dataset[3], eval_dataset[4], eval_dataset[5]]
 
-    # print(x)
-    # print(y)
     return x, y
