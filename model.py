@@ -252,4 +252,4 @@ def main(namemodel, batch_size, namefile,  verbose=False, evaluate=False, max_nu
 
 
 if __name__ == "__main__":
-    main('bert', 4, 'prova.jsonl', evaluate=False, verbose=False)
+    main('albert', 4, 'prova.jsonl', evaluate=False, verbose=False)

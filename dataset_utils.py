@@ -879,9 +879,10 @@ def enumerate_tags(text_split):
     return text_split
 
 
-def convert_nq_to_squad(verbose, is_train=True, args=None):
+def convert_nq_to_squad(verbose, is_train, args=None):
     """
-    Converte il jsonl in un formato compatibile con il Q&A Squad
+    Converte il jsonl in un formato compatibile con il Q&A Squad.
+    Squad non contiene YES/NO answer(certo 95%)
 
     :param is_train: flag che indica se siamo in fase di training o evaluation. Training di default
     :param verbose: flag per stampare o meno varei informazioni durante le trasformazioni(solo la prima)
@@ -933,7 +934,6 @@ def convert_nq_to_squad(verbose, is_train=True, args=None):
 
             data = json.loads(line)
             data_cpy = data.copy()
-            print("ID esempio: {}".format(data['example_id']))
             example_id = str(data_cpy.pop('example_id'))
             data_cpy['document_text'] = ''
             orig_data[example_id] = data_cpy
