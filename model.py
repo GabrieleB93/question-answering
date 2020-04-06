@@ -67,7 +67,7 @@ from modeling_tf_albert import TFALBertMainLayer
 from transformers.modeling_tf_utils import get_initializer
 import dataset_utils
 from time import time
-
+from generator import DataGenerator
 
 class TimingCallback(tf.keras.callbacks.Callback):
     def __init__(self):
@@ -125,10 +125,10 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
         self.layer2 = tf.keras.layers.Dense(256,
                                             kernel_initializer=self.initializer, activation=tf.nn.relu)
         self.start = tf.keras.layers.Dense(1,
-                                           kernel_initializer=self.initializer, name="start", activation=tf.nn.softmax)
+                                           kernel_initializer=self.initializer, name="start")
 
         self.end = tf.keras.layers.Dense(1,
-                                         kernel_initializer=self.initializer, name="end", activation=tf.nn.softmax)
+                                         kernel_initializer=self.initializer, name="end")
 
         self.type = tf.keras.layers.Dense(5, kernel_initializer=self.initializer,
                                           activation=tf.nn.softmax, name="type")
@@ -136,9 +136,16 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
     def call(self, inputs, **kwargs):
         bert_output = self.albert(inputs)
         presoftmax = self.layer2(self.layer_1(bert_output[0]))
+        #tf.print(tf.shape(presoftmax)) # [4, 512, 256]
 
-        start = self.start(presoftmax)
-        end = self.end(presoftmax)
+        start_logit = self.start(presoftmax)
+        #tf.print(tf.shape(start_logit)) #[4, 512, 1]
+        end_logit = self.end(presoftmax)
+        
+        start = tf.math.softmax(tf.squeeze(start_logit, axis = -1), axis = 1)
+        end = tf.math.softmax(tf.squeeze(end_logit, axis = -1), axis = 1)
+        #tf.print(tf.shape(end)) #[4, 512]
+
         answer_type = self.type(bert_output[1])
 
         return start, end, answer_type
@@ -157,12 +164,16 @@ def main(namemodel, batch_size, namefile,  verbose=False, evaluate=False, max_nu
     :param evaluate: Bool per indicare se dobbiamo eseguire Evaluation o Training. Training di Default
     :param max_num_samples: massimo numero di oggetti da prendere in considerazione (1mil Default)
     :return: TUTTO
+
     """
-    logs = "logs/" + datetime.now().strftime("%Y%m%d-%H%M%S")
+    logs = "logs/"# + datetime.now().strftime("%Y%m%d-%H%M%S")
 
     tboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logs,
                                                      histogram_freq=1,
-                                                     profile_batch='500,520')
+                                                     update_freq = 'batch',
+                                                     profile_batch=0)
+
+
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'albert': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AlbertTokenizer),  # V2
@@ -238,15 +249,29 @@ def main(namemodel, batch_size, namefile,  verbose=False, evaluate=False, max_nu
     print(model_class)
     mymodel = model_class(config)
 
-    mymodel.compile(loss=losses, loss_weights=lossWeights)
+    mymodel.compile(loss=losses, 
+                    loss_weights=lossWeights,
+                    metrics = ['categorical_accuracy']
+                    )
 
-    x, y = dataset_utils.getTokenizedDataset(namemodel, vocab, do_lower_case, namefile, verbose, evaluate,
-                                             max_num_samples)
+    x, y = dataset_utils.getTokenizedDataset(namemodel, vocab, do_lower_case, namefile, verbose, evaluate, max_num_samples)
+    directory_path = 'generatorFile/' 
+    datagen = DataGenerator(directory_path, namemodel, vocab)
 
     print("FITTING")
 
     cb = TimingCallback()  # Callback per il tempo di esecuzione
-    mymodel.fit(x, y, verbose=1, batch_size=batch_size, epochs=1, callbacks=[cb, tboard_callback])
+    cp_folder = "Checkpoints/"
+    cp_freq = 1000
+    filepath = cp_folder +"weights.{epoch:02d}-{val_loss:.2f}.hdf5"
+    if not os.path.exists(cp_folder):
+        os.makedirs(cp_folder)
+    checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath, 
+                                                    monitor='categorical_accuracy', 
+                                                    verbose=0, 
+                                                    save_freq=cp_freq)
+    callbacks_list = [cb, tboard_callback]
+    mymodel.fit(datagen, verbose=1, epochs=1, callbacks=callbacks_list)
     mymodel.summary()
     print("Time: " + str(cb.logs))
 
