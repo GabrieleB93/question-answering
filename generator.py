@@ -13,7 +13,8 @@ import dataset_utils
 class DataGenerator(tf.keras.utils.Sequence):
     'Generates data for Keras'
 
-    def __init__(self, directory_path, namemodel, vocab, verbose, evaluate, batch_size=4, max_num_samples=1_000_000_000):
+    def __init__(self, directory_path, namemodel, vocab, verbose, evaluate, batch_size=4,
+                 max_num_samples=1_000_000_000):
         'Initialization'
         '''
         Load the files and create the question answer tuple
@@ -34,7 +35,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.batch_size = batch_size
         self.namemodel = namemodel
         self.vocab = vocab
-        self.verbose  = verbose
+        self.verbose = verbose
         self.evaluate = evaluate
         self.max_num_samples = max_num_samples
         # loading the first file from the directory which will be used for
@@ -79,7 +80,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         if not self.files:
             self.files = self.Allfiles
         self.namefile = self.files.pop()
-
+        print("New file: " + self.namefile)
         # update the input and output tensors for this epoch
         self.input, self.output = dataset_utils.getTokenizedDataset(self.namemodel,
                                                                     self.vocab, 'uncased',
