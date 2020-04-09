@@ -69,6 +69,7 @@ import dataset_utils
 from time import time
 from generator import DataGenerator
 
+
 class TimingCallback(tf.keras.callbacks.Callback):
     def __init__(self):
         self.logs = []
@@ -136,22 +137,23 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
     def call(self, inputs, **kwargs):
         bert_output = self.albert(inputs)
         presoftmax = self.layer2(self.layer_1(bert_output[0]))
-        #tf.print(tf.shape(presoftmax)) # [4, 512, 256]
+        # tf.print(tf.shape(presoftmax)) # [4, 512, 256]
 
         start_logit = self.start(presoftmax)
-        #tf.print(tf.shape(start_logit)) #[4, 512, 1]
+        # tf.print(tf.shape(start_logit)) #[4, 512, 1]
         end_logit = self.end(presoftmax)
-        
-        start = tf.math.softmax(tf.squeeze(start_logit, axis = -1), axis = 1)
-        end = tf.math.softmax(tf.squeeze(end_logit, axis = -1), axis = 1)
-        #tf.print(tf.shape(end)) #[4, 512]
+
+        start = tf.math.softmax(tf.squeeze(start_logit, axis=-1), axis=1)
+        end = tf.math.softmax(tf.squeeze(end_logit, axis=-1), axis=1)
+        # tf.print(tf.shape(end)) #[4, 512]
 
         answer_type = self.type(bert_output[1])
 
         return start, end, answer_type
 
 
-def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbose=False, evaluate=False, max_num_samples=1_000_000):
+def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbose=False, evaluate=False,
+         max_num_samples=1_000_000):
     """
 
     :param namemodel: nomde del modello da eseguire
@@ -162,15 +164,14 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     :return: TUTTO
 
     """
-    logs = "logs/" + datetime.now().strftime("%Y%m%d-%H%M%S")
-
+    logs = "log/" + datetime.now().strftime("%Y%m%d-%H%M%S")  # Linux
+    # logs = "logs\\" + datetime.now().strftime("%Y%m%d-%H%M%S")  # Windows
     if not os.path.exists(logs):
         os.makedirs(logs)
     tboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logs,
                                                      histogram_freq=1,
-                                                     update_freq = 'batch',
+                                                     update_freq='batch',
                                                      profile_batch=0)
-
 
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
@@ -191,7 +192,6 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
         losses = ["categorical_crossentropy", "categorical_crossentropy", "categorical_crossentropy"]
         lossWeights = [1.0, 1.0, 1.0]
 
- 
     do_lower_case = 'uncased'
     if namemodel == "bert":  # base
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
@@ -204,14 +204,14 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
         model_config = 'lo aggiungero in futuro'
         vocab = 'lo aggiungero in futuro'
     else:
-        # di default metto il base bert
-        model_config = 'input/transformers_cache/bert_base_uncased_config.json'
-        vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
-        namemodel = "bert"
+        # di default metto il base albert
+        model_config = 'input/transformers_cache/albert_base_v2.json'
+        vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
+        namemodel = "albert"
         print("sei impazzuto?")
 
     # Set XLA
-    # https://github.com/kamalkraj/ALBERT-TF2.0/blob/8d0cc211361e81a648bf846d8ec84225273db0e4/run_classifer.py#L136
+    # https://github.com/kamalkraj/ALBERT-TF2.0/blob/8d0cc211361e81a648bf846_d8ec84225273db0e4/run_classifer.py#L136
     tf.config.optimizer.set_jit(True)
     tf.config.optimizer.set_experimental_options({'pin_to_host_optimization': False})
 
@@ -221,43 +221,42 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     print(model_class)
     mymodel = model_class(config)
 
-    mymodel.compile(loss=losses, 
+    mymodel.compile(loss=losses,
                     loss_weights=lossWeights,
-                    metrics = ['categorical_accuracy']
+                    metrics=['categorical_accuracy']
                     )
 
     # data generator creation:
     # validation 
     print(val_dir)
     print(train_dir)
-    validation_generator = DataGenerator(val_dir, namemodel, vocab, batch_size=batch_size, validation=True)
+    validation_generator = DataGenerator(val_dir, namemodel, vocab,verbose, evaluate, batch_size=batch_size,  validation=True)
 
-    traingenerator = DataGenerator(train_dir, namemodel, vocab, batch_size=batch_size)
-    
+    traingenerator = DataGenerator(train_dir, namemodel, vocab, verbose, evaluate, batch_size=batch_size)
 
     # Training data
     # since we do an epoch for each file eventually we have to do 
     # epoch*n_files epochs
     n_files = traingenerator.num_files()
-    epoch = int(epoch)*n_files
+    epoch = int(epoch) * n_files
+    print('\n\nwe have {} files so we will train for {} epochs\n\n'.format(n_files, epoch))
 
-
-    cb = TimingCallback()  # execution time callback 
+    cb = TimingCallback()  # execution time callback
 
     cp_freq = 1000
     filepath = os.path.join(checkpoint_dir, "weights.{epoch:02d}-{val_loss:.2f}.hdf5")
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
-    checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath, 
-                                                    monitor='categorical_accuracy', 
-                                                    verbose=0, 
+    checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath,
+                                                    monitor='categorical_accuracy',
+                                                    verbose=0,
                                                     save_freq=cp_freq)
 
     # callbacks
     callbacks_list = [cb, tboard_callback, checkpoint]
 
-    # fittin
-    mymodel.fit(traingenerator, validation_data = validation_generator, verbose=1, epochs=epoch, callbacks=callbacks_list)
+    # fitting
+    mymodel.fit(traingenerator, validation_data=validation_generator, verbose=1, epochs=epoch, callbacks=callbacks_list)
     mymodel.summary()
     print("Time: " + str(cb.logs))
 
@@ -270,9 +269,7 @@ if __name__ == "__main__":
     # parser.add_argument("--vocab_txt", default="input/transformers_cache/bert_large_uncased_vocab.txt", type=str)
 
     # Other parameters
-
     parser.add_argument('--short_null_score_diff_threshold', type=float, default=0.0)
-    
     parser.add_argument('--long_null_score_diff_threshold', type=float, default=0.0)
     parser.add_argument("--max_seq_length", default=512, type=int)
     parser.add_argument("--doc_stride", default=256, type=int)
@@ -290,15 +287,19 @@ if __name__ == "__main__":
     parser.add_argument("--checkpoint_dir", default="checkpoints/", type=str)
 
     parser.add_argument('--validation_dir', type=str, default='validationData/',
-             help = 'Directory were all the validation data splitted in smaller junks are stored')
+                        help='Directory were all the validation data splitted in smaller junks are stored')
     parser.add_argument('--train_dir', type=str, default='TrainData/',
-             help = 'Directory were all the traing data splitted in smaller junks are stored')
+                        help='Directory were all the traing data splitted in smaller junks are stored')
 
     parser.add_argument('--epoch', type=int, default=1)
+    parser.add_argument('--model', type=str, default='albert')
     parser.add_argument('--batch_size', type=int, default=4)
+    parser.add_argument('--evaluate', type=bool, default=False)
+    parser.add_argument('--verbose', type=bool, default=False)
 
     args, _ = parser.parse_known_args()
     # assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
     print("Training / evaluation parameters %s", args)
 
-    main('albert', args.batch_size, args.train_dir, args.validation_dir, args.epoch, args.checkpoint_dir, evaluate=False, verbose=False)
+    main(args.model, args.batch_size, args.train_dir, args.validation_dir, args.epoch, args.checkpoint_dir,
+         evaluate=args.evaluate, verbose=args.verbose)
