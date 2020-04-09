@@ -11,7 +11,7 @@ import dataset_utils
 
 class DataGenerator(tf.keras.utils.Sequence):
     'Generates data for Keras'
-    def __init__(self, directory_path, namemodel, vocab, batch_size = 4, max_num_samples = 1_000_000_000):
+    def __init__(self, directory_path, namemodel, vocab, batch_size = 4, max_num_samples = 1_000_000_000, validation = False):
         'Initialization'
         '''
         Load the files and create the question answer tuple
@@ -23,6 +23,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         @param vocab the vocabulary
         @param max_num_samples integer for the maximum number of samples
         '''
+        self.validation = validation
         self.Allfiles = os.listdir(directory_path) #list of all the files from the directory
         self.files = self.Allfiles.copy()
         print("\n\nthe file we will use for generator are: {}\n\n".format(self.files))
@@ -37,7 +38,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         # the first training cycle
         self.input, self.output = dataset_utils.getTokenizedDataset( self.namemodel, 
                                                         self.vocab, 'uncased', 
-                                                        self.path + self.namefile, 
+                                                        os.path.join(self.path, self.namefile), 
                                                         False, 
                                                         False,
                                                         self.max_num_samples)
@@ -75,18 +76,19 @@ class DataGenerator(tf.keras.utils.Sequence):
 
     def on_epoch_end(self):
         # change the current file and add it to the done list
-        if not self.files:
-            self.files = self.Allfiles
-        self.namefile = self.files.pop()
+        if not self.validation:
+            if not self.files:
+                self.files = self.Allfiles
+            self.namefile = self.files.pop()
 
-        
-        # update the input and output tensors for this epoch 
-        self.input, self.output = dataset_utils.getTokenizedDataset( self.namemodel, 
-                                                        self.vocab, 'uncased', 
-                                                        self.path + self.namefile, 
-                                                        False, 
-                                                        False,
-                                                        self.max_num_samples)
-        
+            
+            # update the input and output tensors for this epoch 
+            self.input, self.output = dataset_utils.getTokenizedDataset( self.namemodel, 
+                                                            self.vocab, 'uncased', 
+                                                            os.path.join(self.path, self.namefile), 
+                                                            False, 
+                                                            False,
+                                                            self.max_num_samples)
+            
 
 

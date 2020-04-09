@@ -230,7 +230,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     # validation 
     print(val_dir)
     print(train_dir)
-    validation_generator = DataGenerator(val_dir, namemodel, vocab, batch_size=batch_size)
+    validation_generator = DataGenerator(val_dir, namemodel, vocab, batch_size=batch_size, validation=True)
 
     traingenerator = DataGenerator(train_dir, namemodel, vocab, batch_size=batch_size)
     
@@ -245,7 +245,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     cb = TimingCallback()  # execution time callback 
 
     cp_freq = 1000
-    filepath = checkpoint_dir +"weights.{epoch:02d}-{val_loss:.2f}.hdf5"
+    filepath = os.path.join(checkpoint_dir, "weights.{epoch:02d}-{val_loss:.2f}.hdf5")
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath, 
@@ -287,7 +287,7 @@ if __name__ == "__main__":
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
-    parser.add_argument("--checkpoint_dir", default="input/nq_bert_uncased_68", type=str)
+    parser.add_argument("--checkpoint_dir", default="checkpoints/", type=str)
 
     parser.add_argument('--validation_dir', type=str, default='validationData/',
              help = 'Directory were all the validation data splitted in smaller junks are stored')
