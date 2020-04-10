@@ -70,6 +70,22 @@ from time import time
 from generator import DataGenerator
 
 
+
+def traing(mymodel, files, epoch, path, batch_size, namemodel, vocab, verbose, evaluate, max_num_samples, callbacks_list):
+    for _ in range(epoch):
+        for f in files:
+            # loading the first file from the directory which will be used for
+            # the first training cycle
+            x, y = dataset_utils.getTokenizedDataset(namemodel,
+                                                    vocab, 
+                                                    'uncased',
+                                                    os.path.join(path, f),
+                                                    verbose,
+                                                    evaluate,
+                                                    max_num_samples)
+            mymodel.fit(x, y, verbose=verbose, epochs=1, batch_size = batch_size, callbacks=callbacks_list)
+
+
 class TimingCallback(tf.keras.callbacks.Callback):
     def __init__(self):
         self.logs = []
@@ -228,21 +244,16 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
 
     # data generator creation:
     # validation 
-    print(val_dir)
-    print(train_dir)
-    validation_generator = DataGenerator(val_dir, namemodel, vocab,verbose, evaluate, batch_size=batch_size,  validation=True)
 
-    traingenerator = DataGenerator(train_dir, namemodel, vocab, verbose, evaluate, batch_size=batch_size)
-
-    # Training data
-    # since we do an epoch for each file eventually we have to do 
-    # epoch*n_files epochs
-    n_files = traingenerator.num_files()
-    epoch = int(epoch) * n_files
-    print('\n\nwe have {} files so we will train for {} epochs\n\n'.format(n_files, epoch))
-
+    Allfiles = os.listdir(train_dir) #list of all the files from the directory
+    files = Allfiles.copy()
+    print("\n\nthe file we will use for training are: {}\n\n".format(files))
+    namefile = files.pop()
+    print(namefile)
+    
     cb = TimingCallback()  # execution time callback
 
+    '''
     cp_freq = 1000
     filepath = os.path.join(checkpoint_dir, "weights.{epoch:02d}-{loss:.2f}.hdf5")
     if not os.path.exists(checkpoint_dir):
@@ -250,13 +261,11 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath,
                                                     monitor='categorical_accuracy',
                                                     verbose=0,
-                                                    save_freq=cp_freq)
+                                                    save_freq=cp_freq)'''
 
     # callbacks
-    callbacks_list = [cb, tboard_callback, checkpoint]
-
-    # fitting
-    mymodel.fit(traingenerator, validation_data=validation_generator, verbose=1, epochs=epoch, callbacks=callbacks_list)
+    callbacks_list = [cb, tboard_callback]
+    traing(mymodel, Allfiles, epoch, train_dir, batch_size, namemodel, vocab, 0, evaluate, max_num_samples, callbacks_list)
     mymodel.summary()
     print("Time: " + str(cb.logs))
 
