@@ -39,9 +39,10 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.verbose = verbose
         self.evaluate = evaluate
         self.max_num_samples = max_num_samples
+        self.current_file_index = 0
         # loading the first file from the directory which will be used for
         # the first training cycle
-        self.current_file_index = 0
+        
 
         self.input, self.output = dataset_utils.getTokenizedDataset(self.namemodel,
                                                                     self.vocab, 'uncased',
@@ -87,6 +88,9 @@ class DataGenerator(tf.keras.utils.Sequence):
     def on_epoch_end(self):
         # change the current file and add it to the done list
         self.current_file_index += 1
+        
+        self.number_indexes = int(np.floor(len(self.input['attention_mask']) / self.batch_size))
+
         if not self.validation:
             if not self.files:
                 self.files = self.Allfiles
@@ -101,7 +105,6 @@ class DataGenerator(tf.keras.utils.Sequence):
                                                             self.evaluate,
                                                             self.max_num_samples)
                                                             
-            self.number_indexes = int(np.floor(len(self.input['attention_mask']) / self.batch_size))
 
             
 

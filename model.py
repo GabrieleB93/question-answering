@@ -256,7 +256,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     callbacks_list = [cb, tboard_callback, checkpoint]
 
     # fitting
-    mymodel.fit(traingenerator, validation_data=validation_generator, verbose=1, epochs=epoch, callbacks=callbacks_list)
+    mymodel.fit(traingenerator, validation_data=validation_generator, verbose=0, epochs=epoch, callbacks=callbacks_list)
     mymodel.summary()
     print("Time: " + str(cb.logs))
 
