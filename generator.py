@@ -1,6 +1,6 @@
 """
 On this file we have all the utility for managing data
-in particular we build a data generator in order to 
+in particular we build a data generator in order to
 load the json one peace at time in order to be able to
 compute the training even without more than 16 GB of RAM available
 """
@@ -18,8 +18,8 @@ class DataGenerator(tf.keras.utils.Sequence):
         'Initialization'
         '''
         Load the files and create the question answer tuple
-        store everithing 
-        
+        store everithing
+
         @param batch_size integer for the size of the batch
         @param directory_path path of the directory containing the training files
         @param namemodel name of model to use (bert, albert)
@@ -41,35 +41,43 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.max_num_samples = max_num_samples
         # loading the first file from the directory which will be used for
         # the first training cycle
+        self.current_file_index = 0
+
         self.input, self.output = dataset_utils.getTokenizedDataset(self.namemodel,
                                                                     self.vocab, 'uncased',
                                                                      os.path.join(self.path, self.namefile),
                                                                     self.verbose,
                                                                     self.evaluate,
                                                                     self.max_num_samples)
+        self.number_indexes = int(np.floor(len(self.input['attention_mask']) / self.batch_size))
+
 
     def num_files(self):
         return len(self.Allfiles)
 
     def __len__(self):
         'Denotes the number of batches per epoch'
-        return int(np.floor(len(self.input['attention_mask']) / self.batch_size))
+        ret = int(np.floor(len(self.input['attention_mask']) / self.batch_size))
+        print("Epoch number {} we have {} files".format(self.current_file_index, ret))
 
+        return ret
     def __getitem__(self, index):
         'Generate one batch of data'
         '''
         this is the dictionary names for the input and output of the model
          x = {
-            'input_ids': 
+            'input_ids':
             'attention_mask':
             'token_type_ids':
         }
         y = {
-            'start': 
+            'start':
             'end':
-            'type':         
+            'type':
         }
         '''
+        index = index % self.number_indexes
+
         x = {k: v[self.batch_size * index:self.batch_size * (index + 1)] for k, v in self.input.items()}
 
         y = [v[self.batch_size * index:self.batch_size * (index + 1)] for v in self.output]
@@ -78,18 +86,22 @@ class DataGenerator(tf.keras.utils.Sequence):
 
     def on_epoch_end(self):
         # change the current file and add it to the done list
+        self.current_file_index += 1
         if not self.validation:
             if not self.files:
                 self.files = self.Allfiles
             self.namefile = self.files.pop()
             print("New file: " + self.namefile)
-            
             # update the input and output tensors for this epoch 
             self.input, self.output = dataset_utils.getTokenizedDataset(self.namemodel,
-                                                            self.vocab, 'uncased',
+                                                            self.vocab, 
+                                                            'uncased',
                                                             os.path.join(self.path, self.namefile),
                                                             self.verbose,
                                                             self.evaluate,
                                                             self.max_num_samples)
+                                                            
+            self.number_indexes = int(np.floor(len(self.input['attention_mask']) / self.batch_size))
+
             
 
