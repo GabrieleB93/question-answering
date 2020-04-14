@@ -155,7 +155,7 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
 
 
 def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbose=False, evaluate=False,
-         max_num_samples=1_000_000, checkpoint = ""):
+         max_num_samples=1_000_000, checkpoint = "", log_dir = "log/"):
     """
 
     :param namemodel: nomde del modello da eseguire
@@ -166,7 +166,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     :return: TUTTO
 
     """
-    logs = "log/" + datetime.now().strftime("%Y%m%d-%H%M%S")  # Linux
+    logs = os.path.join(log_dir + datetime.now().strftime("%Y%m%d-%H%M%S"))  # Linux
     # logs = "logs\\" + datetime.now().strftime("%Y%m%d-%H%M%S")  # Windows
     if not os.path.exists(logs):
         os.makedirs(logs)
@@ -317,9 +317,12 @@ if __name__ == "__main__":
 
 
     parser.add_argument('--validation_dir', type=str, default='validationData/',
-                        help='Directory were all the validation data splitted in smaller junks are stored')
+                        help='Directory where all the validation data splitted in smaller junks are stored')
     parser.add_argument('--train_dir', type=str, default='TrainData/',
-                        help='Directory were all the traing data splitted in smaller junks are stored')
+                        help='Directory where all the traing data splitted in smaller junks are stored')
+
+    parser.add_argument('--log_dir', type=str, default='log/',
+                        help='Directory for tensorboard')
 
     parser.add_argument('--epoch', type=int, default=1)
     parser.add_argument('--model', type=str, default='albert')
@@ -332,4 +335,4 @@ if __name__ == "__main__":
     print("Training / evaluation parameters %s", args)
 
     main(args.model, args.batch_size, args.train_dir, args.validation_dir, args.epoch, args.checkpoint_dir,checkpoint= args.checkpoint,
-         evaluate=args.evaluate, verbose=args.verbose)
+         evaluate=args.evaluate, verbose=args.verbose, log_dir = args.log_dir)

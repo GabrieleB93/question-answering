@@ -69,7 +69,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         print("Epoch number {} we have {} files".format(self.current_file_index, ret))
         self.max = max(self.max, ret)
         print("the maximum number of file until now is {}".format(self.max))
-        return 4
+        return 4800//self.batch_size
 
     def get_sample_data(self):
         x = {k: v[self.batch_size * 0:self.batch_size * (0 + 1)] for k, v in self.input.items()}
