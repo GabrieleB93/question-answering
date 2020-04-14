@@ -14,7 +14,7 @@ class DataGenerator(tf.keras.utils.Sequence):
     'Generates data for Keras'
 
     def __init__(self, directory_path, namemodel, vocab, verbose, evaluate, batch_size=4,
-                 max_num_samples=1_000_000_000, validation = False):
+                 max_num_samples=1_000_000_000, validation = False, batch_start = None):
         'Initialization'
         '''
         Load the files and create the question answer tuple
@@ -25,11 +25,17 @@ class DataGenerator(tf.keras.utils.Sequence):
         @param namemodel name of model to use (bert, albert)
         @param vocab the vocabulary
         @param max_num_samples integer for the maximum number of samples
+        @param batch_start integer, used if we start from a checkpoint we will use the file from this index 
         '''
         self.validation = validation
         self.Allfiles = os.listdir(directory_path) #list of all the files from the directory
+        self.Allfiles = sorted(self.Allfiles, key= lambda file1: int(file1[:-6]))
         self.files = self.Allfiles.copy()
         print("\n\nthe file we will use for generator are: {}\n\n".format(self.files))
+
+        if batch_start:
+            self.files = self.files[batch_start%self.Allfiles:]
+
         self.namefile = self.files.pop()
         print(self.namefile)
         self.path = directory_path
@@ -42,11 +48,12 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.current_file_index = 0
         # loading the first file from the directory which will be used for
         # the first training cycle
-        
+        self.max = 0
 
         self.input, self.output = dataset_utils.getTokenizedDataset(self.namemodel,
-                                                                    self.vocab, 'uncased',
-                                                                     os.path.join(self.path, self.namefile),
+                                                                    self.vocab, 
+                                                                    'uncased',
+                                                                    os.path.join(self.path, self.namefile),
                                                                     self.verbose,
                                                                     self.evaluate,
                                                                     self.max_num_samples)
@@ -60,8 +67,11 @@ class DataGenerator(tf.keras.utils.Sequence):
         'Denotes the number of batches per epoch'
         ret = int(np.floor(len(self.input['attention_mask']) / self.batch_size))
         print("Epoch number {} we have {} files".format(self.current_file_index, ret))
+        self.max = max(self.max, ret)
+        print("the maximum number of file until now is {}".format(self.max))
+        return 1200
 
-        return ret
+
     def __getitem__(self, index):
         'Generate one batch of data'
         '''
