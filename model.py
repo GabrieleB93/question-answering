@@ -58,6 +58,7 @@ import random
 import time
 import pickle
 import math
+import re
 from collections import namedtuple
 import tensorflow as tf
 from transformers import TFBertMainLayer, TFBertPreTrainedModel, TFRobertaMainLayer, TFRobertaPreTrainedModel, \
@@ -224,6 +225,17 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
 
     mymodel(mymodel.dummy_inputs)
 
+    if checkpoint != "":
+        # we do this in order to compile the model, otherwise it will not be able to lead the weights
+        #mymodel(traingenerator.get_sample_data())
+        startepoch = re.sub('weights.', '', checkpoint)
+        startepoch = int(startepoch.split("-")[0])
+
+        mymodel.load_weights(checkpoint, by_name = True)
+        print("checkpoint loaded succefully")
+    else:
+        startepoch = None
+
     adam = tf.keras.optimizers.Adam(lr=0.05)
 
     mymodel.compile(loss=losses,
@@ -241,19 +253,19 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
 
     validation_generator = DataGenerator(val_dir, namemodel, vocab,verbose, evaluate, batch_size=batch_size,  validation=True)
 
-    traingenerator = DataGenerator(train_dir, namemodel, vocab, verbose, evaluate, batch_size=batch_size)
+    traingenerator = DataGenerator(train_dir, namemodel, vocab, verbose, evaluate, batch_size=batch_size, batch_start = startepoch)
 
-    if checkpoint != "":
-        # we do this in order to compile the model, otherwise it will not be able to lead the weights
-        #mymodel(traingenerator.get_sample_data())
-        mymodel.load_weights(checkpoint, by_name = True)
-        print("checkpoint loaded succefully")
+
 
     # Training data
     # since we do an epoch for each file eventually we have to do 
     # epoch*n_files epochs
     n_files = traingenerator.num_files()
-    epoch = int(epoch) * n_files
+    if startepoch:
+        epoch = (int(epoch) - 1) * n_files + (n_files - startepoch)
+    else:
+        epoch = int(epoch) * n_files 
+
     print('\n\nwe have {} files so we will train for {} epochs\n\n'.format(n_files, epoch))
 
     cb = TimingCallback()  # execution time callback
