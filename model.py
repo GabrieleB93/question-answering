@@ -222,11 +222,14 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     print(model_class)
     mymodel = model_class(config)
 
-    
+    mymodel(mymodel.dummy_inputs)
+
+    adam = tf.keras.optimizers.Adam(lr=0.05)
 
     mymodel.compile(loss=losses,
                     loss_weights=lossWeights,
-                    metrics=['categorical_accuracy']
+                    metrics=['categorical_accuracy'],
+                    optimizer=adam
                     )
 
 
@@ -242,7 +245,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
 
     if checkpoint != "":
         # we do this in order to compile the model, otherwise it will not be able to lead the weights
-        mymodel(traingenerator.get_sample_data())
+        #mymodel(traingenerator.get_sample_data())
         mymodel.load_weights(checkpoint, by_name = True)
         print("checkpoint loaded succefully")
 
@@ -263,7 +266,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
                                                     save_weights_only = False,
                                                     monitor='categorical_accuracy',
                                                     verbose=0,
-                                                    save_freq=2)
+                                                    save_freq="epoch")
 
     # callbacks
     callbacks_list = [cb, tboard_callback, checkpoint]
