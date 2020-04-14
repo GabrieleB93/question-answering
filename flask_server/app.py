@@ -23,7 +23,6 @@ def answer():
     if 'tastes' not in req['userProfile']:
         req['adaptionError'] = {"userProfile incomplete"}
 		
-	
-
-    req['keywordExpansion'] = results 
+	print("query ricevuta")
+    
     return jsonify(req)

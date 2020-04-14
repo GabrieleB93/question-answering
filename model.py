@@ -117,7 +117,7 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
     def __init__(self, config, *inputs, **kwargs):
         super().__init__(config, *inputs, **kwargs)
 
-        self.albert = TFALBertMainLayer(config, name='albert')
+        self.albert = TFALBertMainLayer(config)
         self.initializer = get_initializer(config.initializer_range)
 
         # after we have the bert embeddings we calculate the start token with a fully connected
@@ -133,6 +133,7 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
 
         self.type = tf.keras.layers.Dense(5, kernel_initializer=self.initializer,
                                           activation=tf.nn.softmax, name="type")
+
 
     def call(self, inputs, **kwargs):
         bert_output = self.albert(inputs)
@@ -153,7 +154,7 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
 
 
 def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbose=False, evaluate=False,
-         max_num_samples=1_000_000):
+         max_num_samples=1_000_000, checkpoint = ""):
     """
 
     :param namemodel: nomde del modello da eseguire
@@ -221,18 +222,29 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     print(model_class)
     mymodel = model_class(config)
 
+    
+
     mymodel.compile(loss=losses,
                     loss_weights=lossWeights,
                     metrics=['categorical_accuracy']
                     )
 
+
     # data generator creation:
     # validation 
     print(val_dir)
     print(train_dir)
+
+
     validation_generator = DataGenerator(val_dir, namemodel, vocab,verbose, evaluate, batch_size=batch_size,  validation=True)
 
     traingenerator = DataGenerator(train_dir, namemodel, vocab, verbose, evaluate, batch_size=batch_size)
+
+    if checkpoint != "":
+        # we do this in order to compile the model, otherwise it will not be able to lead the weights
+        mymodel(traingenerator.get_sample_data())
+        mymodel.load_weights(checkpoint, by_name = True)
+        print("checkpoint loaded succefully")
 
     # Training data
     # since we do an epoch for each file eventually we have to do 
@@ -248,9 +260,10 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath,
+                                                    save_weights_only = False,
                                                     monitor='categorical_accuracy',
                                                     verbose=0,
-                                                    save_freq=cp_freq)
+                                                    save_freq=2)
 
     # callbacks
     callbacks_list = [cb, tboard_callback, checkpoint]
@@ -284,7 +297,9 @@ if __name__ == "__main__":
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
-    parser.add_argument("--checkpoint_dir", default="checkpoints/", type=str)
+    parser.add_argument("--checkpoint_dir", default="checkpoints/", type=str, help="the directory where we want to save the checkpoint")
+    parser.add_argument("--checkpoint", default="", type=str, help="The file we will use as checkpoint")
+
 
     parser.add_argument('--validation_dir', type=str, default='validationData/',
                         help='Directory were all the validation data splitted in smaller junks are stored')
@@ -301,5 +316,5 @@ if __name__ == "__main__":
     # assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
     print("Training / evaluation parameters %s", args)
 
-    main(args.model, args.batch_size, args.train_dir, args.validation_dir, args.epoch, args.checkpoint_dir,
+    main(args.model, args.batch_size, args.train_dir, args.validation_dir, args.epoch, args.checkpoint_dir,checkpoint= args.checkpoint,
          evaluate=args.evaluate, verbose=args.verbose)
