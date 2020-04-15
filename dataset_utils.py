@@ -1,26 +1,20 @@
 """ Finetuning the library models for question-answering on SQuAD (DistilBERT, Bert, XLM, XLNet)."""
 import argparse
-import os
-import random
-import time
-import pickle
-import math
-from collections import namedtuple
-from transformers import BertConfig, BertTokenizer, RobertaConfig, RobertaTokenizer, AlbertTokenizer, AlbertConfig
+import collections
 import json
 import logging
+import math
 import os
-import collections
 import pickle
-import pandas as pd
-from tqdm.notebook import tqdm
+import random
+import time
+import gc
 import numpy as np
-from transformers.tokenization_bert import whitespace_tokenize
+import pandas as pd
 import tensorflow as tf
-from modeling_tf_albert import TFALBertMainLayer
-from transformers import TFBertMainLayer, TFBertPreTrainedModel, TFRobertaMainLayer, TFRobertaPreTrainedModel, \
-    TFAlbertPreTrainedModel
-from transformers.modeling_tf_utils import get_initializer
+from tqdm.notebook import tqdm
+from transformers import BertConfig, BertTokenizer, RobertaConfig, RobertaTokenizer, AlbertTokenizer, AlbertConfig
+from transformers.tokenization_bert import whitespace_tokenize
 
 tqdm.monitor_interval = 0  # noqa
 
@@ -50,6 +44,9 @@ NbestPrediction = collections.namedtuple("NbestPrediction", [
     "text", "start_logit", "end_logit",
     "start_index", "end_index",
     "orig_doc_start", "orig_doc_end", "crop_index"])
+
+RawResult = collections.namedtuple("RawResult", ["unique_id", "start_logits", "end_logits",
+                                                 "long_logits"])
 
 UNMAPPED = -123
 CLS_INDEX = 0
@@ -890,19 +887,19 @@ def convert_nq_to_squad(verbose, is_train, args=None):
     :return: list of entries
     """
     np.random.seed(123)
-    if args is None:
-        parser = argparse.ArgumentParser()
-        parser.add_argument('--fn', type=str, default='simplified-nq-train.jsonl')
-        parser.add_argument('--version', type=str, default='v1.0.2')
-        parser.add_argument('--prefix', type=str, default='nq')
-        parser.add_argument('--p_val', type=float, default=0.1)
-        parser.add_argument('--crop_len', type=int, default=2_500)
-        parser.add_argument('--num_samples', type=int, default=1_000_000)
-        parser.add_argument('--val_ids', type=str, default='val_ids.csv')
-        parser.add_argument('--do_enumerate', action='store_true')
-        parser.add_argument('--do_not_dump', action='store_true')
-        parser.add_argument('--num_max_tokens', type=int, default=400_000)
-        args = parser.parse_args()
+    # if args is None:
+    #     parser = argparse.ArgumentParser()
+    #     parser.add_argument('--fn', type=str, default='simplified-nq-train.jsonl')
+    #     parser.add_argument('--version', type=str, default='v1.0.2')
+    #     parser.add_argument('--prefix', type=str, default='nq')
+    #     parser.add_argument('--p_val', type=float, default=0.1)
+    #     parser.add_argument('--crop_len', type=int, default=2_500)
+    #     parser.add_argument('--num_samples', type=int, default=1_000_000)
+    #     parser.add_argument('--val_ids', type=str, default='val_ids.csv')
+    #     parser.add_argument('--do_enumerate', action='store_true')
+    #     parser.add_argument('--do_not_dump', action='store_true')
+    #     parser.add_argument('--num_max_tokens', type=int, default=400_000)
+    #     args = parser.parse_args()
 
     if is_train:
         train_fn = f'{args.prefix}-train-{args.version}.json'
@@ -1305,13 +1302,11 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
     return dataset, crops, entries
 
 
-def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, evaluate, max_num_samples):
+def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, max_num_samples):
     """
     La funzione crea input e target per il modello da allenare
 
     :param max_num_samples: massimo numero di oggetti da prendere in considerazione (1mil Default)
-    :param evaluate: uno dei due da levare, ovvie ragioni
-    :param is_train:
     :param model_type: tipo del modello da utilizzare per tokenizzare
     :param vocab: path del vocabolario del modello
     :param do_lower_case: flag sfigato
@@ -1345,7 +1340,7 @@ def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, eva
     _, tokenizer_class = MODEL_CLASSES[model_type]
     tokenizer = tokenizer_class(vocab, do_lower_case=do_lower_case)
     print(tokenizer_class)
-    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate,
+    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, namefile, verbose, False,
                                                         max_num_samples)
 
     do = False
@@ -1375,3 +1370,92 @@ def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, eva
         y = [eval_dataset[3], eval_dataset[4], eval_dataset[5]]
 
     return x, y
+
+
+def getDatasetForEvaluation(args, tokenizer, namefile, verbose, max_num_samples):
+    # all_input_ids, all_attention_mask, all_token_type_ids, all_p_mask
+    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, namefile, verbose, True, max_num_samples)
+    args.eval_batch_size = args.per_tpu_eval_batch_size
+
+    # pad dataset to multiple of `args.eval_batch_size`
+    eval_dataset_length = len(eval_dataset[0])
+    padded_length = math.ceil(eval_dataset_length / args.eval_batch_size) * args.eval_batch_size
+    num_pad = padded_length - eval_dataset[0].shape[0]
+    for ti, t in enumerate(eval_dataset):
+        pad_tensor = tf.expand_dims(tf.zeros_like(t[0]), 0)
+        pad_tensor = tf.repeat(pad_tensor, num_pad, 0)
+        eval_dataset[ti] = tf.concat([t, pad_tensor], 0)
+
+    # create eval dataset
+    eval_ds = tf.data.Dataset.from_tensor_slices({
+        'input_ids': tf.constant(eval_dataset[0]),
+        'attention_mask': tf.constant(eval_dataset[1]),
+        'token_type_ids': tf.constant(eval_dataset[2]),
+        'example_index': tf.range(padded_length, dtype=tf.int32)
+
+    })
+    eval_ds = eval_ds.batch(batch_size=args.eval_batch_size, drop_remainder=True)
+    # eval_ds = eval_ds.prefetch(tf.data.experimental.AUTOTUNE)
+    # eval_ds = strategy.experimental_distribute_dataset(eval_ds)
+
+    # eval
+    print("  Num examples = %d", eval_dataset_length)
+    print("  Batch size = %d", args.eval_batch_size)
+
+    return eval_ds, crops, entries, eval_dataset_length
+
+
+def getResult(args, model, eval_ds, crops, entries, eval_dataset_length):
+    csv_fn = 'submission.csv'
+    padded_length = math.ceil(eval_dataset_length / args.eval_batch_size) * args.eval_batch_size
+
+    @tf.function
+    def predict_step(batch):
+        outputs = model(batch, training=False)
+        return outputs
+
+    all_results = []
+    tic = time.time()
+    for batch_ind, batch in tqdm(enumerate(eval_ds), total=padded_length // args.per_tpu_eval_batch_size):
+        # if batch_ind > 2:
+        #     break
+        example_indexes = batch['example_index']
+        # outputs = strategy.experimental_run_v2(predict_step, args=(batch, ))
+        outputs = predict_step(batch)
+        batched_start_logits = outputs[0].numpy()
+        batched_end_logits = outputs[1].numpy()
+        batched_long_logits = outputs[2].numpy()
+        for i, example_index in enumerate(example_indexes):
+            # filter out padded samples
+            if example_index >= eval_dataset_length:
+                continue
+
+            eval_crop = crops[example_index]
+            unique_id = int(eval_crop.unique_id)
+            start_logits = batched_start_logits[i].tolist()
+            end_logits = batched_end_logits[i].tolist()
+            long_logits = batched_long_logits[i].tolist()
+
+            result = RawResult(unique_id=unique_id,
+                               start_logits=start_logits,
+                               end_logits=end_logits,
+                               long_logits=long_logits)
+            all_results.append(result)
+
+    eval_time = time.time() - tic
+    print("  Evaluation done in total %f secs (%f sec per example)",
+          eval_time, eval_time / padded_length)
+    examples_gen = read_nq_examples(entries, is_training=False)
+    preds = write_predictions(examples_gen, crops, all_results, args.n_best_size,
+                              args.max_answer_length,
+                              None, None, None,
+                              args.verbose_logging,
+                              args.short_null_score_diff_threshold, args.long_null_score_diff_threshold)
+    del crops, all_results
+    gc.collect()
+    candidates = read_candidates(['../input/tensorflow2-question-answering/simplified-nq-test.jsonl'], do_cache=False)
+    sub = convert_preds_to_df(preds, candidates).sort_values('example_id')
+    sub.to_csv(csv_fn, index=False, columns=['example_id', 'PredictionString'])
+    print(f'***** Wrote submission to {csv_fn} *****')
+    result = {}
+    return result
