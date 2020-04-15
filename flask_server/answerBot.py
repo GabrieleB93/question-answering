@@ -1,37 +1,46 @@
 import tensorflow as tf
 
 from web_to_simplified import create_simplified_input
-
-class Page:
-    query
-    url
-    content
-
-    def __init__(self, q, u, c):
-        self.query = q
-        self.url = u
-        self.content = c
-
+from query_to_page import query_to_page
 
 class AnswerBot:
-    def __init__(self, model_path):
+    def __init__(self):
+        super().__init__()
+
+    """def __init__(self, model_path):
         super().__init__()
         # load the model
-        self.model = tf.keras.loadmodel(model_path)
+        self.model = tf.keras.loadmodel(model_path)"""
 
-    def preprocess_page(page):
-    """
+    def preprocess_page(self, page):
+        """
         This function takes a page as input and returns a
         simplified_nq_example
 
         @param page the page containing the abstract
 
         @retval the simplified_nq_example
-    """
+        """
         return create_simplified_input(page.query, page.url, page.content)
+
+    def obtain_wiki_page(self, q):
+        """This function returns a Page object from the question q
+
+        @param q query string
+
+        @retval the page object containing query, url and html content
+
+        """
+        return query_to_page(q)
 
     def answer(self, question):
         page = self.obtain_wiki_page(question)
         simplified_datum = self.preprocess_page(page)
-        prediction = self.model(page)
-        return self.frompredictiontotext(prediction, page)
+        #prediction = self.model(page)
+        #return self.frompredictiontotext(prediction, page)
+
+question = "where was shrodinger born?"
+a = AnswerBot()
+page = a.obtain_wiki_page(question)
+simplified_datum = a.preprocess_page(page)
+print(simplified_datum)
