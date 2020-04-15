@@ -15,7 +15,7 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     :param args:
     :param checkpoint:
     :param namemodel: nomde del modello da eseguire
-    :param verbose: fag per stampare informazioni sul primo elemento del dataset
+    :param verbose: fag per stampare informazioni sul primo elemento del datasetk
     :param max_num_samples: massimo numero di oggetti da prendere in considerazione (1mil Default)
     :return: TUTTO
 
