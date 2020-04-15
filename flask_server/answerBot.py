@@ -1,12 +1,7 @@
 import tensorflow as tf
-
 from web_to_simplified import create_simplified_input
 
 class Page:
-    query
-    url
-    content
-
     def __init__(self, q, u, c):
         self.query = q
         self.url = u
@@ -19,15 +14,16 @@ class AnswerBot:
         # load the model
         self.model = tf.keras.loadmodel(model_path)
 
-    def preprocess_page(page):
-    """
+
+    def preprocess_page(self, page):
+        '''
         This function takes a page as input and returns a
         simplified_nq_example
 
         @param page the page containing the abstract
 
         @retval the simplified_nq_example
-    """
+        '''
         return create_simplified_input(page.query, page.url, page.content)
 
     def answer(self, question):
