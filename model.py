@@ -50,114 +50,28 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from datetime import datetime
-
 import argparse
 import os
-import random
-import time
-import pickle
-import math
 import re
-from collections import namedtuple
+from datetime import datetime
 import tensorflow as tf
-from transformers import TFBertMainLayer, TFBertPreTrainedModel, TFRobertaMainLayer, TFRobertaPreTrainedModel, \
-    TFAlbertPreTrainedModel
-from transformers import BertConfig, BertTokenizer, RobertaConfig, RobertaTokenizer, AlbertTokenizer, AlbertConfig
-from modeling_tf_albert import TFALBertMainLayer
-from transformers.modeling_tf_utils import get_initializer
-import dataset_utils
-from time import time
+from transformers import BertConfig, BertTokenizer, AlbertTokenizer, AlbertConfig
 from generator import DataGenerator
-
-
-class TimingCallback(tf.keras.callbacks.Callback):
-    def __init__(self):
-        self.logs = []
-
-    def on_epoch_begin(self, epoch, logs={}):
-        self.starttime = time()
-
-    def on_epoch_end(self, epoch, logs={}):
-        self.logs.append(time() - self.starttime)
-
-
-class TFBertForNaturalQuestionAnswering(TFBertPreTrainedModel):
-    def __init__(self, config, *inputs, **kwargs):
-        super().__init__(config, *inputs, **kwargs)
-
-        self.bert = TFBertMainLayer(config, name='bert')
-        self.initializer = get_initializer(config.initializer_range)
-
-        # after we have the bert embeddings we calculate the start token with a fully connected 
-        self.layer_1 = tf.keras.layers.Dense(512,
-                                             kernel_initializer=self.initializer, activation=tf.nn.relu)
-        self.layer2 = tf.keras.layers.Dense(256,
-                                            kernel_initializer=self.initializer, activation=tf.nn.relu)
-        self.start = tf.keras.layers.Dense(1,
-                                           kernel_initializer=self.initializer, name="start", activation=tf.nn.softmax)
-
-        self.end = tf.keras.layers.Dense(1,
-                                         kernel_initializer=self.initializer, name="end", activation=tf.nn.softmax)
-
-        self.type = tf.keras.layers.Dense(5, kernel_initializer=self.initializer,
-                                          activation=tf.nn.softmax, name="type")
-
-    def call(self, inputs, **kwargs):
-        bert_output = self.bert(inputs)
-        presoftmax = self.layer2(self.layer_1(bert_output[0]))
-
-        start = self.start(presoftmax)
-        end = self.end(presoftmax)
-        answer_type = self.type(bert_output[1])
-
-        return start, end, answer_type
-
-
-class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
-    def __init__(self, config, *inputs, **kwargs):
-        super().__init__(config, *inputs, **kwargs)
-
-        self.albert = TFALBertMainLayer(config)
-        self.initializer = get_initializer(config.initializer_range)
-
-        # after we have the bert embeddings we calculate the start token with a fully connected
-        self.layer_1 = tf.keras.layers.Dense(512,
-                                             kernel_initializer=self.initializer, activation=tf.nn.relu)
-        self.layer2 = tf.keras.layers.Dense(256,
-                                            kernel_initializer=self.initializer, activation=tf.nn.relu)
-        self.start = tf.keras.layers.Dense(1,
-                                           kernel_initializer=self.initializer, name="start")
-
-        self.end = tf.keras.layers.Dense(1,
-                                         kernel_initializer=self.initializer, name="end")
-
-        self.type = tf.keras.layers.Dense(5, kernel_initializer=self.initializer,
-                                          activation=tf.nn.softmax, name="type")
-
-
-    def call(self, inputs, **kwargs):
-        bert_output = self.albert(inputs)
-        presoftmax = self.layer2(self.layer_1(bert_output[0]))
-        # tf.print(tf.shape(presoftmax)) # [4, 512, 256]
-
-        start_logit = self.start(presoftmax)
-        # tf.print(tf.shape(start_logit)) #[4, 512, 1]
-        end_logit = self.end(presoftmax)
-
-        start = tf.math.softmax(tf.squeeze(start_logit, axis=-1), axis=1)
-        end = tf.math.softmax(tf.squeeze(end_logit, axis=-1), axis=1)
-        # tf.print(tf.shape(end)) #[4, 512]
-
-        answer_type = self.type(bert_output[1])
-
-        return start, end, answer_type
+from model_stuff import model_utils as mu
+from model_stuff.TFAlbertForNaturalQuestionAnswering import TFAlbertForNaturalQuestionAnswering
+from model_stuff.TFBertForNaturalQuestionAnswering import TFBertForNaturalQuestionAnswering
 
 
 def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbose=False, evaluate=False,
-         max_num_samples=1_000_000, checkpoint = "", log_dir = "log/"):
+         max_num_samples=1_000_000, checkpoint="", log_dir="log/"):
     """
 
+    :param log_dir:
+    :param checkpoint:
+    :param epoch:
+    :param train_dir:
+    :param val_dir:
+    :param checkpoint_dir:
     :param namemodel: nomde del modello da eseguire
     :param batch_size: dimensione del batch durante il training
     :param verbose: fag per stampare informazioni sul primo elemento del dataset
@@ -227,11 +141,11 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
 
     if checkpoint != "":
         # we do this in order to compile the model, otherwise it will not be able to lead the weights
-        #mymodel(traingenerator.get_sample_data())
+        # mymodel(traingenerator.get_sample_data())
         startepoch = re.sub('weights.', '', checkpoint)
         startepoch = int(startepoch.split("-")[0])
 
-        mymodel.load_weights(checkpoint, by_name = True)
+        mymodel.load_weights(checkpoint, by_name=True)
         print("checkpoint loaded succefully")
     else:
         startepoch = None
@@ -244,18 +158,16 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
                     optimizer=adam
                     )
 
-
     # data generator creation:
     # validation 
     print(val_dir)
     print(train_dir)
 
+    validation_generator = DataGenerator(val_dir, namemodel, vocab, verbose, evaluate, batch_size=batch_size,
+                                         validation=True)
 
-    validation_generator = DataGenerator(val_dir, namemodel, vocab,verbose, evaluate, batch_size=batch_size,  validation=True)
-
-    traingenerator = DataGenerator(train_dir, namemodel, vocab, verbose, evaluate, batch_size=batch_size, batch_start = startepoch)
-
-
+    traingenerator = DataGenerator(train_dir, namemodel, vocab, verbose, evaluate, batch_size=batch_size,
+                                   batch_start=startepoch)
 
     # Training data
     # since we do an epoch for each file eventually we have to do 
@@ -264,18 +176,18 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     if startepoch:
         epoch = (int(epoch) - 1) * n_files + (n_files - startepoch)
     else:
-        epoch = int(epoch) * n_files 
+        epoch = int(epoch) * n_files
 
     print('\n\nwe have {} files so we will train for {} epochs\n\n'.format(n_files, epoch))
 
-    cb = TimingCallback()  # execution time callback
+    cb = mu.TimingCallback()  # execution time callback
 
     cp_freq = 1000
     filepath = os.path.join(checkpoint_dir, "weights.{epoch:02d}-{loss:.2f}.hdf5")
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath,
-                                                    save_weights_only = False,
+                                                    save_weights_only=False,
                                                     monitor='categorical_accuracy',
                                                     verbose=0,
                                                     save_freq="epoch")
@@ -312,9 +224,9 @@ if __name__ == "__main__":
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
-    parser.add_argument("--checkpoint_dir", default="checkpoints/", type=str, help="the directory where we want to save the checkpoint")
+    parser.add_argument("--checkpoint_dir", default="checkpoints/", type=str,
+                        help="the directory where we want to save the checkpoint")
     parser.add_argument("--checkpoint", default="", type=str, help="The file we will use as checkpoint")
-
 
     parser.add_argument('--validation_dir', type=str, default='validationData/',
                         help='Directory where all the validation data splitted in smaller junks are stored')
@@ -334,5 +246,6 @@ if __name__ == "__main__":
     # assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
     print("Training / evaluation parameters %s", args)
 
-    main(args.model, args.batch_size, args.train_dir, args.validation_dir, args.epoch, args.checkpoint_dir,checkpoint= args.checkpoint,
-         evaluate=args.evaluate, verbose=args.verbose, log_dir = args.log_dir)
+    main(args.model, args.batch_size, args.train_dir, args.validation_dir, args.epoch, args.checkpoint_dir,
+         checkpoint=args.checkpoint,
+         evaluate=args.evaluate, verbose=args.verbose, log_dir=args.log_dir)
