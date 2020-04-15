@@ -166,7 +166,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     :return: TUTTO
 
     """
-    logs = os.path.join(log_dir + datetime.now().strftime("%Y%m%d-%H%M%S"))  # Linux
+    logs = os.path.join(log_dir, datetime.now().strftime("%Y%m%d-%H%M%S"))  # Linux
     # logs = "logs\\" + datetime.now().strftime("%Y%m%d-%H%M%S")  # Windows
     if not os.path.exists(logs):
         os.makedirs(logs)
@@ -284,7 +284,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     callbacks_list = [cb, tboard_callback, checkpoint]
 
     # fitting
-    mymodel.fit(traingenerator, validation_data=validation_generator, verbose=0, epochs=epoch, callbacks=callbacks_list)
+    mymodel.fit(traingenerator, validation_data=validation_generator, verbose=1, epochs=epoch, callbacks=callbacks_list)
     mymodel.summary()
     print("Time: " + str(cb.logs))
 
