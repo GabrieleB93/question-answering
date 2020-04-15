@@ -163,10 +163,10 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     print(val_dir)
     print(train_dir)
 
-    validation_generator = DataGenerator(val_dir, namemodel, vocab, verbose, evaluate, batch_size=batch_size,
+    validation_generator = DataGenerator(val_dir, namemodel, vocab, verbose, batch_size=batch_size,
                                          validation=True)
 
-    traingenerator = DataGenerator(train_dir, namemodel, vocab, verbose, evaluate, batch_size=batch_size,
+    traingenerator = DataGenerator(train_dir, namemodel, vocab, verbose, batch_size=batch_size,
                                    batch_start=startepoch)
 
     # Training data

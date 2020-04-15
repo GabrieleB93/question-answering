@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, request, abort
+import time
 #Rimport answerBot
 #from config import config
 
@@ -18,5 +19,6 @@ def answer():
         return abort(400) # BAD REQUEST
      # TODO implement query analisys and answer
 
+    time.sleep(2.4)
     ret = {"data":query}
     return jsonify(ret)
