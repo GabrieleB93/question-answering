@@ -1,28 +1,22 @@
 from flask import Flask, jsonify, request, abort
-import answerBot
-from config import config
+#Rimport answerBot
+#from config import config
 
+debug = False
 app = Flask(__name__)
-mybot = answerBot.AnswerBot(config.path)
+#mybot = answerBot.AnswerBot(config.path)
 
-@app.route("/") 
-def hello_world():
-    return "Hello, World!"
 
 @app.route("/answer",  methods=["POST"])
 def answer():
-    req = request.get_json()
-    req['keywordExpansion'] = []
-    
+    query = dict(request.form)['query']
+    if debug:
+        print("i recived this query: {}".format(query))
+
     # Errors
-    if not req:
+    if not query:
         return abort(400) # BAD REQUEST
-    if 'userProfile' not in req:
-        req['adaptionError'] = {"userProfile not found"}
-        return jsonify(req), 400
-    if 'tastes' not in req['userProfile']:
-        req['adaptionError'] = {"userProfile incomplete"}
-		
-	print("query ricevuta")
-    
-    return jsonify(req)
+     # TODO implement query analisys and answer
+
+    ret = {"data":query}
+    return jsonify(ret)

@@ -13,8 +13,8 @@ import dataset_utils
 class DataGenerator(tf.keras.utils.Sequence):
     'Generates data for Keras'
 
-    def __init__(self, directory_path, namemodel, vocab, verbose, batch_size=4,
-                 max_num_samples=1_000_000_000, validation=False, batch_start=None):
+    def __init__(self, directory_path, namemodel, vocab, verbose, evaluate, batch_size=4,
+                 max_num_samples=1_000_000_000, validation = False, batch_start = None):
         'Initialization'
         '''
         Load the files and create the question answer tuple
@@ -28,13 +28,13 @@ class DataGenerator(tf.keras.utils.Sequence):
         @param batch_start integer, used if we start from a checkpoint we will use the file from this index 
         '''
         self.validation = validation
-        self.Allfiles = os.listdir(directory_path)  # list of all the files from the directory
-        self.Allfiles = sorted(self.Allfiles, key=lambda file1: int(file1[:-6]))
+        self.Allfiles = os.listdir(directory_path) #list of all the files from the directory
+        self.Allfiles = sorted(self.Allfiles, key= lambda file1: int(file1[:-6]))
         self.files = self.Allfiles.copy()
         print("\n\nthe file we will use for generator are: {}\n\n".format(self.files))
 
         if batch_start:
-            self.files = self.files[batch_start % self.Allfiles:]
+            self.files = self.files[batch_start%self.Allfiles:]
 
         self.namefile = self.files.pop()
         print(self.namefile)
@@ -43,6 +43,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.namemodel = namemodel
         self.vocab = vocab
         self.verbose = verbose
+        self.evaluate = evaluate
         self.max_num_samples = max_num_samples
         self.current_file_index = 0
         # loading the first file from the directory which will be used for
@@ -50,12 +51,14 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.max = 0
 
         self.input, self.output = dataset_utils.getTokenizedDataset(self.namemodel,
-                                                                    self.vocab,
+                                                                    self.vocab, 
                                                                     'uncased',
                                                                     os.path.join(self.path, self.namefile),
                                                                     self.verbose,
+                                                                    self.evaluate,
                                                                     self.max_num_samples)
         self.number_indexes = int(np.floor(len(self.input['attention_mask']) / self.batch_size))
+
 
     def num_files(self):
         return len(self.Allfiles)
@@ -66,10 +69,11 @@ class DataGenerator(tf.keras.utils.Sequence):
         print("Epoch number {} we have {} files".format(self.current_file_index, ret))
         self.max = max(self.max, ret)
         print("the maximum number of file until now is {}".format(self.max))
-        return 4800 // self.batch_size
+        return 4800//self.batch_size
 
     def get_sample_data(self):
         x = {k: v[self.batch_size * 0:self.batch_size * (0 + 1)] for k, v in self.input.items()}
+
 
         return x
 
@@ -99,7 +103,7 @@ class DataGenerator(tf.keras.utils.Sequence):
     def on_epoch_end(self):
         # change the current file and add it to the done list
         self.current_file_index += 1
-
+        
         self.number_indexes = int(np.floor(len(self.input['attention_mask']) / self.batch_size))
 
         if not self.validation:
@@ -109,8 +113,13 @@ class DataGenerator(tf.keras.utils.Sequence):
             print("New file: " + self.namefile)
             # update the input and output tensors for this epoch 
             self.input, self.output = dataset_utils.getTokenizedDataset(self.namemodel,
-                                                                        self.vocab,
-                                                                        'uncased',
-                                                                        os.path.join(self.path, self.namefile),
-                                                                        self.verbose,
-                                                                        self.max_num_samples)
+                                                            self.vocab, 
+                                                            'uncased',
+                                                            os.path.join(self.path, self.namefile),
+                                                            self.verbose,
+                                                            self.evaluate,
+                                                            self.max_num_samples)
+                                                            
+
+            
+

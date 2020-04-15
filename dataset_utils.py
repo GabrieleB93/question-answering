@@ -1223,6 +1223,8 @@ def toMatrixTensor(crop_or_position, len):
     """
     Genera il target per ogni elemento del crop nel giusto formato, compatibile con il modello
 
+        [yes,no,short,long,no_answer] or [0...1...0]
+
     :param crop_or_position: una intera entry del crop oppure direttamente start_position o end_position
     :param len: dimensione del vettore da restituire
     :return: singolo vettore Target corrispondente ad una entry
