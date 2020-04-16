@@ -142,7 +142,8 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     if checkpoint != "":
         # we do this in order to compile the model, otherwise it will not be able to lead the weights
         # mymodel(traingenerator.get_sample_data())
-        startepoch = re.sub('weights.', '', checkpoint)
+        startepoch = os.path.split(checkpoint)[-1]
+        startepoch = re.sub('weights.', '', startepoch)
         startepoch = int(startepoch.split("-")[0])
 
         mymodel.load_weights(checkpoint, by_name=True)
