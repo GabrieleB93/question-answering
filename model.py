@@ -145,11 +145,13 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
         startepoch = os.path.split(checkpoint)[-1]
         startepoch = re.sub('weights.', '', startepoch)
         startepoch = int(startepoch.split("-")[0])
+        initial_epoch = startepoch
 
         mymodel.load_weights(checkpoint, by_name=True)
         print("checkpoint loaded succefully")
     else:
         startepoch = None
+        initial_epoch = 0
 
     adam = tf.keras.optimizers.Adam(lr=0.05)
 
@@ -174,10 +176,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     # since we do an epoch for each file eventually we have to do 
     # epoch*n_files epochs
     n_files = traingenerator.num_files()
-    if startepoch:
-        epoch = (int(epoch) - 1) * n_files + (n_files - startepoch)
-    else:
-        epoch = int(epoch) * n_files
+    epoch = int(epoch) * n_files
 
     print('\n\nwe have {} files so we will train for {} epochs\n\n'.format(n_files, epoch))
 
@@ -197,7 +196,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     callbacks_list = [cb, tboard_callback, checkpoint]
 
     # fitting
-    mymodel.fit(traingenerator, validation_data=validation_generator, verbose=1, epochs=epoch, callbacks=callbacks_list)
+    mymodel.fit(traingenerator, validation_data=validation_generator, verbose=1, epochs=epoch, callbacks=callbacks_list, initial_epoch = initial_epoch)
     mymodel.summary()
     print("Time: " + str(cb.logs))
 
