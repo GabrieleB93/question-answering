@@ -116,3 +116,7 @@ small_jsons/
 logs
 log
 checkpoints
+weights.h5
+
+validationData
+TrainData
