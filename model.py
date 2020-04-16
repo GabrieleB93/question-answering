@@ -182,7 +182,6 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
 
     cb = mu.TimingCallback()  # execution time callback
 
-    cp_freq = 1000
     filepath = os.path.join(checkpoint_dir, "weights.{epoch:02d}-{loss:.2f}.hdf5")
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
@@ -204,26 +203,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    # LARGE BERT
-    # parser.add_argument("--model_config", default="input/transformers_cache/bert_large_uncased_config.json", type=str)
-    # parser.add_argument("--vocab_txt", default="input/transformers_cache/bert_large_uncased_vocab.txt", type=str)
-
     # Other parameters
-    parser.add_argument('--short_null_score_diff_threshold', type=float, default=0.0)
-    parser.add_argument('--long_null_score_diff_threshold', type=float, default=0.0)
-    parser.add_argument("--max_seq_length", default=512, type=int)
-    parser.add_argument("--doc_stride", default=256, type=int)
-    parser.add_argument("--max_query_length", default=64, type=int)
-    parser.add_argument("--per_tpu_eval_batch_size", default=4, type=int)
-    parser.add_argument("--n_best_size", default=10, type=int)
-    parser.add_argument("--max_answer_length", default=30, type=int)
-    parser.add_argument("--verbose_logging", action='store_true')
-    parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--p_keep_impossible', type=float,
-                        default=0.1, help="The fraction of impossible"
-                                          " samples to keep.")
-    parser.add_argument('--do_enumerate', action='store_true')
-
     parser.add_argument("--checkpoint_dir", default="checkpoints/", type=str,
                         help="the directory where we want to save the checkpoint")
     parser.add_argument("--checkpoint", default="", type=str, help="The file we will use as checkpoint")
@@ -235,7 +215,8 @@ if __name__ == "__main__":
 
     parser.add_argument('--log_dir', type=str, default='log/',
                         help='Directory for tensorboard')
-
+    # Quelli sopra andrebbero tolti perchè preenti anche dentro dataset_utils, di conseguenza andrebbero passati
+    # tramite generator -> to fix
     parser.add_argument('--epoch', type=int, default=1)
     parser.add_argument('--model', type=str, default='albert')
     parser.add_argument('--batch_size', type=int, default=4)
