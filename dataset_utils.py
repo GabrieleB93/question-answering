@@ -18,7 +18,7 @@ from transformers.tokenization_bert import whitespace_tokenize
 
 tqdm.monitor_interval = 0  # noqa
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger()
 
 NQExample = collections.namedtuple("NQExample", [
     "qas_id", "question_text", "doc_tokens", "orig_answer_text",
@@ -287,10 +287,10 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
     # print("Dimensione Example: " +str(examples_gen)
     for example_index, example in enumerate(examples_gen):
         if example_index % 1000 == 0 and example_index > 0:
-            logger.info('Converting %s: short_pos %s short_neg %s'
-                        ' long_pos %s long_neg %s',
-                        example_index, num_short_pos, num_short_neg,
-                        num_long_pos, num_long_neg)
+            print('Converting %s: short_pos %s short_neg %s'
+                  ' long_pos %s long_neg %s',
+                  example_index, num_short_pos, num_short_neg,
+                  num_long_pos, num_long_neg)
 
         query_tokens = tokenizer.tokenize(example.question_text)  # tokenizzo la domanda e se troppo lunga la tronco
         if len(query_tokens) > max_query_length:
@@ -495,8 +495,8 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
 
             crop = Crop(
                 unique_id=unique_id,
-                # example_index=example_index,
-                example_index=example.qas_id,
+                example_index=example_index,
+                # example_index=example.qas_id,
                 doc_span_index=doc_span_index,
                 tokens=tokens,
                 token_to_orig_map=token_to_orig_map,
@@ -1185,9 +1185,9 @@ def set_seed(args):
     tf.random.set_seed(args.seed)
 
 
-def get_convert_args():
+def get_convert_args(name):
     convert_args = argparse.Namespace()
-    convert_args.fn = 'input/tensorflow2_question_answering/simplified-nq-test.jsonl'
+    convert_args.fn = name
     convert_args.version = 'v0.0.1'
     convert_args.prefix = 'nq'
     convert_args.num_samples = 1_000_000
@@ -1243,27 +1243,34 @@ def toMatrixTensor(crop_or_position, len):
     return tf.convert_to_tensor(m, dtype=tf.int32)
 
 
-def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_samples):
+def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_samples, do_cache=False):
     """
     Load data crops from cache or dataset file
 
+    :param do_cache:
     :param max_num_samples:
     :param args: variabili varie ed eventuali
     :param tokenizer: tokenizer(°-°)
     :param namefile: path del file da prendere in considerazione
     :param verbose: flag per stampare o meno varei informazioni durante le trasformazioni(solo la prima)
     :param evaluate: bool False di default. Se True dataset contiene solo gli Input, altrimenti anche i Target
-    :param is_train: uguale come in main
     :return: lista contenente input e target, lista di crops, lista di entries
     """
-    do_cache = False
-    cached_crops_fn = 'cached_{}_{}.pkl'.format('test', str(args.max_seq_length))
+
+    if evaluate:
+        args_nq = get_convert_args(namefile)
+    else:
+        args_nq = get_convert_args1(namefile, max_num_samples)
+
+    cached_crops_fn = 'cache/crops_test.pkl'
     if os.path.exists(cached_crops_fn) and do_cache:
         print("Loading crops from cached file %s", cached_crops_fn)
         with open(cached_crops_fn, "rb") as f:
             crops = pickle.load(f)
+        entries = convert_nq_to_squad(verbose, args=args_nq, is_train=not evaluate)
+
     else:
-        entries = convert_nq_to_squad(verbose, args=get_convert_args1(namefile, max_num_samples), is_train=not evaluate)
+        entries = convert_nq_to_squad(verbose, args=args_nq, is_train=not evaluate)
         examples_gen = read_nq_examples(entries, is_training=not evaluate)
         crops = convert_examples_to_crops(examples_gen=examples_gen,
                                           tokenizer=tokenizer,
@@ -1292,6 +1299,7 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
     # all_token_type_ids = tf.cast(all_token_type_ids, tf.int32)
     if evaluate:
         dataset = [all_input_ids, all_attention_mask, all_token_type_ids]
+
     else:
         all_start_positions = tf.stack([toMatrixTensor(f.start_position, args.max_seq_length) for f in crops], 0)
         all_end_positions = tf.stack([toMatrixTensor(f.end_position, args.max_seq_length) for f in crops], 0)
@@ -1316,9 +1324,6 @@ def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, max
     """
     parser = argparse.ArgumentParser()
 
-    # Required parameters per ora inutile
-    parser.add_argument("--checkpoint_dir", default="input/nq_bert_uncased_68", type=str)
-
     # Other parameters
     parser.add_argument('--short_null_score_diff_threshold', type=float, default=0.0)
     parser.add_argument('--long_null_score_diff_threshold', type=float, default=0.0)
@@ -1326,7 +1331,8 @@ def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, max
     parser.add_argument("--doc_stride", default=256, type=int)
     parser.add_argument("--max_query_length", default=64, type=int)
     parser.add_argument("--per_tpu_eval_batch_size", default=4, type=int)
-    parser.add_argument("--n_best_size", default=10, type=int)
+    # parser.add_argument("--n_best_size", default=10, type=int)
+    parser.add_argument("--n_best_size", default=5, type=int)
     parser.add_argument("--max_answer_length", default=30, type=int)
     parser.add_argument("--verbose_logging", action='store_true')
     parser.add_argument('--seed', type=int, default=42)
@@ -1372,9 +1378,10 @@ def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, max
     return x, y
 
 
-def getDatasetForEvaluation(args, tokenizer, namefile, verbose, max_num_samples):
+def getDatasetForEvaluation(args, tokenizer, namefile, verbose, max_num_samples, do_cache):
     # all_input_ids, all_attention_mask, all_token_type_ids, all_p_mask
-    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, namefile, verbose, True, max_num_samples)
+    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, namefile, verbose, True, max_num_samples,
+                                                        do_cache)
     args.eval_batch_size = args.per_tpu_eval_batch_size
 
     # pad dataset to multiple of `args.eval_batch_size`
@@ -1453,7 +1460,7 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length):
                               args.short_null_score_diff_threshold, args.long_null_score_diff_threshold)
     del crops, all_results
     gc.collect()
-    candidates = read_candidates(['../input/tensorflow2-question-answering/simplified-nq-test.jsonl'], do_cache=False)
+    candidates = read_candidates(['TestData/simplified-nq-test.jsonl'], do_cache=False)
     sub = convert_preds_to_df(preds, candidates).sort_values('example_id')
     sub.to_csv(csv_fn, index=False, columns=['example_id', 'PredictionString'])
     print(f'***** Wrote submission to {csv_fn} *****')
