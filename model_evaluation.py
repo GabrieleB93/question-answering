@@ -9,8 +9,9 @@ from model_stuff.TFBertForNaturalQuestionAnswering import TFBertForNaturalQuesti
 from model_stuff import model_utils as mu
 
 
-def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1_000_000):
+def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1_000_000, do_cache=False):
     """
+    :param do_cache:
     :param namefile:
     :param args:
     :param checkpoint:
@@ -75,26 +76,29 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     tf.config.optimizer.set_jit(True)
     tf.config.optimizer.set_experimental_options({'pin_to_host_optimization': False})
 
+    all_chk = os.listdir(checkpoint)  # list of all the files from the directory
+    chk = all_chk.copy()
+    print("\n\nThe file we will use for checkpoint is: {}\n\n".format(chk))
+
+    chk_name = chk.pop()
+
     config_class, model_class, tokenizer_class = MODEL_CLASSES[namemodel]
     config = config_class.from_json_file(model_config)
 
-    print(model_class)
     mymodel = model_class(config)
 
-    mymodel(mymodel.dummy_inputs)
+    mymodel(mymodel.dummy_inputs, training=False)
 
-    adam = tf.keras.optimizers.Adam(lr=0.05)
+    mymodel.load_weights(checkpoint+chk_name, by_name=True)
+    print("Checkpoint loaded succefully")
 
-    mymodel.compile(loss=losses,
-                    loss_weights=lossWeights,
-                    metrics=['categorical_accuracy'],
-                    optimizer=adam
-                    )
+    # adam = tf.keras.optimizers.Adam(lr=0.05)
 
-    # we do this in order to compile the model, otherwise it will not be able to lead the weights
-    # mymodel(traingenerator.get_sample_data())
-    mymodel.load_weights(checkpoint, by_name=True)
-    print("checkpoint loaded succefully")
+    # mymodel.compile(loss=losses,
+    #                 loss_weights=lossWeights,
+    #                 metrics=['categorical_accuracy'],
+    #                 optimizer=adam
+    #                 )
 
     cb = mu.TimingCallback()  # execution time callback
 
@@ -105,10 +109,13 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     # print("Time: " + str(cb.logs))
 
     print("***** Running evaluation *****")
-    eval_ds, crops, entries, eval_dataset_length = getDatasetForEvaluation(args, tokenizer_class, namefile, verbose,
-                                                                           max_num_samples)
-    result = getResult(args, mymodel, eval_ds, crops, entries, eval_dataset_length)
-    print("Result: {}".format(result))
+    tokenizer = tokenizer_class(vocab, do_lower_case='uncased')
+    print(do_cache)
+    eval_ds, crops, entries, eval_dataset_length = getDatasetForEvaluation(args, tokenizer, namefile, verbose,
+                                                                           max_num_samples, do_cache)
+    print("***** Getting results *****")
+    # result = getResult(args, mymodel, eval_ds, crops, entries, eval_dataset_length)
+    # print("Result: {}".format(result))
 
 
 if __name__ == "__main__":
@@ -138,8 +145,8 @@ if __name__ == "__main__":
     parser.add_argument('--epoch', type=int, default=1)
     parser.add_argument('--model', type=str, default='albert')
     parser.add_argument('--batch_size', type=int, default=4)
-    parser.add_argument('--evaluate', type=bool, default=False)
     parser.add_argument('--verbose', type=bool, default=False)
+    parser.add_argument('--do_cache', type=bool, default=False)
 
     args, _ = parser.parse_known_args()
 
@@ -148,6 +155,7 @@ if __name__ == "__main__":
     print("\n\nThe test file we will use for evaluation is: {}\n\n".format(files))
 
     namefile = files.pop()
-    print("Evaluation parameters %s", args)
+    print("File for evaluation: ", namefile)
+    print("Evaluation parameters ", args)
 
-    main(args.model, args, args.checkpoint, namefile, verbose=args.verbose)
+    main(args.model, args, args.checkpoint, args.test_dir+namefile, verbose=args.verbose, do_cache=args.do_cache)
