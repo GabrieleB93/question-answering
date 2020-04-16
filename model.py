@@ -63,7 +63,7 @@ from model_stuff.TFBertForNaturalQuestionAnswering import TFBertForNaturalQuesti
 
 
 def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbose=False, evaluate=False,
-         max_num_samples=1_000_000, checkpoint="", log_dir="log/"):
+         max_num_samples=1_000_000, checkpoint="", log_dir="log/", learning_rate = 0.005):
     """
 
     :param log_dir:
@@ -153,7 +153,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
         startepoch = None
         initial_epoch = 0
 
-    adam = tf.keras.optimizers.Adam(lr=0.05)
+    adam = tf.keras.optimizers.Adam(lr=learning_rate)
 
     mymodel.compile(loss=losses,
                     loss_weights=lossWeights,
@@ -196,7 +196,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     callbacks_list = [cb, tboard_callback, checkpoint]
 
     # fitting
-    mymodel.fit(traingenerator, validation_data=validation_generator, verbose=1, epochs=epoch, callbacks=callbacks_list, initial_epoch = initial_epoch)
+    mymodel.fit(traingenerator, validation_data=validation_generator, verbose=1, epochs=epoch, callbacks=callbacks_list, initial_epoch = initial_epoch, use_multiprocessing = True)
     mymodel.summary()
     print("Time: " + str(cb.logs))
 
@@ -219,6 +219,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_answer_length", default=30, type=int)
     parser.add_argument("--verbose_logging", action='store_true')
     parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--learning_rate', type=float, default=0.005)
     parser.add_argument('--p_keep_impossible', type=float,
                         default=0.1, help="The fraction of impossible"
                                           " samples to keep.")
@@ -238,9 +239,11 @@ if __name__ == "__main__":
 
     parser.add_argument('--epoch', type=int, default=1)
     parser.add_argument('--model', type=str, default='albert')
-    parser.add_argument('--batch_size', type=int, default=4)
+    parser.add_argument('--batch_size', type=int, default=8)
+    
     parser.add_argument('--evaluate', type=bool, default=False)
     parser.add_argument('--verbose', type=bool, default=False)
+
 
     args, _ = parser.parse_known_args()
     # assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
@@ -248,4 +251,4 @@ if __name__ == "__main__":
 
     main(args.model, args.batch_size, args.train_dir, args.validation_dir, args.epoch, args.checkpoint_dir,
          checkpoint=args.checkpoint,
-         evaluate=args.evaluate, verbose=args.verbose, log_dir=args.log_dir)
+         evaluate=args.evaluate, verbose=args.verbose, log_dir=args.log_dir, learning_rate = args.learning_rate)
