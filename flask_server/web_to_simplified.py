@@ -6,14 +6,43 @@
 import argparse
 import os
 import re
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 
-def replace_blanks(string):
-    string = string.replace(" ", "_")
-    return string
+
+def clean_wiki_page(string):
+    soup = BeautifulSoup(contents, 'html.parser')
+    body_content = soup.find("div", {"id": "mw-content-text"})
+    # remove nav bar (empty elements with id "toc")
+    body_content.find("div", {"id": "toc"}).decompose()
+    # remove references
+    body_content.find("div", {"class": "reflist columns references-column-width"}).decompose()
+    # remove "edit" links from all sections
+    body_content.find("span", {"class": "mw-editsection"}).decompose()
+    # remove html comments
+    for element in body_content(text=lambda text: isinstance(text, Comment)):
+        element.extract()
+    # remove all empty elements
+    for x in body_content.find_all():
+        if len(x.get_text(strip=True)) == 0:
+            x.extract()
+    # remove scripts
+    children = body_content.findChildren(recursive=False)[0]
+    # create list of essential tags
+    cleaned_elements  = children.findChildren(recursive=False)
+    # remove trailing stuff from "references" onwards
+    from_where_to_drop = 0 
+    for el in cleaned_elements:
+        if el.find("span", {"id": "References"}):
+            break
+    from_where_to_drop += 1
+    cleaned_elements = cleaned_elements[0:from_where_to_drop]
+    # create string of cleaned tags
+    cleaned_str = ""
+    for el in cleaned_elements:
+        cleaned_str += el
+    return cleaned_str
 
 def filter_html_tags(string):
-    #print(string)
     soup = BeautifulSoup(string, 'html.parser')
     #Keep only body
     body = soup.find('body')
@@ -21,11 +50,14 @@ def filter_html_tags(string):
     for tag in body.findAll(True):
         tag.attrs = None
     string = str(body)
-    #print(string)
     #Delete all html tags except for: br p h1 h2 h3 li ul tr table td
     #OBS: it is case *sensitive*
     line = re.sub(r"<\/?(?!br)(?!p)(?!h1)(?!h2)(?!h3)(?!li)(?!ul)(?!tr)(?!table)(?!td)\w*\b[^>]*>", "", string)
     return line
+
+def replace_blanks(string):
+    string = string.replace(" ", "_")
+    return string
 
 def wrap_punctuation_with_blanks(string):
     string = string.replace(";", "_;_")
@@ -68,6 +100,7 @@ def replace_back_blanks(string):
 def clean_html(page_html):
     with open(page_html, 'r') as myfile:
         string = myfile.read()
+        string = clean_wiki_page(string)
         string = filter_html_tags(string)
         string = replace_blanks(string)
         string = replace_endls_with_blanks(string)
