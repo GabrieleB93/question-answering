@@ -3,8 +3,8 @@ from web_to_simplified import create_simplified_input
 from query_to_page import query_to_page
 
 class AnswerBot:
-    def __init__(self):
-        super().__init__()
+    def __init__(self, verbose = False):
+        self.verbose = verbose
 
     """def __init__(self, model_path):
         super().__init__()
@@ -35,11 +35,16 @@ class AnswerBot:
     def answer(self, question):
         page = self.obtain_wiki_page(question)
         simplified_datum = self.preprocess_page(page)
+        if self.verbose:
+            print('we obtained this page (url): ', page)
+            print('this is the page text processed: ', simplified_datum)
+        return simplified_datum
         #prediction = self.model(page)
         #return self.frompredictiontotext(prediction, page)
 
-question = "where was shrodinger born?"
-a = AnswerBot()
-page = a.obtain_wiki_page(question)
-simplified_datum = a.preprocess_page(page)
-print(simplified_datum)
+if __name__=="__name__":
+    question = "where was shrodinger born?"
+    a = AnswerBot()
+    page = a.obtain_wiki_page(question)
+    simplified_datum = a.preprocess_page(page)
+    print(simplified_datum)

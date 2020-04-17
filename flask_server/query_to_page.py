@@ -64,3 +64,15 @@ def query_to_page(q):
 query = "where was shrodinger born?"
 my_page = query_to_page(query)
 print(my_page.query)"""
+
+def obtain_body(page):
+    pass
+    #only if it is a wikipedia page maybe?
+    # use beatifoul soup to -> bs https://www.crummy.com/software/BeautifulSoup/bs4/doc/
+    # 1) obtain only the body of the article:
+    # <div id="bodyContent" class="mw-body-content"> from this point on 
+    # 2) remove navigation box 
+    # <div id="toc" class="toc" role="navigation" aria-labelledby="mw-toc-heading">
+    # remove everithing from see_also to the end of the file 
+    # <span class="mw-headline" id="See_also">See also</span>
+
