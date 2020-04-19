@@ -55,7 +55,7 @@ import os
 import re
 from datetime import datetime
 import tensorflow as tf
-from transformers import BertConfig, BertTokenizer, AlbertTokenizer, AlbertConfig
+from transformers import BertConfig, BertTokenizer, AlbertTokenizer, AlbertConfig, AutoTokenizer, AutoModelForQuestionAnswering
 from generator import DataGenerator
 from model_stuff import model_utils as mu
 from model_stuff.TFAlbertForNaturalQuestionAnswering import TFAlbertForNaturalQuestionAnswering
@@ -97,18 +97,22 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     dictionary = False
     if dictionary:
         losses = {
-            "start": "categorical_crossentropy",
-            "end": "categorical_crossentropy",
-            "type": "categorical_crossentropy",
+            "start_short": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            "end_short": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            "start_long": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+            "end-long": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
         }
-
-        lossWeights = {"start": 1.0, "end": 1.0, "type": 1.0}
+        lossWeights = [1.0, 1.0, 1.0, 1.0]
 
     else:
-        losses = ["categorical_crossentropy", "categorical_crossentropy", "categorical_crossentropy"]
-        lossWeights = [1.0, 1.0, 1.0]
+        losses = [tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
+                tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
+                tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
+                tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)]
+        lossWeights = [1.0, 1.0, 1.0, 1.0]
 
     do_lower_case = 'uncased'
+
     if namemodel == "bert":  # base
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
         vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
@@ -119,12 +123,14 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
         do_lower_case = False
         model_config = 'lo aggiungero in futuro'
         vocab = 'lo aggiungero in futuro'
+    elif namemodel == "albert_squad":
+        model_config = 'input/transformers_cache/albert_base_v2_squad.json'
+        vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
     else:
         # di default metto il base albert
         model_config = 'input/transformers_cache/albert_base_v2.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
         namemodel = "albert"
-        print("sei impazzuto?")
 
     # Set XLA
     # https://github.com/kamalkraj/ALBERT-TF2.0/blob/8d0cc211361e81a648bf846_d8ec84225273db0e4/run_classifer.py#L136
@@ -133,6 +139,9 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
 
     config_class, model_class, tokenizer_class = MODEL_CLASSES[namemodel]
     config = config_class.from_json_file(model_config)
+
+    if True:
+        tokenizer = AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2")
 
     print(model_class)
     mymodel = model_class(config)
@@ -204,7 +213,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Other parameters
-    parser.add_argument("--learning_rate", default=0.005, type=float,)
+    parser.add_argument("--learning_rate", default=5e-3, type=float,)
 
     parser.add_argument("--checkpoint_dir", default="checkpoints/", type=str,
                         help="the directory where we want to save the checkpoint")
