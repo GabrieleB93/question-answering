@@ -1,24 +1,24 @@
 from flask import Flask, jsonify, request, abort
 import time
-#Rimport answerBot
-#from config import config
+import answerBot
 
 debug = False
 app = Flask(__name__)
-#mybot = answerBot.AnswerBot(config.path)
+mybot = answerBot.AnswerBot()
 
 
 @app.route("/answer",  methods=["POST"])
 def answer():
-    query = dict(request.form)['query']
+    question = dict(request.form)['query']
     if debug:
-        print("i recived this query: {}".format(query))
+        print("i recived this question: {}".format(question))
 
     # Errors
-    if not query:
+    if not question:
         return abort(400) # BAD REQUEST
-     # TODO implement query analisys and answer
+     # TODO implement question analisys and answer
 
-    time.sleep(2.4)
-    ret = {"data":query}
+    answer = mybot.answer(question)
+
+    ret = {"answer":answer, "question":question}
     return jsonify(ret)

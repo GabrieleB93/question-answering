@@ -40,7 +40,10 @@ class AnswerBot:
         if self.verbose:
             print('we obtained this page (url): ', page)
             print('this is the page text processed: ', simplified_datum)
-        return simplified_datum
+        ret = ""
+        for world in simplified_datum["document_text"].split(" ")[:40]:
+            ret += world + " "
+        return ret
         #prediction = self.model(page)
         #return self.frompredictiontotext(prediction, page)
 
