@@ -7,8 +7,7 @@ if __name__ == "__main__":
     
     result = {}
     for query in queries:
-        bot.answer(query)
-        result[query] = bot.answer(query)
+        result[query] = bot.answer(query, query[:3])
 
     with open('query.json', 'w') as outfile:
         json.dump(result, outfile)

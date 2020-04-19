@@ -11,7 +11,7 @@ class AnswerBot:
         # load the model
         self.model = tf.keras.loadmodel(model_path)"""
 
-    def preprocess_page(self, page):
+    def preprocess_page(self, page, name):
         '''
         This function takes a page as input and returns a
         simplified_nq_example
@@ -20,7 +20,9 @@ class AnswerBot:
 
         @retval the simplified_nq_example
         '''
-        return create_simplified_input(page.query, page.url, page.content)
+
+        # TODO remove [edit] and remove referneces [1]
+        return create_simplified_input(page.query, page.url, page.content, name)
 
     def obtain_wiki_page(self, q):
         """This function returns a Page object from the question q
@@ -32,9 +34,9 @@ class AnswerBot:
         """
         return query_to_page(q)
 
-    def answer(self, question):
+    def answer(self, question, name = None):
         page = self.obtain_wiki_page(question)
-        simplified_datum = self.preprocess_page(page)
+        simplified_datum = self.preprocess_page(page, name)
         if self.verbose:
             print('we obtained this page (url): ', page)
             print('this is the page text processed: ', simplified_datum)

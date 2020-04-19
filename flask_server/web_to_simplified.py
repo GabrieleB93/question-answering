@@ -10,21 +10,31 @@ from bs4 import BeautifulSoup, Comment
 
 
 def clean_wiki_page(string):
-    soup = BeautifulSoup(contents, 'html.parser')
+    
+    soup = BeautifulSoup(string, 'html.parser')
     body_content = soup.find("div", {"id": "mw-content-text"})
     # remove nav bar (empty elements with id "toc")
     body_content.find("div", {"id": "toc"}).decompose()
     # remove references
-    body_content.find("div", {"class": "reflist columns references-column-width"}).decompose()
+    try:
+        body_content.find("div", {"class": "reflist columns references-column-width"}).decompose()
+    except:
+        print("in this page we didn't find the references")
     # remove "edit" links from all sections
-    body_content.find("span", {"class": "mw-editsection"}).decompose()
+    try:
+        body_content.find("span", {"class": "mw-editsection"}).decompose()
+    except:
+        print("in this page we didn't find the edit part")
+
     # remove html comments
     for element in body_content(text=lambda text: isinstance(text, Comment)):
         element.extract()
+
     # remove all empty elements
     for x in body_content.find_all():
         if len(x.get_text(strip=True)) == 0:
             x.extract()
+
     # remove scripts
     children = body_content.findChildren(recursive=False)[0]
     # create list of essential tags
@@ -32,17 +42,26 @@ def clean_wiki_page(string):
     # remove trailing stuff from "references" onwards
     from_where_to_drop = 0 
     for el in cleaned_elements:
-        if el.find("span", {"id": "References"}):
+        if el.find("span", {"id": "See_also"}) or el.find("span", {"id":"References"}):
             break
-    from_where_to_drop += 1
+        from_where_to_drop += 1
+
+
+
     cleaned_elements = cleaned_elements[0:from_where_to_drop]
+    
+    #remove attributes
+    for tag in cleaned_elements:
+        tag.attrs = None
+
     # create string of cleaned tags
     cleaned_str = ""
     for el in cleaned_elements:
-        cleaned_str += el
+        cleaned_str += str(el)
     return cleaned_str
 
 def filter_html_tags(string):
+    '''
     soup = BeautifulSoup(string, 'html.parser')
     #Keep only body
     body = soup.find('body')
@@ -50,9 +69,13 @@ def filter_html_tags(string):
     for tag in body.findAll(True):
         tag.attrs = None
     string = str(body)
+   '''
     #Delete all html tags except for: br p h1 h2 h3 li ul tr table td
     #OBS: it is case *sensitive*
     line = re.sub(r"<\/?(?!br)(?!p)(?!h1)(?!h2)(?!h3)(?!li)(?!ul)(?!tr)(?!table)(?!td)\w*\b[^>]*>", "", string)
+    #remove [edit] and references
+    line = re.sub(r"\[edit\]","",line)
+    line = re.sub(r"\[\d+\]","",line)
     return line
 
 def replace_blanks(string):
@@ -97,7 +120,7 @@ def replace_back_blanks(string):
     string = string.replace("_", " ")
     return string
 
-def clean_html(page_html):
+def clean_html(page_html, name = None):
     with open(page_html, 'r') as myfile:
         string = myfile.read()
         string = clean_wiki_page(string)
@@ -108,16 +131,19 @@ def clean_html(page_html):
         string = remove_adj_duplicates(string)
         string = replace_back_blanks(string)
     #print(string)
+    if name:
+        with open(name + ".html", 'w') as outfile:
+            outfile.write(string)
     return string
 
 
 
-def create_simplified_input(question_text, page_url, page_html):
+def create_simplified_input(question_text, page_url, page_html, name):
     """Under the assumption that html_file is 'clean enough'
     this function creates the data structure of an example"""
     with open('boh.html', 'w+') as html_file:
         html_file.write(page_html)
-    page_html_cleaned = clean_html('boh.html')
+    page_html_cleaned = clean_html('boh.html', name = name)
     simplified_input = {
       "question_text": question_text,
       "example_id": 42,
