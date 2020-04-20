@@ -12,47 +12,20 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
         super().__init__(config, *inputs, **kwargs)
   
         self.albert = TFALBertMainLayer(config)
+
         self.initializer = get_initializer(config.initializer_range)
-
-        # after we have the bert embeddings we calculate the start token with a fully connected
-        self.layer_1 = tf.keras.layers.Dense(512,
-                                             kernel_initializer=self.initializer, activation=tf.nn.relu)
-        self.layer2 = tf.keras.layers.Dense(256,
-                                            kernel_initializer=self.initializer, activation=tf.nn.relu)
-        self.start_short = tf.keras.layers.Dense(1,
-                                           kernel_initializer=self.initializer, name="start_short")
-
-        self.end_short = tf.keras.layers.Dense(1,
-                                         kernel_initializer=self.initializer, name="end_short")
-
-        self.start_long = tf.keras.layers.Dense(1,
-                                        kernel_initializer=self.initializer, name="start_long")
-
-        self.end_long = tf.keras.layers.Dense(1,
-                                         kernel_initializer=self.initializer, name="end_long")
-
+        self.qa_outputs = tf.keras.layers.Dense(config.num_labels,
+            kernel_initializer=self.initializer, name='qa_outputs')
+        self.long_outputs = tf.keras.layers.Dense(1, kernel_initializer=self.initializer,
+            name='long_outputs')
 
     def call(self, inputs, **kwargs):
-        bert_output = self.albert(inputs)
-        presoftmax = self.layer2(self.layer_1(bert_output[0]))
-        # tf.print(tf.shape(presoftmax)) # [4, 512, 256]
+        outputs = self.albert(inputs, **kwargs)
+        sequence_output = outputs[0]
 
-        start_logit_short = self.start(presoftmax)
-        # tf.print(tf.shape(start_logit)) #[4, 512, 1]
-        end_logit_short = self.end(presoftmax)
-
-        start_logit_long = self.start(presoftmax)
-        # tf.print(tf.shape(start_logit)) #[4, 512, 1]
-        end_logit_long = self.end(presoftmax)
-
-        start_short = tf.math.softmax(tf.squeeze(start_logit_short, axis=-1), axis=1)
-        end_short = tf.math.softmax(tf.squeeze(end_logit_short, axis=-1), axis=1)
-
-        start_long = tf.math.softmax(tf.squeeze(start_logit_long, axis=-1), axis=1)
-        end_long = tf.math.softmax(tf.squeeze(end_logit_long, axis=-1), axis=1)
-
-        # tf.print(tf.shape(end)) #[4, 512]
-
-        #answer_type = tf.math.softmax(self.type(bert_output[1]))
-
-        return start_logit_short, end_logit_short, start_logit_long, end_logit_long
+        logits = self.qa_outputs(sequence_output)
+        start_logits, end_logits = tf.split(logits, 2, axis=-1)
+        start_logits = tf.squeeze(start_logits, -1)
+        end_logits = tf.squeeze(end_logits, -1)
+        long_logits = tf.squeeze(self.long_outputs(sequence_output), -1)
+        return start_logits, end_logits, long_logits

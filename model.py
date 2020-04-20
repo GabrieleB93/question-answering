@@ -55,7 +55,7 @@ import os
 import re
 from datetime import datetime
 import tensorflow as tf
-from transformers import BertConfig, BertTokenizer, AlbertTokenizer, AlbertConfig, AutoTokenizer, AutoModelForQuestionAnswering
+from transformers import BertConfig, BertTokenizer, AlbertTokenizer, AlbertConfig, AutoTokenizer
 from generator import DataGenerator
 from model_stuff import model_utils as mu
 from model_stuff.TFAlbertForNaturalQuestionAnswering import TFAlbertForNaturalQuestionAnswering
@@ -92,40 +92,37 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'albert': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AlbertTokenizer),  # V2
+        'albert_squad':(AlbertConfig, TFAlbertForNaturalQuestionAnswering, AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2"))
         # 'roberta': (RobertaConfig, TFRobertaForNaturalQuestionAnswering, RobertaTokenizer),
     }
-    dictionary = False
-    if dictionary:
-        losses = {
-            "start_short": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            "end_short": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            "start_long": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-            "end-long": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        }
-        lossWeights = [1.0, 1.0, 1.0, 1.0]
 
-    else:
-        losses = [tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
-                tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
-                tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
-                tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)]
-        lossWeights = [1.0, 1.0, 1.0, 1.0]
+    # define the losses. We decided to use the Sparse one because our targert are integer and not one hot vector
+    # and from logit because we don't apply the softmax
+    losses = [tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
+            tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
+            tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), ]
+    lossWeights = [1.0, 1.0, 1.0]
 
     do_lower_case = 'uncased'
 
     if namemodel == "bert":  # base
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
         vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
+
     elif namemodel == 'albert':  # base v2
         model_config = 'input/transformers_cache/albert_base_v2.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
+
     elif namemodel == 'roberta':
         do_lower_case = False
         model_config = 'lo aggiungero in futuro'
         vocab = 'lo aggiungero in futuro'
+
     elif namemodel == "albert_squad":
         model_config = 'input/transformers_cache/albert_base_v2_squad.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
+        tokenizer = AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2")
+
     else:
         # di default metto il base albert
         model_config = 'input/transformers_cache/albert_base_v2.json'
@@ -140,17 +137,15 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     config_class, model_class, tokenizer_class = MODEL_CLASSES[namemodel]
     config = config_class.from_json_file(model_config)
 
-    if True:
-        tokenizer = AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2")
+
 
     print(model_class)
     mymodel = model_class(config)
 
-    mymodel(mymodel.dummy_inputs)
-
     if checkpoint != "":
         # we do this in order to compile the model, otherwise it will not be able to lead the weights
         # mymodel(traingenerator.get_sample_data())
+        mymodel(mymodel.dummy_inputs)
         startepoch = os.path.split(checkpoint)[-1]
         startepoch = re.sub('weights.', '', startepoch)
         startepoch = int(startepoch.split("-")[0])
@@ -170,11 +165,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
                     optimizer=adam
                     )
 
-    # data generator creation:
-    # validation 
-    print(val_dir)
-    print(train_dir)
-
+    # We create data generator
     validation_generator = DataGenerator(val_dir, namemodel, vocab, verbose, batch_size=batch_size,
                                          validation=True)
 

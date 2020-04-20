@@ -302,12 +302,17 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
         all_doc_tokens = []
 
         for i, token in enumerate(example.doc_tokens):
+            # take the work token
             orig_to_tok_index.append(len(all_doc_tokens))
+            # map it to the number
             sub_tokens = sub_token_cache.get(token)
             if sub_tokens is None:  # tokenizzo i token di ogni documento(?)
                 sub_tokens = tokenizer.tokenize(token)
                 sub_token_cache[token] = sub_tokens
-            tok_to_orig_index.extend([i for _ in range(len(sub_tokens))])  # da capire
+            # Qui succede questo:
+            # un token tipo 'Klementieff' diventa 4 subtoken : ['▁kle', 'ment', 'i', 'eff']
+            # quindi mappi tutti i subtoken corrispondenti al token del testo originale corrispondente a Klementieff
+            tok_to_orig_index.extend([i for _ in range(len(sub_tokens))]) 
             all_doc_tokens.extend(sub_tokens)
 
         tok_start_position = None
@@ -317,6 +322,7 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
             tok_end_position = -1
         # assegno le posizioni se è possibile rispondere alla domanda corta e sono in TRAIING
         if is_training and not example.short_is_impossible:
+            # qua traduco da orignal a token in quanto posso essere shifato dal tokenizer
             tok_start_position = orig_to_tok_index[example.start_position]
             if example.end_position < len(example.doc_tokens) - 1:
                 tok_end_position = orig_to_tok_index[  # why
@@ -384,7 +390,7 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
                 else:
                     long_position = tok_long_position - doc_start + doc_offset
 
-            # drop impossible samples
+            # drop impossible samples -> see Alberti
             if long_is_impossible:
                 if np.random.rand() > p_keep_impossible:
                     continue
@@ -1301,11 +1307,15 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
         dataset = [all_input_ids, all_attention_mask, all_token_type_ids]
 
     else:
-        all_start_positions = tf.stack([toMatrixTensor(f.start_position, args.max_seq_length) for f in crops], 0)
-        all_end_positions = tf.stack([toMatrixTensor(f.end_position, args.max_seq_length) for f in crops], 0)
-        all_type = tf.stack([toMatrixTensor(f, 5) for f in crops])
+        '''
+        all_start_positions = tf.stack([(f.start_position, args.max_seq_length) for f in crops], 0)
+        all_end_positions = tf.stack([(f.end_position, args.max_seq_length) for f in crops], 0)
+        all_type = tf.stack([(f.long_position) for f in crops])'''
+        all_start_positions = tf.convert_to_tensor([f.start_position for f in crops], dtype=tf.int32)
+        all_end_positions = tf.convert_to_tensor([f.end_position for f in crops], dtype=tf.int32)
+        all_long_positions = tf.convert_to_tensor([f.long_position for f in crops], dtype=tf.int32)
         dataset = [all_input_ids, all_attention_mask, all_token_type_ids,
-                   all_start_positions, all_end_positions, all_type]
+                   all_start_positions, all_end_positions, all_long_positions]
 
     return dataset, crops, entries
 
