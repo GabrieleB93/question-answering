@@ -181,8 +181,8 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     print('\n\nwe have {} files so we will train for {} epochs\n\n'.format(n_files, epoch))
 
     cb = mu.TimingCallback()  # execution time callback
-
-    filepath = os.path.join(checkpoint_dir, "weights.{epoch:02d}-{loss:.2f}.hdf5")
+    filepath = os.path.join(checkpoint_dir, "weights_prova_solo_uno.hdf5")
+    //filepath = os.path.join(checkpoint_dir, "weights.{epoch:02d}-{loss:.2f}.hdf5")
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath,

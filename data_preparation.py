@@ -108,7 +108,7 @@ parser.add_argument("--batch-size",
 
 parser.add_argument("--file-max-size",
                     metavar="max_size",
-                    default=1000,
+                    default=100,
                     help="Maximum size of file in MB")
 
 parser.add_argument("--dest-folder",
