@@ -62,10 +62,12 @@ from model_stuff.TFAlbertForNaturalQuestionAnswering import TFAlbertForNaturalQu
 from model_stuff.TFBertForNaturalQuestionAnswering import TFBertForNaturalQuestionAnswering
 
 
-def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbose=False, evaluate=False,
-         max_num_samples=1_000_000, checkpoint="", log_dir="log/", learning_rate = 0.005):
+def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_cache=False, verbose=False, evaluate=False,
+         max_num_samples=1_000_000, checkpoint="", log_dir="log/", learning_rate=0.005):
     """
 
+    :param do_cache:
+    :param learning_rate:
     :param log_dir:
     :param checkpoint:
     :param epoch:
@@ -92,15 +94,16 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'albert': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AlbertTokenizer),  # V2
-        'albert_squad':(AlbertConfig, TFAlbertForNaturalQuestionAnswering, AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2"))
+        'albert_squad': (AlbertConfig, TFAlbertForNaturalQuestionAnswering,
+                         AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2"))
         # 'roberta': (RobertaConfig, TFRobertaForNaturalQuestionAnswering, RobertaTokenizer),
     }
 
     # define the losses. We decided to use the Sparse one because our targert are integer and not one hot vector
     # and from logit because we don't apply the softmax
-    losses = [tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
-            tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
-            tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), ]
+    losses = [tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+              tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+              tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), ]
     lossWeights = [1.0, 1.0, 1.0]
 
     do_lower_case = 'uncased'
@@ -136,8 +139,6 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
 
     config_class, model_class, tokenizer_class = MODEL_CLASSES[namemodel]
     config = config_class.from_json_file(model_config)
-
-
 
     print(model_class)
     mymodel = model_class(config)
@@ -182,7 +183,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
 
     cb = mu.TimingCallback()  # execution time callback
     filepath = os.path.join(checkpoint_dir, "weights_prova_solo_uno.hdf5")
-    #filepath = os.path.join(checkpoint_dir, "weights.{epoch:02d}-{loss:.2f}.hdf5")
+    # filepath = os.path.join(checkpoint_dir, "weights.{epoch:02d}-{loss:.2f}.hdf5")
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath,
@@ -195,22 +196,25 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
     callbacks_list = [cb, tboard_callback, checkpoint]
 
     # fitting
-    mymodel.fit(traingenerator, 
-                validation_data=validation_generator, 
-                verbose=1, 
-                epochs=epoch, 
-                callbacks=callbacks_list, 
-                initial_epoch = initial_epoch)
-                
+    mymodel.fit(traingenerator,
+                validation_data=validation_generator,
+                verbose=1,
+                epochs=epoch,
+                callbacks=callbacks_list,
+                initial_epoch=initial_epoch)
+
     mymodel.summary()
     print("Time: " + str(cb.logs))
 
 
 if __name__ == "__main__":
+    tf.config.gpu.set_per_process_memory_fraction(0.50)
+    tf.config.gpu.set_per_process_memory_growth(True)
+
     parser = argparse.ArgumentParser()
 
     # Other parameters
-    parser.add_argument("--learning_rate", default=5e-3, type=float,)
+    parser.add_argument("--learning_rate", default=5e-3, type=float, )
 
     parser.add_argument("--checkpoint_dir", default="checkpoints/", type=str,
                         help="the directory where we want to save the checkpoint")
@@ -228,15 +232,14 @@ if __name__ == "__main__":
     parser.add_argument('--epoch', type=int, default=1)
     parser.add_argument('--model', type=str, default='albert')
     parser.add_argument('--batch_size', type=int, default=8)
-    
+    parser.add_argument('--do_cache', type=bool, default=False)
     parser.add_argument('--evaluate', type=bool, default=False)
     parser.add_argument('--verbose', type=bool, default=False)
-
 
     args, _ = parser.parse_known_args()
     # assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
     print("Training / evaluation parameters %s", args)
 
     main(args.model, args.batch_size, args.train_dir, args.validation_dir, args.epoch, args.checkpoint_dir,
-         checkpoint=args.checkpoint,
-         evaluate=args.evaluate, verbose=args.verbose, log_dir=args.log_dir, learning_rate = args.learning_rate)
+         checkpoint=args.checkpoint,do_cache=args.do_cache,
+         evaluate=args.evaluate, verbose=args.verbose, log_dir=args.log_dir, learning_rate=args.learning_rate)

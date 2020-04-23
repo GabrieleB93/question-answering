@@ -13,7 +13,8 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tqdm.notebook import tqdm
-from transformers import BertConfig, BertTokenizer, RobertaConfig, RobertaTokenizer, AlbertTokenizer, AlbertConfig
+from transformers import BertConfig, BertTokenizer, RobertaConfig, RobertaTokenizer, AlbertTokenizer, AlbertConfig, \
+    AutoTokenizer
 from transformers.tokenization_bert import whitespace_tokenize
 
 tqdm.monitor_interval = 0  # noqa
@@ -29,8 +30,8 @@ Crop = collections.namedtuple("Crop", ["unique_id", "example_index", "doc_span_i
                                        "tokens", "token_to_orig_map", "token_is_max_context",
                                        "input_ids", "attention_mask", "token_type_ids",
                                        # "p_mask",
-                                       "paragraph_len", "start_position", "end_position", "long_position",
-                                       "short_is_impossible", "long_is_impossible"])
+                                       "paragraph_len", "start_position", "end_position",
+                                       "long_position", "short_is_impossible", "long_is_impossible"])
 
 LongAnswerCandidate = collections.namedtuple('LongAnswerCandidate', [
     'start_token', 'end_token', 'top_level'])
@@ -97,6 +98,7 @@ def read_candidates(candidate_files, do_cache=True):
                     candidates[example_id] = cnds
 
         if do_cache:
+            print("Saving candidates to pkl")
             with open(cache_fn, 'wb') as f:
                 pickle.dump(candidates, f)
     else:
@@ -312,7 +314,7 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
             # Qui succede questo:
             # un token tipo 'Klementieff' diventa 4 subtoken : ['▁kle', 'ment', 'i', 'eff']
             # quindi mappi tutti i subtoken corrispondenti al token del testo originale corrispondente a Klementieff
-            tok_to_orig_index.extend([i for _ in range(len(sub_tokens))]) 
+            tok_to_orig_index.extend([i for _ in range(len(sub_tokens))])
             all_doc_tokens.extend(sub_tokens)
 
         tok_start_position = None
@@ -499,6 +501,11 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
             else:
                 num_long_pos += 1
 
+            verbose = False
+            if verbose: print("Crop number: " + str(unique_id) + " dell'esempio numero: " + str(
+                example_index) + "\n con queste info: start: " + str(start_position) + "| end: " + str(
+                end_position) + "| long: " + str(long_position) + "\n shortIMP=" + str(
+                short_is_impossible) + " longIMP=" + str(long_is_impossible))
             crop = Crop(
                 unique_id=unique_id,
                 example_index=example_index,
@@ -517,6 +524,7 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
                 long_position=long_position,
                 short_is_impossible=short_is_impossible,
                 long_is_impossible=long_is_impossible)
+            # long_start=long_position[0], long_end=long_position[1])
             crops.append(crop)
             unique_id += 1
 
@@ -763,7 +771,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
                 final_pred = (short_best_non_null.text, short_best_non_null.orig_doc_start,
                               short_best_non_null.orig_doc_end)
         except Exception as e:
-            print(e)
+            print("Exception in write prediction: " +str(e))
             final_pred = ("", -1, -1)
             short_num_empty += 1
 
@@ -847,6 +855,7 @@ def convert_preds_to_df(preds, candidates):
         df['PredictionString'].append(long_answer)
 
     df = pd.DataFrame(df)
+    print(df.astype(bool).sum(axis=0))
     print(f'Found {num_found_long} of {num_searched_long} (total {len(preds)})')
     return df
 
@@ -1180,8 +1189,10 @@ def convert_nq_to_squad(verbose, is_train, args=None):
 
 MODEL_CLASSES = {
     'bert': (BertConfig, BertTokenizer),
+    'bert_large': (BertConfig, BertTokenizer),
     'albert': (AlbertConfig, AlbertTokenizer),
     'roberta': (RobertaConfig, RobertaTokenizer),
+    'albert_squad': (AlbertConfig, AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2"))
 }
 
 
@@ -1268,7 +1279,7 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
     else:
         args_nq = get_convert_args1(namefile, max_num_samples)
 
-    cached_crops_fn = 'cache/crops_test.pkl'
+    cached_crops_fn = 'cache/cached_test.pkl'
     if os.path.exists(cached_crops_fn) and do_cache:
         print("Loading crops from cached file %s", cached_crops_fn)
         with open(cached_crops_fn, "rb") as f:
@@ -1276,6 +1287,7 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
         entries = convert_nq_to_squad(verbose, args=args_nq, is_train=not evaluate)
 
     else:
+        print("NOT loading crops")
         entries = convert_nq_to_squad(verbose, args=args_nq, is_train=not evaluate)
         examples_gen = read_nq_examples(entries, is_training=not evaluate)
         crops = convert_examples_to_crops(examples_gen=examples_gen,
@@ -1341,8 +1353,7 @@ def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, max
     parser.add_argument("--doc_stride", default=256, type=int)
     parser.add_argument("--max_query_length", default=64, type=int)
     parser.add_argument("--per_tpu_eval_batch_size", default=4, type=int)
-    # parser.add_argument("--n_best_size", default=10, type=int)
-    parser.add_argument("--n_best_size", default=5, type=int)
+    parser.add_argument("--n_best_size", default=10, type=int)
     parser.add_argument("--max_answer_length", default=30, type=int)
     parser.add_argument("--verbose_logging", action='store_true')
     parser.add_argument('--seed', type=int, default=42)
@@ -1352,11 +1363,15 @@ def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, max
     parser.add_argument('--do_enumerate', action='store_true')
 
     args, _ = parser.parse_known_args()
+    print(model_type)
 
     _, tokenizer_class = MODEL_CLASSES[model_type]
-    tokenizer = tokenizer_class(vocab, do_lower_case=do_lower_case)
-    print(tokenizer_class)
-    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, namefile, verbose, False,
+    if model_type != "albert_squad":
+        tokenizer_class = tokenizer_class(vocab, do_lower_case=do_lower_case)
+        tags = get_add_tokens(do_enumerate=args.do_enumerate)
+        num_added = tokenizer_class.add_tokens(tags, offset=1)
+        print(f"Added {num_added} tokens")
+    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer_class, namefile, verbose, False,
                                                         max_num_samples)
 
     do = False
@@ -1422,7 +1437,7 @@ def getDatasetForEvaluation(args, tokenizer, namefile, verbose, max_num_samples,
     return eval_ds, crops, entries, eval_dataset_length
 
 
-def getResult(args, model, eval_ds, crops, entries, eval_dataset_length):
+def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cache):
     csv_fn = 'submission.csv'
     padded_length = math.ceil(eval_dataset_length / args.eval_batch_size) * args.eval_batch_size
 
@@ -1433,31 +1448,43 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length):
 
     all_results = []
     tic = time.time()
-    for batch_ind, batch in tqdm(enumerate(eval_ds), total=padded_length // args.per_tpu_eval_batch_size):
-        # if batch_ind > 2:
-        #     break
-        example_indexes = batch['example_index']
-        # outputs = strategy.experimental_run_v2(predict_step, args=(batch, ))
-        outputs = predict_step(batch)
-        batched_start_logits = outputs[0].numpy()
-        batched_end_logits = outputs[1].numpy()
-        batched_long_logits = outputs[2].numpy()
-        for i, example_index in enumerate(example_indexes):
-            # filter out padded samples
-            if example_index >= eval_dataset_length:
-                continue
 
-            eval_crop = crops[example_index]
-            unique_id = int(eval_crop.unique_id)
-            start_logits = batched_start_logits[i].tolist()
-            end_logits = batched_end_logits[i].tolist()
-            long_logits = batched_long_logits[i].tolist()
+    cached_results = 'cache/results_test.pkl'
+    if os.path.exists(cached_results) and do_cache:
+        print("Loading results from cached file ", cached_results)
+        with open(cached_results, "rb") as f:
+            all_results = pickle.load(f)
+    else:
+        print("NOT loading results")
+        for batch_ind, batch in tqdm(enumerate(eval_ds), total=padded_length // args.per_tpu_eval_batch_size):
+            # if batch_ind > 2:
+            #     break
+            example_indexes = batch['example_index']
+            # outputs = strategy.experimental_run_v2(predict_step, args=(batch, ))
+            outputs = predict_step(batch)
+            batched_start_logits = outputs[0].numpy()
+            batched_end_logits = outputs[1].numpy()
+            batched_long_logits = outputs[2].numpy()
 
-            result = RawResult(unique_id=unique_id,
-                               start_logits=start_logits,
-                               end_logits=end_logits,
-                               long_logits=long_logits)
-            all_results.append(result)
+            for i, example_index in enumerate(example_indexes):
+                # filter out padded samples
+                if example_index >= eval_dataset_length:
+                    continue
+
+                eval_crop = crops[example_index]
+                unique_id = int(eval_crop.unique_id)
+                start_logits = batched_start_logits[i].tolist()
+                end_logits = batched_end_logits[i].tolist()
+                long_logits = batched_long_logits[i].tolist()
+
+                result = RawResult(unique_id=unique_id,
+                                   start_logits=start_logits,
+                                   end_logits=end_logits,
+                                   long_logits=long_logits)
+                all_results.append(result)
+        if do_cache:
+            with open(cached_results, "wb") as f:
+                pickle.dump(all_results, f)
 
     eval_time = time.time() - tic
     print("  Evaluation done in total %f secs (%f sec per example)",
