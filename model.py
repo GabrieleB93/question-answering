@@ -1,51 +1,3 @@
-"""
-In this file we store all class for the models 
-tensorflow 2.0
-
-{
-  "attention_probs_dropout_prob": 0.1,
-  "bos_token_id": 0,
-  "do_sample": false,
-  "eos_token_ids": 0,
-  "finetuning_task": null,
-  "hidden_act": "gelu",
-  "hidden_dropout_prob": 0.1,
-  "hidden_size": 1024,
-  "id2label": {
-    "0": "LABEL_0",
-    "1": "LABEL_1"
-  },
-  "initializer_range": 0.02,
-  "intermediate_size": 4096,
-  "is_decoder": false,
-  "label2id": {
-    "LABEL_0": 0,
-    "LABEL_1": 1
-  },
-  "layer_norm_eps": 1e-12,
-  "length_penalty": 1.0,
-  "max_length": 20,
-  "max_position_embeddings": 512,
-  "num_attention_heads": 16,
-  "num_beams": 1,
-  "num_hidden_layers": 24,
-  "num_labels": 2,
-  "num_return_sequences": 1,
-  "output_attentions": false,
-  "output_hidden_states": false,
-  "output_past": true,
-  "pad_token_id": 0,
-  "pruned_heads": {},
-  "repetition_penalty": 1.0,
-  "temperature": 1.0,
-  "top_k": 50,
-  "top_p": 1.0,
-  "torchscript": false,
-  "type_vocab_size": 2,
-  "use_bfloat16": false,
-  "vocab_size": 30522
-}
-"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -55,6 +7,7 @@ import os
 import re
 from datetime import datetime
 import tensorflow as tf
+import tensorflow_addons as tfa
 from transformers import BertConfig, BertTokenizer, AlbertTokenizer, AlbertConfig, AutoTokenizer
 from generator import DataGenerator
 from model_stuff import model_utils as mu
@@ -161,7 +114,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
         startepoch = None
         initial_epoch = 0
 
-    adam = tf.tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon = 1e-6)
+    adam = tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon = 1e-6)
 
     mymodel.compile(loss=losses,
                     loss_weights=lossWeights,
