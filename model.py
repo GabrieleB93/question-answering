@@ -63,7 +63,7 @@ from model_stuff.TFBertForNaturalQuestionAnswering import TFBertForNaturalQuesti
 
 
 def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_cache=False, verbose=False, evaluate=False,
-         max_num_samples=1_000_000, checkpoint="", log_dir="log/", learning_rate=0.005):
+         max_num_samples=1_000_000, checkpoint="", log_dir="log/", learning_rate=0.005, starting_epoch = 0):
     """
 
     :param do_cache:
@@ -147,10 +147,13 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
         # we do this in order to compile the model, otherwise it will not be able to lead the weights
         # mymodel(traingenerator.get_sample_data())
         mymodel(mymodel.dummy_inputs)
-        startepoch = os.path.split(checkpoint)[-1]
-        startepoch = re.sub('weights.', '', startepoch)
-        startepoch = int(startepoch.split("-")[0])
-        initial_epoch = startepoch
+        if starting_epoch == 0:
+            startepoch = os.path.split(checkpoint)[-1]
+            startepoch = re.sub('weights.', '', startepoch)
+            startepoch = int(startepoch.split("-")[0])
+            initial_epoch = startepoch
+        else:
+            initial_epoch = starting_epoch
 
         mymodel.load_weights(checkpoint, by_name=True)
         print("checkpoint loaded succefully")
@@ -235,6 +238,7 @@ if __name__ == "__main__":
     parser.add_argument('--do_cache', type=bool, default=False)
     parser.add_argument('--evaluate', type=bool, default=False)
     parser.add_argument('--verbose', type=bool, default=False)
+    parser.add_argument('--starting_epoch', type=int, default=0)
 
     args, _ = parser.parse_known_args()
     # assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
@@ -242,4 +246,4 @@ if __name__ == "__main__":
 
     main(args.model, args.batch_size, args.train_dir, args.validation_dir, args.epoch, args.checkpoint_dir,
          checkpoint=args.checkpoint,do_cache=args.do_cache,
-         evaluate=args.evaluate, verbose=args.verbose, log_dir=args.log_dir, learning_rate=args.learning_rate)
+         evaluate=args.evaluate, verbose=args.verbose, log_dir=args.log_dir, learning_rate=args.learning_rate, starting_epoch = args.starting_epoch)
