@@ -161,7 +161,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
         startepoch = None
         initial_epoch = 0
 
-    adam = tf.keras.optimizers.Adam(lr=learning_rate)
+    adam = tf.tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon = 1e-6)
 
     mymodel.compile(loss=losses,
                     loss_weights=lossWeights,
