@@ -211,8 +211,8 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
 
 
 if __name__ == "__main__":
-    tf.config.gpu.set_per_process_memory_fraction(0.50)
-    tf.config.gpu.set_per_process_memory_growth(True)
+    #tf.config.gpu.set_per_process_memory_fraction(0.50)
+    #tf.config.gpu.set_per_process_memory_growth(True)
 
     parser = argparse.ArgumentParser()
 
