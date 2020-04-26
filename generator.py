@@ -34,7 +34,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         print("\n\nthe file we will use for generator are: {}\n\n".format(self.files))
 
         if batch_start:
-            self.files = self.files[batch_start % len(self.Allfiles):]
+            self.files = self.files[:-batch_start]
 
         self.namefile = self.files.pop()
         print(self.namefile)

@@ -118,7 +118,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
 
     mymodel.compile(loss=losses,
                     loss_weights=lossWeights,
-                    metrics=[tf.keras.metrics.sparse_categorical_accuracy],
+                    metrics=[tf.keras.metrics.SparseCategoricalAccuracy(name='Accuracy')],
                     optimizer=adam
                     )
 
@@ -144,7 +144,6 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
         os.makedirs(checkpoint_dir)
     checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath,
                                                     save_weights_only=False,
-                                                    monitor='categorical_accuracy',
                                                     verbose=0,
                                                     save_freq="epoch")
 
