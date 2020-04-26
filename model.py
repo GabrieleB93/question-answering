@@ -118,7 +118,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
 
     mymodel.compile(loss=losses,
                     loss_weights=lossWeights,
-                    metrics=['categorical_accuracy'],
+                    metrics=[tf.keras.metrics.sparse_categorical_accuracy],
                     optimizer=adam
                     )
 
