@@ -4,6 +4,7 @@ from __future__ import print_function
 from datetime import datetime
 from sys import platform
 from dataset_utils import *
+
 from model_stuff.TFAlbertForNaturalQuestionAnswering import TFAlbertForNaturalQuestionAnswering
 from model_stuff.TFBertForNaturalQuestionAnswering import TFBertForNaturalQuestionAnswering
 from model_stuff import model_utils as mu
@@ -36,22 +37,12 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
 
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
+        'bert_large': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'albert': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AlbertTokenizer),  # V2
+        'albert_squad': (AlbertConfig, TFAlbertForNaturalQuestionAnswering,
+                         AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2"))
         # 'roberta': (RobertaConfig, TFRobertaForNaturalQuestionAnswering, RobertaTokenizer),
     }
-    dictionary = False
-    if dictionary:
-        losses = {
-            "start": "categorical_crossentropy",
-            "end": "categorical_crossentropy",
-            "type": "categorical_crossentropy",
-        }
-
-        lossWeights = {"start": 1.0, "end": 1.0, "type": 1.0}
-
-    else:
-        losses = ["categorical_crossentropy", "categorical_crossentropy", "categorical_crossentropy"]
-        lossWeights = [1.0, 1.0, 1.0]
 
     do_lower_case = 'uncased'
     if namemodel == "bert":  # base
@@ -64,6 +55,12 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
         do_lower_case = False
         model_config = 'lo aggiungero in futuro'
         vocab = 'lo aggiungero in futuro'
+    elif namemodel == "albert_squad":
+        model_config = 'input/transformers_cache/albert_base_v2_squad.json'
+        vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
+    elif namemodel == "bert_large":
+        model_config = 'input/transformers_cache/bert_large_uncased_config.json'
+        vocab = 'input/transformers_cache/bert_large_uncased_vocab.txt'
     else:
         # di default metto il base albert
         model_config = 'input/transformers_cache/albert_base_v2.json'
@@ -76,12 +73,6 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     tf.config.optimizer.set_jit(True)
     tf.config.optimizer.set_experimental_options({'pin_to_host_optimization': False})
 
-    all_chk = os.listdir(checkpoint)  # list of all the files from the directory
-    chk = all_chk.copy()
-    print("\n\nThe file we will use for checkpoint is: {}\n\n".format(chk))
-
-    chk_name = chk.pop()
-
     config_class, model_class, tokenizer_class = MODEL_CLASSES[namemodel]
     config = config_class.from_json_file(model_config)
 
@@ -89,33 +80,19 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
 
     mymodel(mymodel.dummy_inputs, training=False)
 
-    mymodel.load_weights(checkpoint+chk_name, by_name=True)
+    mymodel.load_weights(checkpoint, by_name=True)
     print("Checkpoint loaded succefully")
-
-    # adam = tf.keras.optimizers.Adam(lr=0.05)
-
-    # mymodel.compile(loss=losses,
-    #                 loss_weights=lossWeights,
-    #                 metrics=['categorical_accuracy'],
-    #                 optimizer=adam
-    #                 )
-
-    cb = mu.TimingCallback()  # execution time callback
-
-    # callbacks
-    # callbacks_list = [cb, tboard_callback]
-
-    # fitting
-    # print("Time: " + str(cb.logs))
 
     print("***** Running evaluation *****")
     tokenizer = tokenizer_class(vocab, do_lower_case='uncased')
-    print(do_cache)
+    tags = get_add_tokens(do_enumerate=args.do_enumerate)
+    num_added = tokenizer.add_tokens(tags)
+    print(f"Added {num_added} tokens")
     eval_ds, crops, entries, eval_dataset_length = getDatasetForEvaluation(args, tokenizer, namefile, verbose,
                                                                            max_num_samples, do_cache)
     print("***** Getting results *****")
-    # result = getResult(args, mymodel, eval_ds, crops, entries, eval_dataset_length)
-    # print("Result: {}".format(result))
+    result = getResult(args, mymodel, eval_ds, crops, entries, eval_dataset_length, do_cache)
+    print("Result: {}".format(result))
 
 
 if __name__ == "__main__":
@@ -137,9 +114,9 @@ if __name__ == "__main__":
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
-    parser.add_argument("--checkpoint", default="checkpoints/", type=str, help="The file we will use as checkpoint")
+    parser.add_argument("--checkpoint", default="checkpoints/weights.hdf5", type=str, help="The file we will use as checkpoint")
 
-    parser.add_argument('--test_dir', type=str, default='TestData/',
+    parser.add_argument('--test_dir', type=str, default='TestData/simplified-nq-test.jsonl',
                         help='Directory were all the traing data splitted in smaller junks are stored')
 
     parser.add_argument('--epoch', type=int, default=1)
@@ -150,12 +127,9 @@ if __name__ == "__main__":
 
     args, _ = parser.parse_known_args()
 
-    Allfiles = os.listdir(args.test_dir)  # list of all the files from the directory
-    files = Allfiles.copy()
-    print("\n\nThe test file we will use for evaluation is: {}\n\n".format(files))
-
-    namefile = files.pop()
-    print("File for evaluation: ", namefile)
+    print("File for evaluation: ", args.test_dir)
+    assert args.checkpoint.endswith('.hdf5'), "Checkpoint not specified"
+    print("Checkpoint for evaluation: ", args.checkpoint)
     print("Evaluation parameters ", args)
 
-    main(args.model, args, args.checkpoint, args.test_dir+namefile, verbose=args.verbose, do_cache=args.do_cache)
+    main(args.model, args, args.checkpoint, args.test_dir, verbose=args.verbose, do_cache=args.do_cache)

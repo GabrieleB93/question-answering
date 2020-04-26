@@ -127,7 +127,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
                                          validation=True)
 
     traingenerator = DataGenerator(train_dir, namemodel, vocab, verbose, batch_size=batch_size,
-                                   batch_start=startepoch)
+                                   batch_start=initial_epoch)
 
     # Training data
     # since we do an epoch for each file eventually we have to do 
@@ -138,7 +138,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
     print('\n\nwe have {} files so we will train for {} epochs\n\n'.format(n_files, epoch))
 
     cb = mu.TimingCallback()  # execution time callback
-    filepath = os.path.join(checkpoint_dir, "weights_prova_solo_uno.hdf5")
+    filepath = os.path.join(checkpoint_dir, "weights.hdf5")
     # filepath = os.path.join(checkpoint_dir, "weights.{epoch:02d}-{loss:.2f}.hdf5")
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)

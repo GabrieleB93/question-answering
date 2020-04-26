@@ -97,6 +97,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         return x, y
 
     def on_epoch_end(self):
+
         # change the current file and add it to the done list
         self.current_file_index += 1
 
