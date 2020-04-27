@@ -57,7 +57,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
     losses = [tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), ]
-    lossWeights = [1.0, 1.0, 1.0]
+    lossWeights = [1.0, 0.5, 0.5]
 
     do_lower_case = 'uncased'
 
