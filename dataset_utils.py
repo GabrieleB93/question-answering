@@ -856,7 +856,7 @@ def convert_preds_to_df(preds, candidates):
 
     df = pd.DataFrame(df)
     print(df.astype(bool).sum(axis=0))
-    print(f'Found {num_found_long} of {num_searched_long} (total {len(preds)})')
+    print(f'Found number of long answered: {num_found_long} of number of long searched: {num_searched_long} (total {len(preds)})')
     return df
 
 
