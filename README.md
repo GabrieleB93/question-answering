@@ -1,6 +1,9 @@
 # question-answering
 Software for the task of question answering, HTL Unipi project
 
+## How to run
+In the global system or in a virtual env run ```pip install -r requirement.txt```, then run ```python model.py``` and this corresponds to fine tune bert on natural questions dataset.
+
 ## Authors
 Gabriele Barreca
 Mario Bonsembiante
