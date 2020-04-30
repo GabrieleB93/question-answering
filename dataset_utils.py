@@ -82,9 +82,10 @@ def read_candidates(candidate_files, do_cache=True):
     assert isinstance(candidate_files, (tuple, list)), candidate_files
     for fn in candidate_files:
         assert os.path.exists(fn), f'Missing file {fn}'
-    cache_fn = 'candidates.pkl'
+    cache_fn = 'cache/candidates.pkl'
 
     candidates = {}  # Creo il dizionario dei candidati (che sia dalla cache o meno)
+    question = {}
     if not os.path.exists(cache_fn):
         for fn in candidate_files:
             with open(fn) as f:
@@ -96,6 +97,7 @@ def read_candidates(candidate_files, do_cache=True):
                                                 c['top_level']) for c in
                             cnds]  # le informazioni sono comprese nella long answer. Top_level mi dice se la risposta è dentro un'altra o meno
                     candidates[example_id] = cnds
+                    question[example_id] = str(entry['question_text'])
 
         if do_cache:
             print("Saving candidates to pkl")
@@ -106,7 +108,7 @@ def read_candidates(candidate_files, do_cache=True):
         with open(cache_fn, 'rb') as f:
             candidates = pickle.load(f)
 
-    return candidates
+    return candidates, question
 
 
 def is_whitespace(c):  # ok
@@ -647,7 +649,6 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
     for crop in all_crops:
         example_index_to_crops[crop.example_index].append(crop)
     unique_id_to_result = {result.unique_id: result for result in all_results}
-
     all_predictions = collections.OrderedDict()
     all_nbest_json = collections.OrderedDict()
     scores_diff_json = collections.OrderedDict()
@@ -655,11 +656,12 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
     for example_index, example in enumerate(examples_gen):
         if example_index % 1000 == 0 and example_index > 0:
             logger.info(f'[{example_index}]: {short_num_empty} short and {long_num_empty} long empty')
-
         crops = example_index_to_crops[example_index]
+
         short_prelim_predictions, long_prelim_predictions = [], []
         for crop_index, crop in enumerate(crops):
             assert crop.unique_id in unique_id_to_result, f"{crop.unique_id}"
+
             result = unique_id_to_result[crop.unique_id]
             # get the `n_best_size` largest indexes
             # https://stackoverflow.com/questions/6910641/how-do-i-get-indices-of-n-maximum-values-in-a-numpy-array#23734295
@@ -718,7 +720,6 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
 
         short_nbest = get_nbest(short_prelim_predictions, crops,
                                 example, n_best_size)
-
         short_best_non_null = None
         for entry in short_nbest:
             if short_best_non_null is None:
@@ -736,7 +737,6 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             if long_best_non_null is None:
                 if entry.text != "":
                     long_best_non_null = entry
-
         nbest_json = {'short': [], 'long': []}
         for kk, entries in [('short', short_nbest), ('long', long_nbest)]:
             for i, entry in enumerate(entries):
@@ -795,7 +795,6 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             print(e)
             final_pred += ("", -1)
             long_num_empty += 1
-
         all_predictions[example.qas_id] = final_pred
         all_nbest_json[example.qas_id] = nbest_json
 
@@ -817,17 +816,21 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
 
 
 # Not used for now
-def convert_preds_to_df(preds, candidates):
+def convert_preds_to_df(preds, candidates, question, tokenizer):
     num_found_long, num_searched_long = 0, 0
-    df = {'example_id': [], 'PredictionString': []}
+    df = {'example_id': [], 'PredictionString': [], 'question': [], 'answer': []}
     for example_id, pred in preds.items():
         short_text, start_token, end_token, long_text, long_token = pred
         df['example_id'].append(example_id + '_short')
+        df['question'].append(question[example_id])
+
         short_answer = ''
         if start_token != -1:
             # +1 is required to make the token inclusive
             short_answer = f'{start_token}:{end_token + 1}'
+
         df['PredictionString'].append(short_answer)
+        df['answer'].append(short_text)
 
         # print(entry['document_text'].split(' ')[start_token: end_token + 1])
         # find the long answer
@@ -853,6 +856,8 @@ def convert_preds_to_df(preds, candidates):
 
         df['example_id'].append(example_id + '_long')
         df['PredictionString'].append(long_answer)
+        df['question'].append(question[example_id])
+        df['answer'].append(long_text)
 
     df = pd.DataFrame(df)
     print(df.astype(bool).sum(axis=0))
@@ -1437,7 +1442,7 @@ def getDatasetForEvaluation(args, tokenizer, namefile, verbose, max_num_samples,
     return eval_ds, crops, entries, eval_dataset_length
 
 
-def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cache):
+def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer):
     csv_fn = 'submission.csv'
     padded_length = math.ceil(eval_dataset_length / args.eval_batch_size) * args.eval_batch_size
 
@@ -1497,9 +1502,9 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cach
                               args.short_null_score_diff_threshold, args.long_null_score_diff_threshold)
     del crops, all_results
     gc.collect()
-    candidates = read_candidates(['TestData/simplified-nq-test.jsonl'], do_cache=False)
-    sub = convert_preds_to_df(preds, candidates).sort_values('example_id')
-    sub.to_csv(csv_fn, index=False, columns=['example_id', 'PredictionString'])
+    candidates, question = read_candidates([namefile], do_cache=False)
+    sub = convert_preds_to_df(preds, candidates, question, tokenizer).sort_values('example_id')
+    sub.to_csv(csv_fn, index=False, columns=['example_id', 'PredictionString', 'question', 'answer'])
     print(f'***** Wrote submission to {csv_fn} *****')
     result = {}
     return result

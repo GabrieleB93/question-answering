@@ -91,7 +91,7 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     eval_ds, crops, entries, eval_dataset_length = getDatasetForEvaluation(args, tokenizer, namefile, verbose,
                                                                            max_num_samples, do_cache)
     print("***** Getting results *****")
-    result = getResult(args, mymodel, eval_ds, crops, entries, eval_dataset_length, do_cache)
+    result = getResult(args, mymodel, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile,tokenizer)
     print("Result: {}".format(result))
 
 
@@ -114,7 +114,7 @@ if __name__ == "__main__":
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
-    parser.add_argument("--checkpoint", default="checkpoints/weights.hdf5", type=str, help="The file we will use as checkpoint")
+    parser.add_argument("--checkpoint", default="checkpoints/weights.h5", type=str, help="The file we will use as checkpoint")
 
     parser.add_argument('--test_dir', type=str, default='TestData/simplified-nq-test.jsonl',
                         help='Directory were all the traing data splitted in smaller junks are stored')
@@ -128,7 +128,7 @@ if __name__ == "__main__":
     args, _ = parser.parse_known_args()
 
     print("File for evaluation: ", args.test_dir)
-    assert args.checkpoint.endswith('.hdf5'), "Checkpoint not specified"
+    # assert args.checkpoint.endswith('.hdf5'), "Checkpoint not specified"
     print("Checkpoint for evaluation: ", args.checkpoint)
     print("Evaluation parameters ", args)
 
