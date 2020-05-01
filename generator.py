@@ -91,7 +91,6 @@ class DataGenerator(tf.keras.utils.Sequence):
         index = index % self.number_indexes
 
         x = {k: v[self.batch_size * index:self.batch_size * (index + 1)] for k, v in self.input.items()}
-
         y = [v[self.batch_size * index:self.batch_size * (index + 1)] for v in self.output]
 
         return x, y
