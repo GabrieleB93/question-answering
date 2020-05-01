@@ -15,8 +15,9 @@ from model_stuff.TFAlbertForNaturalQuestionAnswering import TFAlbertForNaturalQu
 from model_stuff.TFBertForNaturalQuestionAnswering import TFBertForNaturalQuestionAnswering
 
 
-def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_cache=False, verbose=False, evaluate=False,
-         max_num_samples=1_000_000, checkpoint="", log_dir="log/", learning_rate=0.005, starting_epoch = 0):
+def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_cache=False, verbose=False,
+         evaluate=False,
+         max_num_samples=1_000_000, checkpoint="", log_dir="log/", learning_rate=0.005, starting_epoch=0):
     """
 
     :param do_cache:
@@ -64,26 +65,31 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
     if namemodel == "bert":  # base
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
         vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
+        pretrained = ''
 
     elif namemodel == 'albert':  # base v2
         model_config = 'input/transformers_cache/albert_base_v2.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
+        pretrained = 'albert-base-v2'
 
     elif namemodel == 'roberta':
         do_lower_case = False
         model_config = 'lo aggiungero in futuro'
         vocab = 'lo aggiungero in futuro'
+        pretrained = ''
 
     elif namemodel == "albert_squad":
         model_config = 'input/transformers_cache/albert_base_v2_squad.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
         tokenizer = AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2")
+        pretrained = ''
 
     else:
         # di default metto il base albert
         model_config = 'input/transformers_cache/albert_base_v2.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
         namemodel = "albert"
+        pretrained = 'albert-base-v2'
 
     # Set XLA
     # https://github.com/kamalkraj/ALBERT-TF2.0/blob/8d0cc211361e81a648bf846_d8ec84225273db0e4/run_classifer.py#L136
@@ -91,12 +97,12 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
     tf.config.optimizer.set_experimental_options({'pin_to_host_optimization': False})
 
     config_class, model_class, tokenizer_class = MODEL_CLASSES[namemodel]
-    config = config_class.from_json_file(model_config)
-
     print(model_class)
-    mymodel = model_class(config)
 
     if checkpoint != "":
+        config = config_class.from_json_file(model_config)
+        mymodel = model_class(config)
+
         # we do this in order to compile the model, otherwise it will not be able to lead the weights
         # mymodel(traingenerator.get_sample_data())
         mymodel(mymodel.dummy_inputs)
@@ -111,10 +117,11 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
         mymodel.load_weights(checkpoint, by_name=True)
         print("checkpoint loaded succefully")
     else:
-        startepoch = None
         initial_epoch = 0
+        config = config_class.from_pretrained(model_config)
+        mymodel = model_class.from_pretrained(pretrained, config=config)
 
-    adam = tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon = 1e-6)
+    adam = tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon=1e-6)
 
     mymodel.compile(loss=losses,
                     loss_weights=lossWeights,
@@ -130,7 +137,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
                                    batch_start=initial_epoch)
 
     # Training data
-    # since we do an epoch for each file eventually we have to do 
+    # since we do an epoch for each file eventually we have to do
     # epoch*n_files epochs
     n_files = traingenerator.num_files()
     epoch = int(epoch) * n_files
@@ -138,7 +145,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
     print('\n\nwe have {} files so we will train for {} epochs\n\n'.format(n_files, epoch))
 
     cb = mu.TimingCallback()  # execution time callback
-    filepath = os.path.join(checkpoint_dir, "weights.hdf5")
+    filepath = os.path.join(checkpoint_dir, "weights_preTrained.hdf5")
     # filepath = os.path.join(checkpoint_dir, "weights.{epoch:02d}-{loss:.2f}.hdf5")
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
@@ -163,8 +170,8 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
 
 
 if __name__ == "__main__":
-    #tf.config.gpu.set_per_process_memory_fraction(0.50)
-    #tf.config.gpu.set_per_process_memory_growth(True)
+    # tf.config.gpu.set_per_process_memory_fraction(0.50)
+    # tf.config.gpu.set_per_process_memory_growth(True)
 
     parser = argparse.ArgumentParser()
 
@@ -197,5 +204,6 @@ if __name__ == "__main__":
     print("Training / evaluation parameters %s", args)
 
     main(args.model, args.batch_size, args.train_dir, args.validation_dir, args.epoch, args.checkpoint_dir,
-         checkpoint=args.checkpoint,do_cache=args.do_cache,
-         evaluate=args.evaluate, verbose=args.verbose, log_dir=args.log_dir, learning_rate=args.learning_rate, starting_epoch = args.starting_epoch)
+         checkpoint=args.checkpoint, do_cache=args.do_cache,
+         evaluate=args.evaluate, verbose=args.verbose, log_dir=args.log_dir, learning_rate=args.learning_rate,
+         starting_epoch=args.starting_epoch)
