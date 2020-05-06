@@ -54,10 +54,19 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
 
     # define the losses. We decided to use the Sparse one because our targert are integer and not one hot vector
     # and from logit because we don't apply the softmax
-    losses = [tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-              tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-              tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), ]
-    lossWeights = [1.0, 0.5, 0.5]
+    dictionary = False
+    if dictionary:
+        losses = {
+                    "start": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                    "end": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                    "long": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
+                }
+        lossWeights = {"start":1.0,"end": 0.5,"long": 0.5}
+    else:
+        losses = [tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), ]
+        lossWeights = [1.0, 0.5, 0.5]
 
     do_lower_case = 'uncased'
 

@@ -19,7 +19,7 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
         self.end = tf.keras.layers.Dense(1,
             kernel_initializer=self.initializer, name='end')
         self.long_outputs = tf.keras.layers.Dense(1, kernel_initializer=self.initializer,
-            name='long_outputs')
+            name='long')
 
     def call(self, inputs, **kwargs):
         outputs = self.albert(inputs, **kwargs)

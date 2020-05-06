@@ -93,8 +93,13 @@ class DataGenerator(tf.keras.utils.Sequence):
         x = {k: v[self.batch_size * index:self.batch_size * (index + 1)] for k, v in self.input.items()}
 
         y = [v[self.batch_size * index:self.batch_size * (index + 1)] for v in self.output]
+        dictionary = False
+        if dictionary:
+            names = {0: "start", 1: "end",2: "long"}
+            y = {n: y[i] for i, n in names.items()}
 
-        return x, y
+
+        return x + y
 
     def on_epoch_end(self):
 
