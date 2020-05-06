@@ -118,5 +118,5 @@ log
 checkpoints
 weights.h5
 
-validationData
+#validationData
 TrainData

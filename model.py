@@ -189,7 +189,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, verbo
                                                     save_weights_only=False,
                                                     monitor='categorical_accuracy',
                                                     verbose=0,
-                                                    save_freq="epoch")
+                                                    save_freq=3)#"epoch")
 
     # callbacks
     callbacks_list = [cb, tboard_callback, checkpoint]
