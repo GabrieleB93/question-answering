@@ -34,7 +34,7 @@ class DataGenerator(tf.keras.utils.Sequence):
         print("\n\nthe file we will use for generator are: {}\n\n".format(self.files))
 
         if batch_start:
-            self.files = self.files[batch_start % len(self.Allfiles):]
+            self.files = self.files[:-batch_start]
 
         self.namefile = self.files.pop()
         print(self.namefile)
@@ -91,12 +91,12 @@ class DataGenerator(tf.keras.utils.Sequence):
         index = index % self.number_indexes
 
         x = {k: v[self.batch_size * index:self.batch_size * (index + 1)] for k, v in self.input.items()}
-
         y = [v[self.batch_size * index:self.batch_size * (index + 1)] for v in self.output]
 
         return x, y
 
     def on_epoch_end(self):
+
         # change the current file and add it to the done list
         self.current_file_index += 1
 

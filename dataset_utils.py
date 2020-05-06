@@ -13,7 +13,8 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tqdm.notebook import tqdm
-from transformers import BertConfig, BertTokenizer, RobertaConfig, RobertaTokenizer, AlbertTokenizer, AlbertConfig
+from transformers import BertConfig, BertTokenizer, RobertaConfig, RobertaTokenizer, AlbertTokenizer, AlbertConfig, \
+    AutoTokenizer
 from transformers.tokenization_bert import whitespace_tokenize
 
 tqdm.monitor_interval = 0  # noqa
@@ -29,8 +30,8 @@ Crop = collections.namedtuple("Crop", ["unique_id", "example_index", "doc_span_i
                                        "tokens", "token_to_orig_map", "token_is_max_context",
                                        "input_ids", "attention_mask", "token_type_ids",
                                        # "p_mask",
-                                       "paragraph_len", "start_position", "end_position", "long_position",
-                                       "short_is_impossible", "long_is_impossible"])
+                                       "paragraph_len", "start_position", "end_position",
+                                       "long_position", "short_is_impossible", "long_is_impossible"])
 
 LongAnswerCandidate = collections.namedtuple('LongAnswerCandidate', [
     'start_token', 'end_token', 'top_level'])
@@ -81,9 +82,10 @@ def read_candidates(candidate_files, do_cache=True):
     assert isinstance(candidate_files, (tuple, list)), candidate_files
     for fn in candidate_files:
         assert os.path.exists(fn), f'Missing file {fn}'
-    cache_fn = 'candidates.pkl'
+    cache_fn = 'cache/candidates.pkl'
 
     candidates = {}  # Creo il dizionario dei candidati (che sia dalla cache o meno)
+    question = {}
     if not os.path.exists(cache_fn):
         for fn in candidate_files:
             with open(fn) as f:
@@ -95,8 +97,10 @@ def read_candidates(candidate_files, do_cache=True):
                                                 c['top_level']) for c in
                             cnds]  # le informazioni sono comprese nella long answer. Top_level mi dice se la risposta è dentro un'altra o meno
                     candidates[example_id] = cnds
+                    question[example_id] = str(entry['question_text'])
 
         if do_cache:
+            print("Saving candidates to pkl")
             with open(cache_fn, 'wb') as f:
                 pickle.dump(candidates, f)
     else:
@@ -104,7 +108,7 @@ def read_candidates(candidate_files, do_cache=True):
         with open(cache_fn, 'rb') as f:
             candidates = pickle.load(f)
 
-    return candidates
+    return candidates, question
 
 
 def is_whitespace(c):  # ok
@@ -312,7 +316,7 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
             # Qui succede questo:
             # un token tipo 'Klementieff' diventa 4 subtoken : ['▁kle', 'ment', 'i', 'eff']
             # quindi mappi tutti i subtoken corrispondenti al token del testo originale corrispondente a Klementieff
-            tok_to_orig_index.extend([i for _ in range(len(sub_tokens))]) 
+            tok_to_orig_index.extend([i for _ in range(len(sub_tokens))])
             all_doc_tokens.extend(sub_tokens)
 
         tok_start_position = None
@@ -499,6 +503,11 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
             else:
                 num_long_pos += 1
 
+            verbose = False
+            if verbose: print("Crop number: " + str(unique_id) + " dell'esempio numero: " + str(
+                example_index) + "\n con queste info: start: " + str(start_position) + "| end: " + str(
+                end_position) + "| long: " + str(long_position) + "\n shortIMP=" + str(
+                short_is_impossible) + " longIMP=" + str(long_is_impossible))
             crop = Crop(
                 unique_id=unique_id,
                 example_index=example_index,
@@ -517,6 +526,7 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
                 long_position=long_position,
                 short_is_impossible=short_is_impossible,
                 long_is_impossible=long_is_impossible)
+            # long_start=long_position[0], long_end=long_position[1])
             crops.append(crop)
             unique_id += 1
 
@@ -639,7 +649,6 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
     for crop in all_crops:
         example_index_to_crops[crop.example_index].append(crop)
     unique_id_to_result = {result.unique_id: result for result in all_results}
-
     all_predictions = collections.OrderedDict()
     all_nbest_json = collections.OrderedDict()
     scores_diff_json = collections.OrderedDict()
@@ -647,11 +656,12 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
     for example_index, example in enumerate(examples_gen):
         if example_index % 1000 == 0 and example_index > 0:
             logger.info(f'[{example_index}]: {short_num_empty} short and {long_num_empty} long empty')
-
         crops = example_index_to_crops[example_index]
+
         short_prelim_predictions, long_prelim_predictions = [], []
         for crop_index, crop in enumerate(crops):
             assert crop.unique_id in unique_id_to_result, f"{crop.unique_id}"
+
             result = unique_id_to_result[crop.unique_id]
             # get the `n_best_size` largest indexes
             # https://stackoverflow.com/questions/6910641/how-do-i-get-indices-of-n-maximum-values-in-a-numpy-array#23734295
@@ -710,7 +720,6 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
 
         short_nbest = get_nbest(short_prelim_predictions, crops,
                                 example, n_best_size)
-
         short_best_non_null = None
         for entry in short_nbest:
             if short_best_non_null is None:
@@ -728,7 +737,6 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             if long_best_non_null is None:
                 if entry.text != "":
                     long_best_non_null = entry
-
         nbest_json = {'short': [], 'long': []}
         for kk, entries in [('short', short_nbest), ('long', long_nbest)]:
             for i, entry in enumerate(entries):
@@ -763,7 +771,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
                 final_pred = (short_best_non_null.text, short_best_non_null.orig_doc_start,
                               short_best_non_null.orig_doc_end)
         except Exception as e:
-            print(e)
+            print("Exception in write prediction: " +str(e))
             final_pred = ("", -1, -1)
             short_num_empty += 1
 
@@ -787,7 +795,6 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             print(e)
             final_pred += ("", -1)
             long_num_empty += 1
-
         all_predictions[example.qas_id] = final_pred
         all_nbest_json[example.qas_id] = nbest_json
 
@@ -809,17 +816,21 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
 
 
 # Not used for now
-def convert_preds_to_df(preds, candidates):
+def convert_preds_to_df(preds, candidates, question, tokenizer):
     num_found_long, num_searched_long = 0, 0
-    df = {'example_id': [], 'PredictionString': []}
+    df = {'example_id': [], 'PredictionString': [], 'question': [], 'answer': []}
     for example_id, pred in preds.items():
         short_text, start_token, end_token, long_text, long_token = pred
         df['example_id'].append(example_id + '_short')
+        df['question'].append(question[example_id])
+
         short_answer = ''
         if start_token != -1:
             # +1 is required to make the token inclusive
             short_answer = f'{start_token}:{end_token + 1}'
+
         df['PredictionString'].append(short_answer)
+        df['answer'].append(short_text)
 
         # print(entry['document_text'].split(' ')[start_token: end_token + 1])
         # find the long answer
@@ -845,9 +856,12 @@ def convert_preds_to_df(preds, candidates):
 
         df['example_id'].append(example_id + '_long')
         df['PredictionString'].append(long_answer)
+        df['question'].append(question[example_id])
+        df['answer'].append(long_text)
 
     df = pd.DataFrame(df)
-    print(f'Found {num_found_long} of {num_searched_long} (total {len(preds)})')
+    print(df.astype(bool).sum(axis=0))
+    print(f'Found number of long answered: {num_found_long} of number of long searched: {num_searched_long} (total {len(preds)})')
     return df
 
 
@@ -1180,8 +1194,10 @@ def convert_nq_to_squad(verbose, is_train, args=None):
 
 MODEL_CLASSES = {
     'bert': (BertConfig, BertTokenizer),
+    'bert_large': (BertConfig, BertTokenizer),
     'albert': (AlbertConfig, AlbertTokenizer),
     'roberta': (RobertaConfig, RobertaTokenizer),
+    # 'albert_squad': (AlbertConfig, AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2"))
 }
 
 
@@ -1268,7 +1284,7 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
     else:
         args_nq = get_convert_args1(namefile, max_num_samples)
 
-    cached_crops_fn = 'cache/crops_test.pkl'
+    cached_crops_fn = 'cache/cached_test.pkl'
     if os.path.exists(cached_crops_fn) and do_cache:
         print("Loading crops from cached file %s", cached_crops_fn)
         with open(cached_crops_fn, "rb") as f:
@@ -1276,6 +1292,7 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
         entries = convert_nq_to_squad(verbose, args=args_nq, is_train=not evaluate)
 
     else:
+        print("NOT loading crops")
         entries = convert_nq_to_squad(verbose, args=args_nq, is_train=not evaluate)
         examples_gen = read_nq_examples(entries, is_training=not evaluate)
         crops = convert_examples_to_crops(examples_gen=examples_gen,
@@ -1341,8 +1358,7 @@ def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, max
     parser.add_argument("--doc_stride", default=256, type=int)
     parser.add_argument("--max_query_length", default=64, type=int)
     parser.add_argument("--per_tpu_eval_batch_size", default=4, type=int)
-    # parser.add_argument("--n_best_size", default=10, type=int)
-    parser.add_argument("--n_best_size", default=5, type=int)
+    parser.add_argument("--n_best_size", default=10, type=int)
     parser.add_argument("--max_answer_length", default=30, type=int)
     parser.add_argument("--verbose_logging", action='store_true')
     parser.add_argument('--seed', type=int, default=42)
@@ -1352,11 +1368,15 @@ def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, max
     parser.add_argument('--do_enumerate', action='store_true')
 
     args, _ = parser.parse_known_args()
+    print(model_type)
 
     _, tokenizer_class = MODEL_CLASSES[model_type]
-    tokenizer = tokenizer_class(vocab, do_lower_case=do_lower_case)
-    print(tokenizer_class)
-    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, namefile, verbose, False,
+    if model_type != "albert_squad":
+        tokenizer_class = tokenizer_class(vocab, do_lower_case=do_lower_case)
+        tags = get_add_tokens(do_enumerate=args.do_enumerate)
+        num_added = tokenizer_class.add_tokens(tags)
+        print(f"Added {num_added} tokens")
+    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer_class, namefile, verbose, False,
                                                         max_num_samples)
 
     do = False
@@ -1422,7 +1442,7 @@ def getDatasetForEvaluation(args, tokenizer, namefile, verbose, max_num_samples,
     return eval_ds, crops, entries, eval_dataset_length
 
 
-def getResult(args, model, eval_ds, crops, entries, eval_dataset_length):
+def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer):
     csv_fn = 'submission.csv'
     padded_length = math.ceil(eval_dataset_length / args.eval_batch_size) * args.eval_batch_size
 
@@ -1433,31 +1453,43 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length):
 
     all_results = []
     tic = time.time()
-    for batch_ind, batch in tqdm(enumerate(eval_ds), total=padded_length // args.per_tpu_eval_batch_size):
-        # if batch_ind > 2:
-        #     break
-        example_indexes = batch['example_index']
-        # outputs = strategy.experimental_run_v2(predict_step, args=(batch, ))
-        outputs = predict_step(batch)
-        batched_start_logits = outputs[0].numpy()
-        batched_end_logits = outputs[1].numpy()
-        batched_long_logits = outputs[2].numpy()
-        for i, example_index in enumerate(example_indexes):
-            # filter out padded samples
-            if example_index >= eval_dataset_length:
-                continue
 
-            eval_crop = crops[example_index]
-            unique_id = int(eval_crop.unique_id)
-            start_logits = batched_start_logits[i].tolist()
-            end_logits = batched_end_logits[i].tolist()
-            long_logits = batched_long_logits[i].tolist()
+    cached_results = 'cache/results_test.pkl'
+    if os.path.exists(cached_results) and do_cache:
+        print("Loading results from cached file ", cached_results)
+        with open(cached_results, "rb") as f:
+            all_results = pickle.load(f)
+    else:
+        print("NOT loading results")
+        for batch_ind, batch in tqdm(enumerate(eval_ds), total=padded_length // args.per_tpu_eval_batch_size):
+            # if batch_ind > 2:
+            #     break
+            example_indexes = batch['example_index']
+            # outputs = strategy.experimental_run_v2(predict_step, args=(batch, ))
+            outputs = predict_step(batch)
+            batched_start_logits = outputs[0].numpy()
+            batched_end_logits = outputs[1].numpy()
+            batched_long_logits = outputs[2].numpy()
 
-            result = RawResult(unique_id=unique_id,
-                               start_logits=start_logits,
-                               end_logits=end_logits,
-                               long_logits=long_logits)
-            all_results.append(result)
+            for i, example_index in enumerate(example_indexes):
+                # filter out padded samples
+                if example_index >= eval_dataset_length:
+                    continue
+
+                eval_crop = crops[example_index]
+                unique_id = int(eval_crop.unique_id)
+                start_logits = batched_start_logits[i].tolist()
+                end_logits = batched_end_logits[i].tolist()
+                long_logits = batched_long_logits[i].tolist()
+
+                result = RawResult(unique_id=unique_id,
+                                   start_logits=start_logits,
+                                   end_logits=end_logits,
+                                   long_logits=long_logits)
+                all_results.append(result)
+        if do_cache:
+            with open(cached_results, "wb") as f:
+                pickle.dump(all_results, f)
 
     eval_time = time.time() - tic
     print("  Evaluation done in total %f secs (%f sec per example)",
@@ -1470,9 +1502,9 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length):
                               args.short_null_score_diff_threshold, args.long_null_score_diff_threshold)
     del crops, all_results
     gc.collect()
-    candidates = read_candidates(['TestData/simplified-nq-test.jsonl'], do_cache=False)
-    sub = convert_preds_to_df(preds, candidates).sort_values('example_id')
-    sub.to_csv(csv_fn, index=False, columns=['example_id', 'PredictionString'])
+    candidates, question = read_candidates([namefile], do_cache=False)
+    sub = convert_preds_to_df(preds, candidates, question, tokenizer).sort_values('example_id')
+    sub.to_csv(csv_fn, index=False, columns=['example_id', 'PredictionString', 'question', 'answer'])
     print(f'***** Wrote submission to {csv_fn} *****')
     result = {}
     return result
