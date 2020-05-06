@@ -98,7 +98,7 @@ class DataGenerator(tf.keras.utils.Sequence):
             y = {n: y[i] for i, n in names.items()}
 
 
-        return x + y
+        return x, y
 
     def on_epoch_end(self):
 

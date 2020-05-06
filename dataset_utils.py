@@ -1374,8 +1374,8 @@ def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, max
     if model_type != "albert_squad":
         tokenizer_class = tokenizer_class(vocab, do_lower_case=do_lower_case)
         tags = get_add_tokens(do_enumerate=args.do_enumerate)
-        num_added = tokenizer_class.add_tokens(tags)
-        print(f"Added {num_added} tokens")
+        # num_added = tokenizer_class.add_tokens(tags)
+        # print(f"Added {num_added} tokens")
     eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer_class, namefile, verbose, False,
                                                         max_num_samples)
 
