@@ -109,21 +109,22 @@ def main(namemodel,
         do_lower_case=do_lower_case)
 
     print(model_class)
-
+    start_file = 0
     if checkpoint != "":
         config = config_class.from_json_file(model_config)
         mymodel = model_class(config)
 
         # we do this in order to compile the model, otherwise it will not be able to lead the weights
         # mymodel(traingenerator.get_sample_data())
+        
         mymodel(mymodel.dummy_inputs)
         if starting_epoch == 0:
-            startepoch = os.path.split(checkpoint)[-1]
-            startepoch = re.sub('weights.', '', startepoch)
-            startepoch = int(startepoch.split("-")[0])
-            initial_epoch = startepoch
+            start_file = os.path.split(checkpoint)[-1]
+            start_file = re.sub('weights.', '', start_file)
+            start_file = int(start_file.split("-")[0])
+            start_file = start_file
         else:
-            initial_epoch = starting_epoch
+            start_file = starting_epoch
 
         mymodel.load_weights(checkpoint, by_name=True)
         print("checkpoint loaded succefully")
@@ -145,20 +146,39 @@ def main(namemodel,
             start_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["start"], outputs["start"], from_logits=True)
             end_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["end"], outputs["end"], from_logits=True)
             long_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["type"], outputs["long"], from_logits=True)
+            
+            acc_1 = tf.keras.metrics.sparse_categorical_accuracy(
+                batch["start"], outputs["start"]
+            )          
+            acc_2 = tf.keras.metrics.sparse_categorical_accuracy(
+                batch["end"], outputs["end"]
+            ) 
+            acc_3 = tf.keras.metrics.sparse_categorical_accuracy(
+                batch["type"], outputs["long"]
+            )   
+
             loss = ((tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss) / 2.0) +
                 tf.reduce_mean(long_loss)) / 2.0
         grads = tape.gradient(loss, mymodel.trainable_variables)
         adam.apply_gradients(zip(grads, mymodel.trainable_variables))
-        return loss
+        return loss, tf.reduce_mean(acc_1), tf.reduce_mean(acc_2), tf.reduce_mean(acc_3)
 
-    Allfiles = os.listdir(train_dir)  # list of all the files from the directory
-    Allfiles = sorted(Allfiles, key=lambda file1: int(file1[:-6]))
-    dataset = Allfiles.copy()
+    all_files = os.listdir(train_dir)  # list of all the files from the directory
+    all_files = sorted(all_files, key=lambda file1: int(file1[:-6]))
+    allfFile_copy = all_files.copy()
+
+    if start_file > 0:
+        all_files = all_files[start_file:]
+    
 
     global_step = 1
     num_samples = 0
     smooth = 0.99
-    for i, file in enumerate(Allfiles):
+    running_loss = 0.0
+    running_accuracy_1 = 0.0
+    running_accuracy_2 = 0.0
+    running_accuracy_3 = 0.0
+    for i, file in enumerate(all_files):
         # load file 
         train_dataset = dataset_utils.getTokenizedDataset(  tokenizer,
                                                             os.path.join(train_dir, file),
@@ -176,15 +196,18 @@ def main(namemodel,
         train_ds = train_ds.shuffle(buffer_size=100, seed=12)
         train_ds = train_ds.batch(batch_size=batch_size, drop_remainder=True)
         train_ds = iter(train_ds)
-        running_loss = 0.0
+
         epoch_iterator = tqdm(range(num_steps_per_epoch))
         for step in epoch_iterator:
             batch = next(train_ds)
-            loss = train_step(batch)
+            loss, accuracy_1, accuracy_2, accuracy_3 = train_step(batch)
         
             global_step += 1
             num_samples += batch_size
             running_loss = smooth * running_loss + (1. - smooth) * float(loss)
+            running_accuracy_1 =  smooth * running_accuracy_1 + (1. - smooth) * float(accuracy_1)
+            running_accuracy_2 =  smooth * running_accuracy_1 + (1. - smooth) * float(accuracy_2)
+            running_accuracy_3 =  smooth * running_accuracy_1 + (1. - smooth) * float(accuracy_3)
 
             if global_step % checkpoint_interval == 0:
                 # Save model checkpoint
@@ -201,8 +224,9 @@ def main(namemodel,
                     rmtree(fn)
                 
             
-            epoch_iterator.set_postfix({'epoch': '%d/%d' % (i, len(Allfiles)),
-                    'samples': num_samples, 'global_loss': round(running_loss, 4)})
+            epoch_iterator.set_postfix({'file': '%d/%d' % (i, len(all_files)),
+                    'samples': num_samples, 'global_loss': round(running_loss, 4), 
+                    "Accuracy": "%.2f:%.2f:%.2f" % (running_accuracy_1, running_accuracy_2, running_accuracy_3) })
 
 
 
