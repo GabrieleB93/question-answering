@@ -77,6 +77,7 @@ def main(namemodel,
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
         pretrained = 'albert-base-v2'
 
+
     elif namemodel == 'roberta':
         do_lower_case = False
         model_config = 'lo aggiungero in futuro'
@@ -101,7 +102,12 @@ def main(namemodel,
     tf.config.optimizer.set_jit(True)
     tf.config.optimizer.set_experimental_options({'pin_to_host_optimization': False})
 
+
     config_class, model_class, tokenizer_class = MODEL_CLASSES[namemodel]
+    
+    tokenizer = tokenizer_class.from_pretrained(pretrained,
+        do_lower_case=do_lower_case)
+
     print(model_class)
 
     if checkpoint != "":
@@ -154,9 +160,7 @@ def main(namemodel,
     smooth = 0.99
     for file in Allfiles:
         # load file 
-        train_dataset = dataset_utils.getTokenizedDataset(namemodel,
-                                                            vocab,
-                                                            'uncased',
+        train_dataset = dataset_utils.getTokenizedDataset(  tokenizer,
                                                             os.path.join(train_dir, file),
                                                             verbose,
                                                             max_num_samples)

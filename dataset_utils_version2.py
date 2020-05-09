@@ -1337,7 +1337,7 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
     return dataset, crops, entries
 
 
-def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, max_num_samples):
+def getTokenizedDataset(tokenizer, namefile, verbose, max_num_samples):
     """
     La funzione crea input e target per il modello da allenare
 
@@ -1368,6 +1368,7 @@ def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, max
     parser.add_argument('--do_enumerate', action='store_true')
 
     args, _ = parser.parse_known_args()
+    """
     print(model_type)
 
     _, tokenizer_class = MODEL_CLASSES[model_type]
@@ -1376,7 +1377,8 @@ def getTokenizedDataset(model_type, vocab, do_lower_case, namefile, verbose, max
         tags = get_add_tokens(do_enumerate=args.do_enumerate)
         # num_added = tokenizer_class.add_tokens(tags)
         # print(f"Added {num_added} tokens")
-    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer_class, namefile, verbose, False,
+    """
+    eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, namefile, verbose, False,
                                                         max_num_samples)
 
     do = False
