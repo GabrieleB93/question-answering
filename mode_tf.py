@@ -13,11 +13,26 @@ from generator import DataGenerator
 from model_stuff import model_utils as mu
 from model_stuff.TFAlbertForNaturalQuestionAnswering import TFAlbertForNaturalQuestionAnswering
 from model_stuff.TFBertForNaturalQuestionAnswering import TFBertForNaturalQuestionAnswering
+import dataset_utils_version2 as dataset_utils
+from tqdm import tqdm; tqdm.monitor_interval = 0  #
+import glob
+import logging
+from shutil import rmtree, copy
+
+logger = logging.getLogger(__name__)
 
 
-def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_cache=False, verbose=False,
-         evaluate=False,
-         max_num_samples=1_000_000, checkpoint="", log_dir="log/", learning_rate=0.005, starting_epoch=0):
+def main(namemodel, 
+        batch_size, 
+        train_dir, 
+        epoch, checkpoint_dir, do_cache=False, verbose=False,
+        evaluate=False,
+        max_num_samples=1_000_000, 
+        checkpoint="", 
+        log_dir="log/", 
+        learning_rate=0.005, 
+        starting_epoch=0,
+        checkpoint_interval = 1000):
     """
 
     :param do_cache:
@@ -40,10 +55,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
     # logs = "logs\\" + datetime.now().strftime("%Y%m%d-%H%M%S")  # Windows
     if not os.path.exists(logs):
         os.makedirs(logs)
-    tboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logs,
-                                                     histogram_freq=1,
-                                                     update_freq='batch',
-                                                     profile_batch=0)
+
 
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
@@ -53,28 +65,6 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
         # 'roberta': (RobertaConfig, TFRobertaForNaturalQuestionAnswering, RobertaTokenizer),
     }
 
-    # define the losses. We decided to use the Sparse one because our targert are integer and not one hot vector
-    # and from logit because we don't apply the softmax
-    dictionary = True
-    if dictionary:
-        losses = {
-                    "start": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-                    "end": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-                    "long": tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), 
-                }
-        lossWeights = {"start":1.0,"end": 0.5,"long": 0.5}
-    else:
-        losses = ["sparse_categorical_crossentropy",
-        "sparse_categorical_crossentropy",
-        "sparse_categorical_crossentropy", ]
-        lossWeights = [1.0, 0.5, 0.5]
-    '''
-    else:
-        losses = [tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-                tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-                tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True), ]
-        lossWeights = [1.0, 0.5, 0.5]
-    '''
     do_lower_case = 'uncased'
 
     if namemodel == "bert":  # base
@@ -138,50 +128,80 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
 
     adam = tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon=1e-6)
 
-    mymodel.compile(loss=losses,
-                    loss_weights=lossWeights,
-                    metrics=[tf.keras.metrics.SparseCategoricalAccuracy(name='Accuracy')],
-                    optimizer=adam
-                    )
-
-    # We create data generator
-    validation_generator = DataGenerator(val_dir, namemodel, vocab, verbose, batch_size=batch_size,
-                                         validation=True)
-
-    traingenerator = DataGenerator(train_dir, namemodel, vocab, verbose, batch_size=batch_size,
-                                   batch_start=initial_epoch)
-
-    # Training data
-    # since we do an epoch for each file eventually we have to do
-    # epoch*n_files epochs
-    n_files = traingenerator.num_files()
-    epoch = int(epoch) * n_files
-
-    print('\n\nwe have {} files so we will train for {} epochs\n\n'.format(n_files, epoch))
-
-    cb = mu.TimingCallback()  # execution time callback
     filepath = os.path.join(checkpoint_dir, "weights_preTrained.hdf5")
     # filepath = os.path.join(checkpoint_dir, "weights.{epoch:02d}-{loss:.2f}.hdf5")
-    if not os.path.exists(checkpoint_dir):
-        os.makedirs(checkpoint_dir)
-    checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath,
-                                                    save_weights_only=False,
-                                                    verbose=0,
-                                                    save_freq=3)#"epoch")
 
-    # callbacks
-    callbacks_list = [cb, tboard_callback, checkpoint]
+        # this file we implement the training by ourself istead of using keras
+    @tf.function
+    def train_step(batch):
+        with tf.GradientTape() as tape:
+            outputs = mymodel(batch, training=True)
+            start_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["start"], outputs["start"], from_logits=True)
+            end_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["end"], outputs["end"], from_logits=True)
+            long_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["type"], outputs["long"], from_logits=True)
+            loss = ((tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss) / 2.0) +
+                tf.reduce_mean(long_loss)) / 2.0
+        grads = tape.gradient(loss, mymodel.trainable_variables)
+        adam.apply_gradients(zip(grads, mymodel.trainable_variables))
+        return loss
 
-    # fitting
-    mymodel.fit(traingenerator,
-                validation_data=validation_generator,
-                verbose=1,
-                epochs=epoch,
-                callbacks=callbacks_list,
-                initial_epoch=initial_epoch)
+    Allfiles = os.listdir(train_dir)  # list of all the files from the directory
+    Allfiles = sorted(Allfiles, key=lambda file1: int(file1[:-6]))
+    dataset = Allfiles.copy()
 
-    mymodel.summary()
-    print("Time: " + str(cb.logs))
+    global_step = 1
+    num_samples = 0
+    smooth = 0.99
+    for file in Allfiles:
+        # load file 
+        train_dataset = dataset_utils.getTokenizedDataset(namemodel,
+                                                            vocab,
+                                                            'uncased',
+                                                            os.path.join(train_dir, file),
+                                                            verbose,
+                                                            max_num_samples)
+
+        # how many epochs iterations we do in this file
+        num_steps_per_epoch = len(train_dataset['input_ids']) // batch_size
+
+        opt = tf.data.Options()
+        opt.experimental_deterministic = True
+        # use tf.Data in order to create an efficent pipeLine
+        train_ds = tf.data.Dataset.from_tensor_slices(train_dataset).with_options(opt)
+        train_ds = train_ds.repeat()
+        train_ds = train_ds.shuffle(buffer_size=100, seed=12)
+        train_ds = train_ds.batch(batch_size=batch_size, drop_remainder=True)
+        train_ds = iter(train_ds)
+        running_loss = 0.0
+        epoch_iterator = tqdm(range(num_steps_per_epoch))
+        for step in epoch_iterator:
+            batch = next(train_ds)
+            loss = train_step(batch)
+        
+            global_step += 1
+            num_samples += batch_size
+            running_loss = smooth * running_loss + (1. - smooth) * float(loss)
+
+            if global_step % checkpoint_interval == 0:
+                # Save model checkpoint
+                step_str = '%06d' % global_step
+                ckpt_dir = os.path.join(checkpoint_dir, 'checkpoint-{}'.format(step_str))
+                os.makedirs(ckpt_dir, exist_ok=True)
+                weights_fn = os.path.join(ckpt_dir, 'weights.h5')
+                mymodel.save_weights(weights_fn)
+                tokenizer.save_pretrained(ckpt_dir)
+
+                # remove too many checkpoints
+                checkpoint_fns = sorted(glob.glob(os.path.join(checkpoint_dir, 'checkpoint-*')))
+                for fn in checkpoint_fns[:-2]:
+                    rmtree(fn)
+                
+            
+            epoch_iterator.set_postfix({'epoch': '%d/%d' % (epoch, len(Allfiles)),
+                    'samples': num_samples, 'global_loss': round(running_loss, 4)})
+
+
+
 
 
 if __name__ == "__main__":
@@ -197,13 +217,15 @@ if __name__ == "__main__":
                         help="the directory where we want to save the checkpoint")
     parser.add_argument("--checkpoint", default="", type=str, help="The file we will use as checkpoint")
 
-    parser.add_argument('--validation_dir', type=str, default='validationData/',
-                        help='Directory where all the validation data splitted in smaller junks are stored')
     parser.add_argument('--train_dir', type=str, default='TrainData/',
                         help='Directory where all the traing data splitted in smaller junks are stored')
 
     parser.add_argument('--log_dir', type=str, default='log/',
                         help='Directory for tensorboard')
+    
+    parser.add_argument("--checkpoint_interval", type = int, default=1000,
+            help="after how many steps do we have to save the checkpoint")
+
     # Quelli sopra andrebbero tolti perchè preenti anche dentro dataset_utils, di conseguenza andrebbero passati
     # tramite generator -> to fix
     parser.add_argument('--epoch', type=int, default=1)
@@ -218,7 +240,16 @@ if __name__ == "__main__":
     # assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
     print("Training / evaluation parameters %s", args)
 
-    main(args.model, args.batch_size, args.train_dir, args.validation_dir, args.epoch, args.checkpoint_dir,
-         checkpoint=args.checkpoint, do_cache=args.do_cache,
-         evaluate=args.evaluate, verbose=args.verbose, log_dir=args.log_dir, learning_rate=args.learning_rate,
-         starting_epoch=args.starting_epoch)
+    main(args.model, 
+        args.batch_size, 
+        args.train_dir, 
+        args.epoch, 
+        args.checkpoint_dir,
+        checkpoint=args.checkpoint, 
+        do_cache=args.do_cache,
+        evaluate=args.evaluate, 
+        verbose=args.verbose, 
+        log_dir=args.log_dir, 
+        learning_rate=args.learning_rate,
+        starting_epoch=args.starting_epoch,
+        checkpoint_interval = args.checkpoint_interval)

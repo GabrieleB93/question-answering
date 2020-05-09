@@ -17,11 +17,11 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
 
         self.initializer = get_initializer(config.initializer_range)
         self.start = tf.keras.layers.Dense(1,
-            kernel_initializer=self.initializer, name='start')
+            kernel_initializer=self.initializer, name='start', activation = "softmax")
         self.end = tf.keras.layers.Dense(1,
-            kernel_initializer=self.initializer, name='end')
+            kernel_initializer=self.initializer, name='end', activation = "softmax")
         self.long_outputs = tf.keras.layers.Dense(1, kernel_initializer=self.initializer,
-            name='long')
+            name='long', activation = "softmax")
 
     def call(self, inputs, **kwargs):
         outputs = self.albert(inputs, **kwargs)
@@ -30,4 +30,5 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
         start_logits =  tf.squeeze(self.start(sequence_output), -1)
         end_logits =  tf.squeeze(self.end(sequence_output), -1)
         long_logits = tf.squeeze(self.long_outputs(sequence_output), -1)
-        return start_logits, end_logits, long_logits
+        
+        return {"start": start_logits, "end": end_logits, "long":long_logits}

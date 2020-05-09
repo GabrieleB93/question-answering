@@ -85,9 +85,9 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
 
     print("***** Running evaluation *****")
     tokenizer = tokenizer_class(vocab, do_lower_case='uncased')
-    tags = get_add_tokens(do_enumerate=args.do_enumerate)
-    num_added = tokenizer.add_tokens(tags)
-    print(f"Added {num_added} tokens")
+    #tags = get_add_tokens(do_enumerate=args.do_enumerate)
+    #num_added = tokenizer.add_tokens(tags)
+    #print(f"Added {num_added} tokens")
     eval_ds, crops, entries, eval_dataset_length = getDatasetForEvaluation(args, tokenizer, namefile, verbose,
                                                                            max_num_samples, do_cache)
     print("***** Getting results *****")
@@ -114,7 +114,7 @@ if __name__ == "__main__":
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
-    parser.add_argument("--checkpoint", default="checkpoints/weights.h5", type=str, help="The file we will use as checkpoint")
+    parser.add_argument("--checkpoint", default="checkpoints/checkpoints/wheights_server_FULL_1_0.hdf5", type=str, help="The file we will use as checkpoint")
 
     parser.add_argument('--test_dir', type=str, default='TestData/simplified-nq-test.jsonl',
                         help='Directory were all the traing data splitted in smaller junks are stored')
