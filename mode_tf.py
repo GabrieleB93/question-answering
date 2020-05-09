@@ -158,7 +158,7 @@ def main(namemodel,
     global_step = 1
     num_samples = 0
     smooth = 0.99
-    for file in Allfiles:
+    for i, file in enumerate(Allfiles):
         # load file 
         train_dataset = dataset_utils.getTokenizedDataset(  tokenizer,
                                                             os.path.join(train_dir, file),
@@ -201,7 +201,7 @@ def main(namemodel,
                     rmtree(fn)
                 
             
-            epoch_iterator.set_postfix({'epoch': '%d/%d' % (epoch, len(Allfiles)),
+            epoch_iterator.set_postfix({'epoch': '%d/%d' % (i, len(Allfiles)),
                     'samples': num_samples, 'global_loss': round(running_loss, 4)})
 
 
