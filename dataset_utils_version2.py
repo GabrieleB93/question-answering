@@ -1264,6 +1264,12 @@ def toMatrixTensor(crop_or_position, len):
         m[crop_or_position] = 1
     return tf.convert_to_tensor(m, dtype=tf.int32)
 
+def set_value(crop):
+    if crop.long_is_impossible and crop.short_is_impossible:
+        return 0
+    else:
+        return 1
+
 
 def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_samples, do_cache=False):
     """
@@ -1332,8 +1338,11 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
         all_start_positions = tf.convert_to_tensor([f.start_position for f in crops], dtype=tf.int32)
         all_end_positions = tf.convert_to_tensor([f.end_position for f in crops], dtype=tf.int32)
         all_long_positions = tf.convert_to_tensor([f.long_position for f in crops], dtype=tf.int32)
+        all_type_answer = tf.convert_to_tensor([set_value(f) for f in crops], dtype=tf.int32)
+
+
         dataset = [all_input_ids, all_attention_mask, all_token_type_ids,
-                   all_start_positions, all_end_positions, all_long_positions]
+                   all_start_positions, all_end_positions, all_long_positions, all_type_answer]
 
     return dataset, crops, entries
 
@@ -1398,7 +1407,8 @@ def getTokenizedDataset(tokenizer, namefile, verbose, max_num_samples):
         'token_type_ids': eval_dataset[2],
         'start': eval_dataset[3],
         'end': eval_dataset[4],
-        'type': eval_dataset[5]
+        'long': eval_dataset[5],
+        'answerable': eval_dataset[6]
     }
     return ret
 

@@ -17,18 +17,26 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
 
         self.initializer = get_initializer(config.initializer_range)
         self.start = tf.keras.layers.Dense(1,
-            kernel_initializer=self.initializer, name='start', activation = "softmax")
+            kernel_initializer=self.initializer, name='start')
         self.end = tf.keras.layers.Dense(1,
-            kernel_initializer=self.initializer, name='end', activation = "softmax")
+            kernel_initializer=self.initializer, name='end')
         self.long_outputs = tf.keras.layers.Dense(1, kernel_initializer=self.initializer,
-            name='long', activation = "softmax")
+            name='long')
+
+        self.answerable = tf.keras.layers.Dense(1, kernel_initializer=self.initializer,
+            name='answerable', activation = "sigmoid")
 
     def call(self, inputs, **kwargs):
         outputs = self.albert(inputs, **kwargs)
         sequence_output = outputs[0]
+ 
+        # tf.print(outputs[0].shape) (batch, len->0, hidden) 1->0
+        # tf.print(outputs[1].shape) (batch, hidden_size)
 
         start_logits =  tf.squeeze(self.start(sequence_output), -1)
         end_logits =  tf.squeeze(self.end(sequence_output), -1)
         long_logits = tf.squeeze(self.long_outputs(sequence_output), -1)
-        
-        return {"start": start_logits, "end": end_logits, "long":long_logits}
+
+        answerable = tf.squeeze(self.answerable(outputs[1]), -1)
+                
+        return {"start": start_logits, "end": end_logits, "long":long_logits, "answerable": answerable}

@@ -142,27 +142,41 @@ def main(namemodel,
 
 
         # this file we implement the training by ourself istead of using keras
-    @tf.function
+    #@tf.function
     def train_step(batch):
         with tf.GradientTape() as tape:
-            outputs = mymodel(batch, training=True)
+            input_ley =  ['input_ids','attention_mask', 'token_type_ids']
+            outputs = mymodel({ k: batch[k] for k in input_ley } , training=True)
             
+            # (batch_size, 1).* type_answer -> (batch_size, 1)
+
+            type_loss = tf.keras.losses.binary_crossentropy(batch["answerable"], outputs["answerable"])
+
             start_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["start"], outputs["start"], from_logits=True)
             end_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["end"], outputs["end"], from_logits=True)
-            long_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["type"], outputs["long"], from_logits=True)
+            long_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["long"], outputs["long"], from_logits=True)
             
+            # Idea: if not answerable we not optimize for the start, end long losses
+
+            type_loss = tf.keras.metrics.binary_accuracy(batch["answerable"], outputs["answerable"]) 
+
+            start_loss = tf.math.multiply(start_loss,tf.cast(batch["answerable"], float))
+            end_loss = tf.math.multiply(end_loss, tf.cast(batch["answerable"], float))
+            long_loss = tf.math.multiply(long_loss, tf.cast(batch["answerable"], float))
+
+
             acc_1 = tf.keras.metrics.sparse_categorical_accuracy(
                 batch["start"], outputs["start"])          
             acc_2 = tf.keras.metrics.sparse_categorical_accuracy(
                 batch["end"], outputs["end"]) 
             acc_3 = tf.keras.metrics.sparse_categorical_accuracy(
-                batch["type"], outputs["long"])   
+                batch["long"], outputs["long"])  
 
             loss = ((tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss) / 2.0) +
-                tf.reduce_mean(long_loss)) / 2.0
+                tf.reduce_mean(long_loss) ) / 2.0 + tf.reduce_mean(type_loss) / 2.0
         grads = tape.gradient(loss, mymodel.trainable_variables)
         adam.apply_gradients(zip(grads, mymodel.trainable_variables))
-        return loss, tf.reduce_mean(acc_1), tf.reduce_mean(acc_2), tf.reduce_mean(acc_3)
+        return loss, tf.reduce_mean(acc_1), tf.reduce_mean(acc_2), tf.reduce_mean(acc_3),0 # TODO  tf.reduce_mean(type_loss)
 
     all_files = os.listdir(train_dir)  # list of all the files from the directory
     all_files = sorted(all_files, key=lambda file1: int(file1[:-6]))
@@ -182,6 +196,7 @@ def main(namemodel,
     running_accuracy_1 = 0.0
     running_accuracy_2 = 0.0
     running_accuracy_3 = 0.0
+    running_type_loss = 0.0
     for i, file in enumerate(all_files):
         # load file 
         train_dataset = dataset_utils.getTokenizedDataset(  tokenizer,
@@ -204,14 +219,15 @@ def main(namemodel,
         epoch_iterator = tqdm(range(num_steps_per_epoch))
         for step in epoch_iterator:
             batch = next(train_ds)
-            loss, accuracy_1, accuracy_2, accuracy_3 = train_step(batch)
+            loss, accuracy_1, accuracy_2, accuracy_3, type_loss = train_step(batch)
         
             global_step += 1
             num_samples += batch_size
             running_loss = smooth * running_loss + (1. - smooth) * float(loss)
             running_accuracy_1 =  smooth_acc * running_accuracy_1 + (1. - smooth_acc) * float(accuracy_1)
-            running_accuracy_2 =  smooth_acc * running_accuracy_1 + (1. - smooth_acc) * float(accuracy_2)
-            running_accuracy_3 =  smooth_acc * running_accuracy_1 + (1. - smooth_acc) * float(accuracy_3)
+            running_accuracy_2 =  smooth_acc * running_accuracy_2 + (1. - smooth_acc) * float(accuracy_2)
+            running_accuracy_3 =  smooth_acc * running_accuracy_3 + (1. - smooth_acc) * float(accuracy_3)
+            running_type_loss = smooth_acc * running_type_loss + (1. - smooth_acc) * float(type_loss)
 
             if global_step % checkpoint_interval == 0:
                 # Save model checkpoint
@@ -230,7 +246,7 @@ def main(namemodel,
             
             epoch_iterator.set_postfix({'file': '%d/%d' % (i, len(all_files)),
                     'samples': num_samples, 'global_loss': round(running_loss, 4), 
-                    "Accuracy": "%.2f:%.2f:%.2f" % (running_accuracy_1, running_accuracy_2, running_accuracy_3) })
+                    "Accuracy": "%.2f:%.2f:%.2f:%.2f" % (running_accuracy_1, running_accuracy_2, running_accuracy_3, running_type_loss) })
 
 
 
@@ -262,7 +278,7 @@ if __name__ == "__main__":
     # tramite generator -> to fix
     parser.add_argument('--epoch', type=int, default=1)
     parser.add_argument('--model', type=str, default='albert')
-    parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--batch_size', type=int, default=2)
     parser.add_argument('--do_cache', type=bool, default=False)
     parser.add_argument('--evaluate', type=bool, default=False)
     parser.add_argument('--verbose', type=bool, default=False)
