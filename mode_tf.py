@@ -82,7 +82,7 @@ def main(namemodel,
         do_lower_case = False
         model_config = 'lo aggiungero in futuro'
         vocab = 'lo aggiungero in futuro'
-        pretrained = ''
+        pretrained = 'roberta-'
 
     elif namemodel == "albert_squad":
         model_config = 'input/transformers_cache/albert_base_v2_squad.json'
@@ -108,6 +108,11 @@ def main(namemodel,
     tokenizer = tokenizer_class.from_pretrained(pretrained,
         do_lower_case=do_lower_case)
 
+    """
+    tags = dataset_utils.get_add_tokens(do_enumerate=True)
+    num_added = tokenizer.add_tokens(tags)
+    print(f"Added {num_added} tokens")
+    """
     print(model_class)
     start_file = 0
     if checkpoint != "":

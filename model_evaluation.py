@@ -114,7 +114,7 @@ if __name__ == "__main__":
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
-    parser.add_argument("--checkpoint", default="checkpoints/checkpoints/wheights_server_FULL_1_0.hdf5", type=str, help="The file we will use as checkpoint")
+    parser.add_argument("--checkpoint", default="checkpoints/checkpoint-092000/weights.h5", type=str, help="The file we will use as checkpoint")
 
     parser.add_argument('--test_dir', type=str, default='TestData/simplified-nq-test.jsonl',
                         help='Directory were all the traing data splitted in smaller junks are stored')
