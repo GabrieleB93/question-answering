@@ -146,19 +146,17 @@ def main(namemodel,
     def train_step(batch):
         with tf.GradientTape() as tape:
             outputs = mymodel(batch, training=True)
+            
             start_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["start"], outputs["start"], from_logits=True)
             end_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["end"], outputs["end"], from_logits=True)
             long_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["type"], outputs["long"], from_logits=True)
             
             acc_1 = tf.keras.metrics.sparse_categorical_accuracy(
-                batch["start"], outputs["start"]
-            )          
+                batch["start"], outputs["start"])          
             acc_2 = tf.keras.metrics.sparse_categorical_accuracy(
-                batch["end"], outputs["end"]
-            ) 
+                batch["end"], outputs["end"]) 
             acc_3 = tf.keras.metrics.sparse_categorical_accuracy(
-                batch["type"], outputs["long"]
-            )   
+                batch["type"], outputs["long"])   
 
             loss = ((tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss) / 2.0) +
                 tf.reduce_mean(long_loss)) / 2.0
@@ -249,7 +247,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--checkpoint_dir", default="checkpoints/", type=str,
                         help="the directory where we want to save the checkpoint")
-    parser.add_argument("--checkpoint", default="", type=str, help="The file we will use as checkpoint")
+    parser.add_argument("--checkpoint", default="checkpoints/checkpoint-092000/weights.h5", type=str, help="The file we will use as checkpoint")
 
     parser.add_argument('--train_dir', type=str, default='TrainData/',
                         help='Directory where all the traing data splitted in smaller junks are stored')
@@ -268,7 +266,7 @@ if __name__ == "__main__":
     parser.add_argument('--do_cache', type=bool, default=False)
     parser.add_argument('--evaluate', type=bool, default=False)
     parser.add_argument('--verbose', type=bool, default=False)
-    parser.add_argument('--starting_epoch', type=int, default=0)
+    parser.add_argument('--starting_epoch', type=int, default=1)
 
     args, _ = parser.parse_known_args()
     # assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'

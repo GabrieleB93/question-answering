@@ -1293,6 +1293,7 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
 
     else:
         print("NOT loading crops")
+        print("\n\n IMPORTANTE p_keep impossible= ", args.p_keep_impossible, "\n\n")
         entries = convert_nq_to_squad(verbose, args=args_nq, is_train=not evaluate)
         examples_gen = read_nq_examples(entries, is_training=not evaluate)
         crops = convert_examples_to_crops(examples_gen=examples_gen,
@@ -1303,7 +1304,7 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
                                           is_training=not evaluate,
                                           cls_token_segment_id=0,
                                           pad_token_segment_id=0,
-                                          p_keep_impossible=args.p_keep_impossible if not evaluate else 1.0)
+                                          p_keep_impossible=args.p_keep_impossible )#if not evaluate else 1.0)
         if do_cache:
             with open(cached_crops_fn, "wb") as f:
                 pickle.dump(crops, f)
@@ -1363,7 +1364,7 @@ def getTokenizedDataset(tokenizer, namefile, verbose, max_num_samples):
     parser.add_argument("--verbose_logging", action='store_true')
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--p_keep_impossible', type=float,
-                        default=0.1, help="The fraction of impossible"
+                        default=0.03, help="The fraction of impossible"
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
