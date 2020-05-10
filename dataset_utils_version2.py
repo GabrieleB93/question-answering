@@ -1398,7 +1398,7 @@ def getTokenizedDataset(tokenizer, namefile, verbose, max_num_samples):
         'token_type_ids': eval_dataset[2],
         'start': eval_dataset[3],
         'end': eval_dataset[4],
-        'type': eval_dataset[5]
+        'long': eval_dataset[5],
     }
     return ret
 

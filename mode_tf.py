@@ -149,14 +149,14 @@ def main(namemodel,
             
             start_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["start"], outputs["start"], from_logits=True)
             end_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["end"], outputs["end"], from_logits=True)
-            long_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["type"], outputs["long"], from_logits=True)
+            long_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["long"], outputs["long"], from_logits=True)
             
             acc_1 = tf.keras.metrics.sparse_categorical_accuracy(
                 batch["start"], outputs["start"])          
             acc_2 = tf.keras.metrics.sparse_categorical_accuracy(
                 batch["end"], outputs["end"]) 
             acc_3 = tf.keras.metrics.sparse_categorical_accuracy(
-                batch["type"], outputs["long"])   
+                batch["long"], outputs["long"])   
 
             loss = ((tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss) / 2.0) +
                 tf.reduce_mean(long_loss)) / 2.0

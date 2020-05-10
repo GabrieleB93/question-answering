@@ -17,11 +17,11 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
 
         self.initializer = get_initializer(config.initializer_range)
         self.start = tf.keras.layers.Dense(1,
-            kernel_initializer=self.initializer, name='start', activation = "softmax")
+            kernel_initializer=self.initializer, name='start')
         self.end = tf.keras.layers.Dense(1,
-            kernel_initializer=self.initializer, name='end', activation = "softmax")
+            kernel_initializer=self.initializer, name='end')
         self.long_outputs = tf.keras.layers.Dense(1, kernel_initializer=self.initializer,
-            name='long', activation = "softmax")
+            name='long')
 
     def call(self, inputs, **kwargs):
         outputs = self.albert(inputs, **kwargs)
