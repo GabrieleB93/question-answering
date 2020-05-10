@@ -247,7 +247,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--checkpoint_dir", default="checkpoints/", type=str,
                         help="the directory where we want to save the checkpoint")
-    parser.add_argument("--checkpoint", default="checkpoints/checkpoint-092000/weights.h5", type=str, help="The file we will use as checkpoint")
+    parser.add_argument("--checkpoint", default="", type=str, help="The file we will use as checkpoint")
 
     parser.add_argument('--train_dir', type=str, default='TrainData/',
                         help='Directory where all the traing data splitted in smaller junks are stored')
@@ -266,7 +266,7 @@ if __name__ == "__main__":
     parser.add_argument('--do_cache', type=bool, default=False)
     parser.add_argument('--evaluate', type=bool, default=False)
     parser.add_argument('--verbose', type=bool, default=False)
-    parser.add_argument('--starting_epoch', type=int, default=1)
+    parser.add_argument('--starting_epoch', type=int, default=0)
 
     args, _ = parser.parse_known_args()
     # assert args.model_type not in ('xlnet', 'xlm'), f'Unsupported model_type: {args.model_type}'
