@@ -30,10 +30,7 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
 
     if not os.path.exists(logs):
         os.makedirs(logs)
-    tboard_callback = tf.keras.callbacks.TensorBoard(log_dir=logs,
-                                                     histogram_freq=1,
-                                                     update_freq='batch',
-                                                     profile_batch=0)
+
 
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
@@ -85,6 +82,9 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
 
     print("***** Running evaluation *****")
     tokenizer = tokenizer_class(vocab, do_lower_case='uncased')
+
+    tokenizer = tokenizer_class.from_pretrained("albert-base-v2",
+        do_lower_case=do_lower_case)
     #tags = get_add_tokens(do_enumerate=args.do_enumerate)
     #num_added = tokenizer.add_tokens(tags)
     #print(f"Added {num_added} tokens")

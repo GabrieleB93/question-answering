@@ -140,8 +140,6 @@ def main(namemodel,
 
     adam = tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon=1e-6)
 
-    filepath = os.path.join(checkpoint_dir, "weights_preTrained.hdf5")
-    # filepath = os.path.join(checkpoint_dir, "weights.{epoch:02d}-{loss:.2f}.hdf5")
 
         # this file we implement the training by ourself istead of using keras
     @tf.function
@@ -173,12 +171,15 @@ def main(namemodel,
     allfFile_copy = all_files.copy()
 
     if start_file > 0:
+        print("since we loaded drom a checkpoints we had this files: ",all_files, start_file)
         all_files = all_files[start_file:]
+        print("since we loaded drom a checkpoints we have this files: ",all_files, start_file)
     
 
     global_step = 1
     num_samples = 0
     smooth = 0.99
+    smooth_acc = 0.3
     running_loss = 0.0
     running_accuracy_1 = 0.0
     running_accuracy_2 = 0.0
@@ -210,9 +211,9 @@ def main(namemodel,
             global_step += 1
             num_samples += batch_size
             running_loss = smooth * running_loss + (1. - smooth) * float(loss)
-            running_accuracy_1 =  smooth * running_accuracy_1 + (1. - smooth) * float(accuracy_1)
-            running_accuracy_2 =  smooth * running_accuracy_1 + (1. - smooth) * float(accuracy_2)
-            running_accuracy_3 =  smooth * running_accuracy_1 + (1. - smooth) * float(accuracy_3)
+            running_accuracy_1 =  smooth_acc * running_accuracy_1 + (1. - smooth_acc) * float(accuracy_1)
+            running_accuracy_2 =  smooth_acc * running_accuracy_1 + (1. - smooth_acc) * float(accuracy_2)
+            running_accuracy_3 =  smooth_acc * running_accuracy_1 + (1. - smooth_acc) * float(accuracy_3)
 
             if global_step % checkpoint_interval == 0:
                 # Save model checkpoint
