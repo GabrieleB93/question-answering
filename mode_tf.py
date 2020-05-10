@@ -158,7 +158,7 @@ def main(namemodel,
             
             # Idea: if not answerable we not optimize for the start, end long losses
 
-            type_loss = tf.keras.metrics.binary_accuracy(batch["answerable"], outputs["answerable"]) 
+            type_loss = tf.keras.metrics.binary_accuracy(tf.cast(batch["answerable"], float), outputs["answerable"], threshold=0.5) 
 
             start_loss = tf.math.multiply(start_loss,tf.cast(batch["answerable"], float))
             end_loss = tf.math.multiply(end_loss, tf.cast(batch["answerable"], float))
@@ -176,7 +176,7 @@ def main(namemodel,
                 tf.reduce_mean(long_loss) ) / 2.0 + tf.reduce_mean(type_loss) / 2.0
         grads = tape.gradient(loss, mymodel.trainable_variables)
         adam.apply_gradients(zip(grads, mymodel.trainable_variables))
-        return loss, tf.reduce_mean(acc_1), tf.reduce_mean(acc_2), tf.reduce_mean(acc_3),0 # TODO  tf.reduce_mean(type_loss)
+        return loss, tf.reduce_mean(acc_1), tf.reduce_mean(acc_2), tf.reduce_mean(acc_3), tf.reduce_mean(type_loss)
 
     all_files = os.listdir(train_dir)  # list of all the files from the directory
     all_files = sorted(all_files, key=lambda file1: int(file1[:-6]))
