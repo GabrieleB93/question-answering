@@ -136,13 +136,14 @@ def main(namemodel,
     else:
         initial_epoch = 0
         config = config_class.from_pretrained(model_config)
+        #mymodel = model_class(config, training = True)
         mymodel = model_class.from_pretrained(pretrained, config=config)
 
     adam = tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon=1e-6)
 
 
         # this file we implement the training by ourself istead of using keras
-    #@tf.function
+    @tf.function
     def train_step(batch):
         with tf.GradientTape() as tape:
             input_ley =  ['input_ids','attention_mask', 'token_type_ids']
@@ -158,11 +159,6 @@ def main(namemodel,
             
             # Idea: if not answerable we not optimize for the start, end long losses
 
-            type_loss = tf.keras.metrics.binary_accuracy(tf.cast(batch["answerable"], float), outputs["answerable"], threshold=0.5) 
-
-            start_loss = tf.math.multiply(start_loss,tf.cast(batch["answerable"], float))
-            end_loss = tf.math.multiply(end_loss, tf.cast(batch["answerable"], float))
-            long_loss = tf.math.multiply(long_loss, tf.cast(batch["answerable"], float))
 
 
             acc_1 = tf.keras.metrics.sparse_categorical_accuracy(
@@ -174,6 +170,13 @@ def main(namemodel,
 
             loss = ((tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss) / 2.0) +
                 tf.reduce_mean(long_loss) ) / 2.0 + tf.reduce_mean(type_loss) / 2.0
+
+        type_loss = tf.keras.metrics.binary_accuracy(tf.cast(batch["answerable"], float), outputs["answerable"], threshold=0.5) 
+
+        start_loss = tf.math.multiply(start_loss,tf.cast(batch["answerable"], float))
+        end_loss = tf.math.multiply(end_loss, tf.cast(batch["answerable"], float))
+        long_loss = tf.math.multiply(long_loss, tf.cast(batch["answerable"], float))
+
         grads = tape.gradient(loss, mymodel.trainable_variables)
         adam.apply_gradients(zip(grads, mymodel.trainable_variables))
         return loss, tf.reduce_mean(acc_1), tf.reduce_mean(acc_2), tf.reduce_mean(acc_3), tf.reduce_mean(type_loss)
@@ -191,7 +194,7 @@ def main(namemodel,
     global_step = 1
     num_samples = 0
     smooth = 0.99
-    smooth_acc = 0.3
+    smooth_acc = 0.66
     running_loss = 0.0
     running_accuracy_1 = 0.0
     running_accuracy_2 = 0.0

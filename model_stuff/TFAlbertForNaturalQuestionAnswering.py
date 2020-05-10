@@ -29,6 +29,8 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
     def call(self, inputs, **kwargs):
         outputs = self.albert(inputs, **kwargs)
         sequence_output = outputs[0]
+        pooling_layer = sequence_output[:,0,:]#outputs[1]
+        
  
         # tf.print(outputs[0].shape) (batch, len->0, hidden) 1->0
         # tf.print(outputs[1].shape) (batch, hidden_size)
@@ -37,6 +39,6 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
         end_logits =  tf.squeeze(self.end(sequence_output), -1)
         long_logits = tf.squeeze(self.long_outputs(sequence_output), -1)
 
-        answerable = tf.squeeze(self.answerable(outputs[1]), -1)
+        answerable = tf.squeeze(self.answerable(pooling_layer), -1)
                 
         return {"start": start_logits, "end": end_logits, "long":long_logits, "answerable": answerable}
