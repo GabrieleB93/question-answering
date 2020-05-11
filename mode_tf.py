@@ -75,7 +75,8 @@ def main(namemodel,
     elif namemodel == 'albert':  # base v2
         model_config = 'input/transformers_cache/albert_base_v2.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
-        pretrained = 'albert-base-v2'
+        # this is the only usefull 
+        pretrained = 'albert-large-v2'
 
 
     elif namemodel == 'roberta':
@@ -95,7 +96,7 @@ def main(namemodel,
         model_config = 'input/transformers_cache/albert_base_v2.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
         namemodel = "albert"
-        pretrained = 'albert-base-v2'
+        pretrained = 'albert-large-v2'
 
     # Set XLA
     # https://github.com/kamalkraj/ALBERT-TF2.0/blob/8d0cc211361e81a648bf846_d8ec84225273db0e4/run_classifer.py#L136
@@ -108,11 +109,8 @@ def main(namemodel,
     tokenizer = tokenizer_class.from_pretrained(pretrained,
         do_lower_case=do_lower_case)
 
-    """
-    tags = dataset_utils.get_add_tokens(do_enumerate=True)
-    num_added = tokenizer.add_tokens(tags)
-    print(f"Added {num_added} tokens")
-    """
+    
+
     print(model_class)
     start_file = 0
     if checkpoint != "":
@@ -135,11 +133,18 @@ def main(namemodel,
         print("checkpoint loaded succefully")
     else:
         initial_epoch = 0
-        config = config_class.from_pretrained(model_config)
+        config = config_class.from_pretrained(pretrained)
         mymodel = model_class.from_pretrained(pretrained, config=config)
 
-    adam = tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon=1e-6)
-
+    """
+    tags = dataset_utils.get_add_tokens(do_enumerate=True)
+    num_added = tokenizer.add_tokens(tags)
+    print(f"Added {num_added} tokens")
+    mymodel.resize_token_embeddings(len(tokenizer))  # Notice: resize_token_embeddings expect to receive the full size of the new vocabulary, i.e. the length of the tokenizer.
+    """
+    
+    #adam = tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon=1e-6)
+    adam = tf.optimizers.Adam(ls = learning_rate)
 
         # this file we implement the training by ourself istead of using keras
     @tf.function
