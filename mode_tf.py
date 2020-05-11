@@ -137,7 +137,9 @@ def main(namemodel,
         initial_epoch = 0
         config = config_class.from_pretrained(model_config)
         #mymodel = model_class(config, training = True)
+        print("\nModel from pretrained")
         mymodel = model_class.from_pretrained(pretrained, config=config)
+        print("model loaded succefully")
 
     adam = tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon=1e-6)
 
@@ -158,8 +160,9 @@ def main(namemodel,
             long_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["long"], outputs["long"], from_logits=True)
             
             # Idea: if not answerable we not optimize for the start, end long losses
-
-
+            start_loss = tf.math.multiply(start_loss,tf.cast(batch["answerable"], float))
+            end_loss = tf.math.multiply(end_loss, tf.cast(batch["answerable"], float))
+            long_loss = tf.math.multiply(long_loss, tf.cast(batch["answerable"], float))
 
             acc_1 = tf.keras.metrics.sparse_categorical_accuracy(
                 batch["start"], outputs["start"])          
@@ -168,14 +171,16 @@ def main(namemodel,
             acc_3 = tf.keras.metrics.sparse_categorical_accuracy(
                 batch["long"], outputs["long"])  
 
+            acc_1 = tf.math.multiply(acc_1,tf.cast(batch["answerable"], float))
+            acc_2 = tf.math.multiply(acc_2,tf.cast(batch["answerable"], float))
+            acc_3 = tf.math.multiply(acc_3,tf.cast(batch["answerable"], float))
+
             loss = ((tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss) / 2.0) +
                 tf.reduce_mean(long_loss) ) / 2.0 + tf.reduce_mean(type_loss) / 2.0
 
         type_loss = tf.keras.metrics.binary_accuracy(tf.cast(batch["answerable"], float), outputs["answerable"], threshold=0.5) 
 
-        start_loss = tf.math.multiply(start_loss,tf.cast(batch["answerable"], float))
-        end_loss = tf.math.multiply(end_loss, tf.cast(batch["answerable"], float))
-        long_loss = tf.math.multiply(long_loss, tf.cast(batch["answerable"], float))
+
 
         grads = tape.gradient(loss, mymodel.trainable_variables)
         adam.apply_gradients(zip(grads, mymodel.trainable_variables))
