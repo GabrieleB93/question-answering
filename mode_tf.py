@@ -144,7 +144,7 @@ def main(namemodel,
     """
     
     #adam = tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon=1e-6)
-    adam = tf.optimizers.Adam(ls = learning_rate)
+    adam = tf.optimizers.Adam(lr = learning_rate)
 
         # this file we implement the training by ourself istead of using keras
     @tf.function
