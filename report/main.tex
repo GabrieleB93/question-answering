@@ -186,10 +186,17 @@ The broad architecture of \nomefico is shown in \Cref{fig:broad_architecture}.
 
 \begin{figure}[ht!]
     \centering
-    \includegraphics[scale=.3]{pics/meanEvents.pdf}
-    \caption{Mean of each event happened during one match.}
-    \label{fig:meanEvents}
+    \includegraphics[scale=.9]{pics/broad_architecture.png}
+    \caption{.}
+    \label{fig:broad_architecture}
 \end{figure}
+
+We decided to tackle the problem creating a stack of two neural networks, forming a two-layer architecture. The first layer was built using BERT's \cite{devlin2018bert} checkpoints, while the second layer is a neural networks that uses BERT's embeddings and the Natural Questions (NQ) \cite{kwiatowski} dataset \footnote{Some qualities of NQ are the following: (1) the questions were formulated by people out of genuine curiosity or out of need for an answer to complete another task, (2) the questions were formulated by people before they had seen the document that might contain the answer, (3) the documents in which the answer is to be found are much longer than the documents used in some of the existing question answering challenges.} with the aim of obtaining the start position and end position of the answer in the given paragraph.
+
+Let us dig into details a bit more and explain how the BERT layer works.
+
+
+
 At this point, we assume that the system receives as input two textual items, the first one is the question and the second one is the paragraph that is supposed to contain the answer
 
 \todo[inline]{short?long?}
@@ -224,7 +231,7 @@ Use a binary classification layer to check if the answer is ``plausible'' (i.e. 
 %%%%%%%%%%%%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%%%%%%%%%%%
 \subsection{Boh}
 
-\bibliographystyle{plain}
+\bibliographystyle{unsrt}
 \bibliography{references}
 
 \end{document} 
