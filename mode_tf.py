@@ -88,8 +88,7 @@ def main(namemodel,
     elif namemodel == "albert_squad":
         model_config = 'input/transformers_cache/albert_base_v2_squad.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
-        tokenizer = AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2")
-        pretrained = ''
+        pretrained = 'twmkn9/albert-large-v2-squad2'
 
     else:
         # di default metto il base albert
