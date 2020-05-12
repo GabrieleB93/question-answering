@@ -163,6 +163,8 @@ def main(namemodel,
 
             loss = ((tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss) / 2.0) +
                 tf.reduce_mean(long_loss)) / 2.0
+            
+            
         grads = tape.gradient(loss, mymodel.trainable_variables)
         adam.apply_gradients(zip(grads, mymodel.trainable_variables))
         return loss, tf.reduce_mean(acc_1), tf.reduce_mean(acc_2), tf.reduce_mean(acc_3)
@@ -207,7 +209,17 @@ def main(namemodel,
         epoch_iterator = tqdm(range(num_steps_per_epoch))
         for step in epoch_iterator:
             batch = next(train_ds)
+            # Create writer
+            writer = tf.summary.create_file_writer(logs)
+
             loss, accuracy_1, accuracy_2, accuracy_3 = train_step(batch)
+            #print('===================================')
+            #print(tf.reshape(loss, []).numpy())
+            with writer.as_default():
+                tf.summary.scalar('loss', loss, step=step)
+                tf.summary.scalar('acc_1', accuracy_1, step=step)
+                tf.summary.scalar('acc_2', accuracy_2, step=step)
+                tf.summary.scalar('acc_3', accuracy_3, step=step)
         
             global_step += 1
             num_samples += batch_size
