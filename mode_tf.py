@@ -60,8 +60,7 @@ def main(namemodel,
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'albert': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AlbertTokenizer),  # V2
-        'albert_squad': (AlbertConfig, TFAlbertForNaturalQuestionAnswering,
-                         AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2"))
+        'albert_squad': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AutoTokenizer)
         # 'roberta': (RobertaConfig, TFRobertaForNaturalQuestionAnswering, RobertaTokenizer),
     }
 
@@ -70,7 +69,7 @@ def main(namemodel,
     if namemodel == "bert":  # base
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
         vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
-        pretrained = 'bert-base-v2'
+        pretrained = 'bert-base-uncased'
 
     elif namemodel == 'albert':  # base v2
         model_config = 'input/transformers_cache/albert_base_v2.json'
@@ -88,7 +87,7 @@ def main(namemodel,
     elif namemodel == "albert_squad":
         model_config = 'input/transformers_cache/albert_base_v2_squad.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
-        pretrained = 'twmkn9/albert-large-v2-squad2'
+        pretrained = 'twmkn9/albert-base-v2-squad2'#"ktrapeznikov/albert-xlarge-v2-squad-v2"
 
     else:
         # di default metto il base albert

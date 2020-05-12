@@ -28,4 +28,4 @@ class TFBertForNaturalQuestionAnswering(TFBertPreTrainedModel):
 
         long_logits = tf.squeeze(self.long_outputs(sequence_output), -1)
 
-        return start_logits, end_logits, long_logits
+        return {"start": start_logits, "end": end_logits, "long":long_logits}
