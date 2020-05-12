@@ -21,6 +21,16 @@ from shutil import rmtree, copy
 
 logger = logging.getLogger(__name__)
 
+def partial_accuracy(true_value, logits):
+    acc_1 = tf.keras.metrics.sparse_categorical_accuracy(
+                true_value, logits)    
+    # don't count if the true value is the start of the string, because it means that it 
+    # has no answer      
+    acc_1 = tf.math.multiply(acc_1, tf.cast(tf.cast(true_value, bool), float))
+    num = tf.math.reduce_sum(acc_1)
+    den = tf.math.maximum(tf.math.reduce_sum(tf.cast(tf.cast(true_value, bool), float)),tf.keras.backend.epsilon())
+
+    return num/den
 
 def main(namemodel, 
         batch_size, 
@@ -154,12 +164,9 @@ def main(namemodel,
             end_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["end"], outputs["end"], from_logits=True)
             long_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["long"], outputs["long"], from_logits=True)
             
-            acc_1 = tf.keras.metrics.sparse_categorical_accuracy(
-                batch["start"], outputs["start"])          
-            acc_2 = tf.keras.metrics.sparse_categorical_accuracy(
-                batch["end"], outputs["end"]) 
-            acc_3 = tf.keras.metrics.sparse_categorical_accuracy(
-                batch["long"], outputs["long"])   
+            acc_1 = partial_accuracy( batch["start"], outputs["start"])  #tf.keras.metrics.sparse_categorical_accuracy(batch["start"], outputs["start"])          
+            acc_2 = partial_accuracy( batch["end"], outputs["end"]) #tf.keras.metrics.sparse_categorical_accuracy(batch["end"], outputs["end"]) 
+            acc_3 = partial_accuracy( batch["long"], outputs["long"]) #tf.keras.metrics.sparse_categorical_accuracy(batch["long"], outputs["long"])   
 
             loss = ((tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss) / 2.0) +
                 tf.reduce_mean(long_loss)) / 2.0
