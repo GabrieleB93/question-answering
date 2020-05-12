@@ -223,10 +223,10 @@ def main(namemodel,
             #print('===================================')
             #print(tf.reshape(loss, []).numpy())
             with writer.as_default():
-                tf.summary.scalar('loss', loss, step=step)
-                tf.summary.scalar('acc_1', accuracy_1, step=step)
-                tf.summary.scalar('acc_2', accuracy_2, step=step)
-                tf.summary.scalar('acc_3', accuracy_3, step=step)
+                tf.summary.scalar('loss', loss, step=global_step)
+                tf.summary.scalar('acc_1', accuracy_1, step=global_step)
+                tf.summary.scalar('acc_2', accuracy_2, step=global_step)
+                tf.summary.scalar('acc_3', accuracy_3, step=global_step)
         
             global_step += 1
             num_samples += batch_size
