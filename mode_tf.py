@@ -168,13 +168,15 @@ def main(namemodel,
             acc_2 = partial_accuracy( batch["end"], outputs["end"]) #tf.keras.metrics.sparse_categorical_accuracy(batch["end"], outputs["end"]) 
             acc_3 = partial_accuracy( batch["long"], outputs["long"]) #tf.keras.metrics.sparse_categorical_accuracy(batch["long"], outputs["long"])   
 
+
+            variance = tf.math.reduce_max( outputs["start"]) -  tf.math.reduce_min( outputs["start"])
             loss = ((tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss) / 2.0) +
                 tf.reduce_mean(long_loss)) / 2.0
             
             
         grads = tape.gradient(loss, mymodel.trainable_variables)
         adam.apply_gradients(zip(grads, mymodel.trainable_variables))
-        return loss, tf.reduce_mean(acc_1), tf.reduce_mean(acc_2), tf.reduce_mean(acc_3)
+        return loss, tf.reduce_mean(acc_1), tf.reduce_mean(acc_2), tf.reduce_mean(acc_3), tf.reduce_mean(variance)
 
     all_files = os.listdir(train_dir)  # list of all the files from the directory
     all_files = sorted(all_files, key=lambda file1: int(file1[:-6]))
@@ -219,7 +221,7 @@ def main(namemodel,
             # Create writer
             writer = tf.summary.create_file_writer(logs)
 
-            loss, accuracy_1, accuracy_2, accuracy_3 = train_step(batch)
+            loss, accuracy_1, accuracy_2, accuracy_3, variance = train_step(batch)
             #print('===================================')
             #print(tf.reshape(loss, []).numpy())
             with writer.as_default():
@@ -227,6 +229,7 @@ def main(namemodel,
                 tf.summary.scalar('acc_1', accuracy_1, step=global_step)
                 tf.summary.scalar('acc_2', accuracy_2, step=global_step)
                 tf.summary.scalar('acc_3', accuracy_3, step=global_step)
+                tf.summary.scalar('delta', variance, step=global_step)
         
             global_step += 1
             num_samples += batch_size
