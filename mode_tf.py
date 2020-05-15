@@ -114,15 +114,14 @@ def main(namemodel,
 
     config_class, model_class, tokenizer_class = MODEL_CLASSES[namemodel]
     
-    tokenizer = tokenizer_class.from_pretrained(pretrained,
-        do_lower_case=do_lower_case)
+    tokenizer = tokenizer_class.from_pretrained(pretrained,do_lower_case=do_lower_case)
 
     
 
     print(model_class)
     start_file = 0
     if checkpoint != "":
-        config = config_class.from_json_file(model_config)
+        config = config_class.from_pretrained(pretrained)
         mymodel = model_class(config)
 
         # we do this in order to compile the model, otherwise it will not be able to lead the weights
