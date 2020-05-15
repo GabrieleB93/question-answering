@@ -77,13 +77,9 @@ def main(namemodel,
     do_lower_case = 'uncased'
 
     if namemodel == "bert":  # base
-        model_config = 'input/transformers_cache/bert_base_uncased_config.json'
-        vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
         pretrained = 'bert-base-uncased'
 
     elif namemodel == 'albert':  # base v2
-        model_config = 'input/transformers_cache/albert_base_v2.json'
-        vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
         # this is the only usefull 
         pretrained = 'albert-base-v2'
 
@@ -101,10 +97,8 @@ def main(namemodel,
 
     else:
         # di default metto il base albert
-        model_config = 'input/transformers_cache/albert_base_v2.json'
-        vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
         namemodel = "albert"
-        pretrained = 'albert-large-v2'
+        pretrained = 'albert-base-v2'
 
     # Set XLA
     # https://github.com/kamalkraj/ALBERT-TF2.0/blob/8d0cc211361e81a648bf846_d8ec84225273db0e4/run_classifer.py#L136
@@ -140,7 +134,7 @@ def main(namemodel,
         print("checkpoint loaded succefully")
     else:
         initial_epoch = 0
-        config = config_class.from_pretrained(model_config)
+        config = config_class.from_pretrained(pretrained)
         #mymodel = model_class(config, training = True)
         print("\nModel from pretrained")
         mymodel = model_class.from_pretrained(pretrained, config=config)
@@ -181,8 +175,6 @@ def main(namemodel,
             acc_3 = partial_accuracy( batch["long"], outputs["long"]) #tf.keras.metrics.sparse_categorical_accuracy(batch["long"], outputs["long"])   
             type_acc = tf.keras.metrics.binary_accuracy(tf.cast(batch["answerable"], float), outputs["answerable"], threshold=0.5) 
 
-
-            variance = tf.math.reduce_max( outputs["start"]) -  tf.math.reduce_min( outputs["start"])
             loss = ((tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss) / 2.0) +
                 tf.reduce_mean(long_loss) ) / 2.0 + tf.reduce_mean(type_loss) / 2.0
             
