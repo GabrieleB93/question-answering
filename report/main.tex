@@ -34,6 +34,7 @@
 %%
 \usepackage{hhline}
 \usepackage{listings}
+\usepackage{lipsum}
 
 \usepackage{mathrsfs}
 \usepackage{mathtools}
@@ -96,6 +97,7 @@
 \subsectionfont{\bf \color{pdarkblue}}
 \subsubsectionfont{\bf \color{pdarkerblue}}
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{document}
@@ -119,32 +121,46 @@
     \end{minipage}%
 
     
-      %{\color{pblue} \textsc{ \Large Human Language Techonlogies}}
+    %{\color{pblue} \textsc{ \Large Human Language Techonlogies}}
     
-      %\vspace{0.5cm}
+    %\vspace{0.5cm}
     
-      %{\color{pblue} \textsc{ A.Y. 2018-2019}}
+    %{\color{pblue} \textsc{ A.Y. 2018-2019}}
     
-        \vspace{1.2cm}
+    \vspace{1.2cm}
     
-        Gabriele Barreca, Mario Bonsembiante {\small and} Gemma Martini
-        
-        \vspace{0.7cm}
-        
-        University of Pisa
-      
-        \vspace{1.5cm}
-        
-        \abstract{Mettere abstract}
+    Gabriele Barreca, Mario Bonsembiante {\small and} Gemma Martini
     
+    %\vspace{0.4cm}
+    
+    {\scriptsize University of Pisa}
+    
+    \vspace{0.5cm}
+    
+    \abstract{\lipsum[3]}
+    
+    \vspace{1cm}
+    
+    \begin{tikzpicture}%
+        \draw[thick, brown] (0,0)--(0.8\textwidth,0);%   
+    \end{tikzpicture}%
+    
+    \vspace{-0.5cm}
+    \tableofcontents
+
+    \vspace{0.36cm}
+
+    \begin{tikzpicture}%    
+        \draw[thick, brown] (0,0)--(0.8\textwidth,0);%   
+    \end{tikzpicture}%
+
     %{\large \today}
     \vfill
 \end{titlepage}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\tableofcontents
-\thispagestyle{empty}
+%\thispagestyle{empty}
 \newpage
 \setcounter{page}{1}
 
@@ -161,27 +177,24 @@ In this paper, we present a BERT-based implementation that solves an open domain
 
 Moreover, we uploaded a Python implementation on   \href{www.google.com}{this} GitHub repository and we integrated it with a straightforward UI, available at \href{www.gemmamartini.it}{www.gemmamartini.it}.
 
-\nomefico
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{The task}\label{sec:task}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The aim of our application is to provide an answer to a custom user's query. Such data-flow can be observed in \Cref{fig:application_dataflow}.
 
-All references:
-\begin{itemize}
-  \item kbqa~\cite{kbqa}    
-  \item coqa~\cite{coqa}
-  \item collobert~\cite{Collobert}
-  \item vaswani~\cite{vaswani}
-  \item weston1~\cite{weston-tracking}
-  \item weston2~\cite{weston-reading}
-  \item alberti 2019~\cite{alberti}
-  \item kwiatowski 2019~\cite{kwiatowski}
-  \item chen~\cite{chen}
-  \item liu purple~\cite{liu-purple}
-  \item liu yellow~\cite{liu-yellow}
-  \item RoBERTa~\cite{roberta}
-\end{itemize}
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=\textwidth]{report/pics/application_dataflow.png}
+    \caption{.}
+    \label{fig:application_dataflow}
+\end{figure}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{The architecture}\label{sec:model}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 The broad architecture of \nomefico is shown in \Cref{fig:broad_architecture}.
 
 \begin{figure}[ht!]
@@ -191,7 +204,7 @@ The broad architecture of \nomefico is shown in \Cref{fig:broad_architecture}.
     \label{fig:broad_architecture}
 \end{figure}
 
-We decided to tackle the problem creating a stack of two neural networks, forming a two-layer architecture. The first layer was built using BERT's \cite{devlin2018bert} checkpoints, while the second layer is a neural networks that uses BERT's embeddings and the Natural Questions (NQ) \cite{kwiatowski} dataset \footnote{Some qualities of NQ are the following: (1) the questions were formulated by people out of genuine curiosity or out of need for an answer to complete another task, (2) the questions were formulated by people before they had seen the document that might contain the answer, (3) the documents in which the answer is to be found are much longer than the documents used in some of the existing question answering challenges.} with the aim of obtaining the start position and end position of the answer in the given paragraph.
+We decided to tackle the open domain QA task problem creating a stack of two neural networks, forming a two-layer architecture. The first layer is built using BERT's \cite{devlin2018bert} checkpoints, while the second layer is a neural networks that uses BERT's embeddings and the Natural Questions (NQ) \cite{kwiatowski} dataset \footnote{Some qualities of NQ are the following: (1) the questions were formulated by people out of genuine curiosity or out of need for an answer to complete another task, (2) the questions were formulated by people before they had seen the document that might contain the answer, (3) the documents in which the answer is to be found are much longer than the documents used in some of the existing question answering challenges.} with the aim of obtaining the start position and end position of the answer in the given paragraph.
 
 Let us dig into details a bit more and explain how the BERT layer works.
 
@@ -229,7 +242,23 @@ Use a binary classification layer to check if the answer is ``plausible'' (i.e. 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%%%%%%%%%%%
-\subsection{Boh}
+\subsection{All references}
+
+\begin{itemize}
+  \item kbqa~\cite{kbqa}    
+  \item coqa~\cite{coqa}
+  \item collobert~\cite{Collobert}
+  \item vaswani~\cite{vaswani}
+  \item weston1~\cite{weston-tracking}
+  \item weston2~\cite{weston-reading}
+  \item alberti 2019~\cite{alberti}
+  \item kwiatowski 2019~\cite{kwiatowski}
+  \item chen~\cite{chen}
+  \item liu purple~\cite{liu-purple}
+  \item liu yellow~\cite{liu-yellow}
+  \item RoBERTa~\cite{roberta}
+\end{itemize}
+
 
 \bibliographystyle{unsrt}
 \bibliography{references}
