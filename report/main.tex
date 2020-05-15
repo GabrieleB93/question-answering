@@ -24,8 +24,11 @@
 \usepackage{fullpage}
 \usepackage{graphicx}
 
-\usepackage{hyperref}
-%%Must stay here
+\usepackage[colorlinks = true,
+            linkcolor = pdarkerblue,
+            urlcolor  = gblue,
+            citecolor = gblue,
+            anchorcolor = blue]{hyperref}%%Must stay here
 \usepackage{caption}
 \usepackage{cleveref}
 %%
@@ -58,27 +61,20 @@
 
 \usepackage{verbatim}
 
+\usepackage{wrapfig}
+
 \usepackage{xinttools}
+\usepackage{xcolor}
+
+%%%~~~~~~~~~~~~~~~~~~~~~~~~Fonts~~~~~~~~~~~~~~~~~~~~~~~%%%
 
 
 %%%~~~~~~~~~~~~~~~~~~~~~~~~Colours~~~~~~~~~~~~~~~~~~~~~%%%
-\definecolor{gblue}{HTML}{3366CC}
-\definecolor{gred}{HTML}{DC3912}
-\definecolor{gyellow}{HTML}{FF9900}
-\definecolor{ggreen}{HTML}{109618}
-\definecolor{gpurple}{HTML}{990099}
-\definecolor{gseablue}{HTML}{0099C6}
-\definecolor{gpastelpink}{HTML}{DD4477}
-\definecolor{pblue}{HTML}{0000FF}
-\definecolor{pdarkblue}{HTML}{0000b3}
+\definecolor{gblue}{HTML}{000099}
+\definecolor{pblue}{HTML}{00004d}%{0000FF}
+\definecolor{pdarkblue}{HTML}{000080}
 \definecolor{pdarkerblue}{HTML}{000066}
-\definecolor{materialorange}{HTML}{cc99ff}
-\definecolor{intnull}{HTML}{0000ff}
-\definecolor{inteins}{HTML}{99bbff}
-\definecolor{intzwei}{HTML}{3333cc}
-\definecolor{intdrei}{HTML}{e6ecff}
-\definecolor{intvier}{HTML}{000099}
-\definecolor{intfunf}{HTML}{1a8cff}
+%\definecolor{veryblue}{HTML}{00004d}
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Tikz~~~~~~~~~~~~~~~~~~~~~~~~~~~~~%
 \usetikzlibrary{calc}
@@ -90,20 +86,11 @@
 \usetikzlibrary{positioning}
 \usetikzlibrary{fit}
 
-\newcommand\fadingtext[3][]{%
-  \begin{tikzfadingfrompicture}[name=fading letter]
-    \node[text=transparent!0,inner xsep=0pt,outer xsep=0pt,#1] {#3};
-  \end{tikzfadingfrompicture}%
-  \begin{tikzpicture}[baseline=(textnode.base)]
-    \node[inner sep=0pt,outer sep=0pt,#1](textnode){\phantom{#3}}; 
-    \shade[path fading=fading letter,#2,fit fading=false]
-    (textnode.south west) rectangle (textnode.north east);% 
-  \end{tikzpicture}% 
-}
+\newcommand{\nomefico}{\textbf{nomeFicoDaScegliere}}
 
 \pgfplotsset{compat=1.15}
 
-\captionsetup[figure]{labelfont={color=blue, bf},textfont={it, small}}
+\captionsetup[figure]{labelfont={color=pdarkblue, bf},textfont={it, small}}
 
 \sectionfont{\bf \Large \color{pblue}}
 \subsectionfont{\bf \color{pdarkblue}}
@@ -114,49 +101,44 @@
 \begin{document}
 
 \begin{titlepage}
+    \centering
+    \begin{minipage}{0.22\textwidth}%
+        \includegraphics[width=\linewidth]{pics/Cherubino.jpg}
+    \end{minipage}\hspace{10pt}
+    \begin{minipage}{0.6\textwidth}%
+        \flushright
+        \large
+        \vspace{0.8cm}
+        \textsc{\color{pblue}%
+        \nomefico\\
+        a Bert-based, open domain\\
+        question answering system}
+        \begin{tikzpicture}%
+            \draw[thick, brown] (0.1,0)--(0.99\textwidth,0);%   
+        \end{tikzpicture}%
+    \end{minipage}%
 
-\begin{center}
-\vspace{3.5cm}
-
-\Large
-
-  \includegraphics[scale=0.3]{pics/Cherubino.jpg}
-
-  \vspace{1.2cm}
-
-  {\color{pblue} \sc \huge Question answering}
-  
-  \vspace{0.3cm}
-
-  {\color{pblue} \sc for}
-
-  \vspace{0.3cm}
-  
-  {\color{pblue} \textsc{ \huge Online Quiz}}
-
-  \vspace{1.5cm}  
-
-  {\color{pblue} \textsc{ \Large Human Language Techonlogies}}
-
-  \vspace{0.5cm}
-
-  {\color{pblue} \textsc{ A.Y. 2018-2019}}
-
-  \vspace{2cm}
-
-{\sc Gabriele Barreca}    
-   \vspace{0.5cm}
-  
-{\sc Mario Bonsembiante}
-    \vspace{0.5cm}
- 
-{\sc Gemma Martini}
-  
-  \vspace{1.5cm}
-
-{\large \today}
-\vfill
-\end{center}
+    
+      %{\color{pblue} \textsc{ \Large Human Language Techonlogies}}
+    
+      %\vspace{0.5cm}
+    
+      %{\color{pblue} \textsc{ A.Y. 2018-2019}}
+    
+        \vspace{1.2cm}
+    
+        Gabriele Barreca, Mario Bonsembiante {\small and} Gemma Martini
+        
+        \vspace{0.7cm}
+        
+        University of Pisa
+      
+        \vspace{1.5cm}
+        
+        \abstract{Mettere abstract}
+    
+    %{\large \today}
+    \vfill
 \end{titlepage}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -169,6 +151,17 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Introduction}\label{sec:intro}
+Question answering (QA) systems can be seen as information retrieval systems which aim is to respond to queries, stated in natural language, by returning short answers or long sentences.
+The ``so-called'' \emph{open domain QA task} adds the challenge of understanding if the answer to the selected question may or may not be found in a paragraph, which content has been buried within large text corpora, such as Wikipedia.
+
+\vspace{0.2cm}
+
+Building such systems for practical applications has historically been quite challenging and involved.
+In this paper, we present a BERT-based implementation that solves an open domain QA task and we provide some performances study about it.
+
+Moreover, we uploaded a Python implementation on   \href{www.google.com}{this} GitHub repository and we integrated it with a straightforward UI, available at \href{www.gemmamartini.it}{www.gemmamartini.it}.
+
+\nomefico
 
 All references:
 \begin{itemize}
@@ -187,8 +180,49 @@ All references:
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{The model}\label{sec:model}
+\section{The architecture}\label{sec:model}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+The broad architecture of \nomefico is shown in \Cref{fig:broad_architecture}.
+
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[scale=.9]{pics/broad_architecture.png}
+    \caption{.}
+    \label{fig:broad_architecture}
+\end{figure}
+
+We decided to tackle the problem creating a stack of two neural networks, forming a two-layer architecture. The first layer was built using BERT's \cite{devlin2018bert} checkpoints, while the second layer is a neural networks that uses BERT's embeddings and the Natural Questions (NQ) \cite{kwiatowski} dataset \footnote{Some qualities of NQ are the following: (1) the questions were formulated by people out of genuine curiosity or out of need for an answer to complete another task, (2) the questions were formulated by people before they had seen the document that might contain the answer, (3) the documents in which the answer is to be found are much longer than the documents used in some of the existing question answering challenges.} with the aim of obtaining the start position and end position of the answer in the given paragraph.
+
+Let us dig into details a bit more and explain how the BERT layer works.
+
+
+
+At this point, we assume that the system receives as input two textual items, the first one is the question and the second one is the paragraph that is supposed to contain the answer
+
+\todo[inline]{short?long?}
+
 In this section the tools used in the project are described.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Experimental results}\label{sec:experimental_results}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%
+\subsection{Hardware}
+%%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%
+
+
+%%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%
+\subsection{Hyper-parameters values}
+%%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Future work}\label{sec:future_work}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Use a binary classification layer to check if the answer is ``plausible'' (i.e. the meanings in the question are covered in the answer), as done by \cite{Hu2019ReadV} and \cite{Back2020NeurQuRI}.
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}\label{sec:conclusions}
@@ -197,7 +231,7 @@ In this section the tools used in the project are described.
 %%%%%%%%%%%%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%%%%%%%%%%%
 \subsection{Boh}
 
-\bibliographystyle{plain}
+\bibliographystyle{unsrt}
 \bibliography{references}
 
 \end{document} 

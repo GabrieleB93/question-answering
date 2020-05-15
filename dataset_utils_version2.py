@@ -1310,7 +1310,7 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
                                           is_training=not evaluate,
                                           cls_token_segment_id=0,
                                           pad_token_segment_id=0,
-                                          p_keep_impossible=args.p_keep_impossible )#if not evaluate else 1.0)
+                                          p_keep_impossible=args.p_keep_impossible if not evaluate else 1.0)
         if do_cache:
             with open(cached_crops_fn, "wb") as f:
                 pickle.dump(crops, f)

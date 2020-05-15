@@ -16,12 +16,10 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
         self.albert = TFAlbertMainLayer(config)
 
         self.initializer = get_initializer(config.initializer_range)
-        self.start = tf.keras.layers.Dense(1,
-            kernel_initializer=self.initializer, name='start')
-        self.end = tf.keras.layers.Dense(1,
-            kernel_initializer=self.initializer, name='end')
+        self.qa_outputs = tf.keras.layers.Dense(config.num_labels,
+                                  kernel_initializer=self.initializer, name='qa_outputs')
         self.long_outputs = tf.keras.layers.Dense(1, kernel_initializer=self.initializer,
-            name='long')
+                                    name='long_outputs')
 
         self.answerable = tf.keras.layers.Dense(1, kernel_initializer=self.initializer,
             name='answerable', activation = "sigmoid")
@@ -35,8 +33,12 @@ class TFAlbertForNaturalQuestionAnswering(TFAlbertPreTrainedModel):
         # tf.print(outputs[0].shape) (batch, len->0, hidden) 1->0
         # tf.print(outputs[1].shape) (batch, hidden_size)
 
-        start_logits =  tf.squeeze(self.start(sequence_output), -1)
-        end_logits =  tf.squeeze(self.end(sequence_output), -1)
+        logits = self.qa_outputs(sequence_output)
+        start_logits, end_logits = tf.split(logits, 2, axis=-1)
+
+        start_logits = tf.squeeze(start_logits, -1)
+        end_logits = tf.squeeze(end_logits, -1)
+        
         long_logits = tf.squeeze(self.long_outputs(sequence_output), -1)
 
         answerable = tf.squeeze(self.answerable(pooling_layer), -1)

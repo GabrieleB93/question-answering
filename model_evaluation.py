@@ -44,24 +44,26 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     do_lower_case = 'uncased'
     if namemodel == "bert":  # base
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
-        vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
+        vocab = 'bert_base_uncased_vocab.txt'
+        pretrained = 'bert-base-uncased'
+
     elif namemodel == 'albert':  # base v2
         model_config = 'input/transformers_cache/albert_base_v2.json'
-        vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
+        vocab = 'spiece.model'
     elif namemodel == 'roberta':
         do_lower_case = False
         model_config = 'lo aggiungero in futuro'
         vocab = 'lo aggiungero in futuro'
     elif namemodel == "albert_squad":
         model_config = 'input/transformers_cache/albert_base_v2_squad.json'
-        vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
+        vocab = 'spiece.model'
     elif namemodel == "bert_large":
         model_config = 'input/transformers_cache/bert_large_uncased_config.json'
         vocab = 'input/transformers_cache/bert_large_uncased_vocab.txt'
     else:
         # di default metto il base albert
         model_config = 'input/transformers_cache/albert_base_v2.json'
-        vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
+        vocab = 'spiece.model'
         namemodel = "albert"
         print("sei impazzuto?")
 
@@ -77,14 +79,14 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
 
     mymodel(mymodel.dummy_inputs, training=False)
 
-    mymodel.load_weights(checkpoint, by_name=True)
+    mymodel.load_weights(os.path.join(checkpoint, "weights.h5"), by_name=True)
     print("Checkpoint loaded succefully")
 
     print("***** Running evaluation *****")
-    tokenizer = tokenizer_class(vocab, do_lower_case='uncased')
+    # load tokenizer from the directory
+    tokenizer = tokenizer_class(os.path.join(checkpoint,vocab), do_lower_case='uncased')
 
-    tokenizer = tokenizer_class.from_pretrained("albert-base-v2",
-        do_lower_case=do_lower_case)
+    #tokenizer = tokenizer_class.from_pretrained(pretrained,do_lower_case=do_lower_case)
     #tags = get_add_tokens(do_enumerate=args.do_enumerate)
     #num_added = tokenizer.add_tokens(tags)
     #print(f"Added {num_added} tokens")
@@ -114,7 +116,7 @@ if __name__ == "__main__":
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
-    parser.add_argument("--checkpoint", default="checkpoints/checkpoint-031000/weights.h5", type=str, help="The file we will use as checkpoint")
+    parser.add_argument("--checkpoint", default="checkpoints/checkpoint-092000/", type=str, help="The file we will use as checkpoint")
 
     parser.add_argument('--test_dir', type=str, default='TestData/simplified-nq-test.jsonl',
                         help='Directory were all the traing data splitted in smaller junks are stored')

@@ -21,6 +21,16 @@ from shutil import rmtree, copy
 
 logger = logging.getLogger(__name__)
 
+def partial_accuracy(true_value, logits):
+    acc_1 = tf.keras.metrics.sparse_categorical_accuracy(
+                true_value, logits)    
+    # don't count if the true value is the start of the string, because it means that it 
+    # has no answer      
+    acc_1 = tf.math.multiply(acc_1, tf.cast(tf.cast(true_value, bool), float))
+    num = tf.math.reduce_sum(acc_1)
+    den = tf.math.maximum(tf.math.reduce_sum(tf.cast(tf.cast(true_value, bool), float)),tf.keras.backend.epsilon())
+
+    return num/den
 
 def main(namemodel, 
         batch_size, 
@@ -60,8 +70,7 @@ def main(namemodel,
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'albert': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AlbertTokenizer),  # V2
-        'albert_squad': (AlbertConfig, TFAlbertForNaturalQuestionAnswering,
-                         AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2"))
+        'albert_squad': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AutoTokenizer)
         # 'roberta': (RobertaConfig, TFRobertaForNaturalQuestionAnswering, RobertaTokenizer),
     }
 
@@ -70,12 +79,13 @@ def main(namemodel,
     if namemodel == "bert":  # base
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
         vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
-        pretrained = ''
+        pretrained = 'bert-base-uncased'
 
     elif namemodel == 'albert':  # base v2
         model_config = 'input/transformers_cache/albert_base_v2.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
-        pretrained = 'albert-base-v2'
+        # this is the only usefull 
+        pretrained = 'albert-large-v2'
 
 
     elif namemodel == 'roberta':
@@ -87,15 +97,14 @@ def main(namemodel,
     elif namemodel == "albert_squad":
         model_config = 'input/transformers_cache/albert_base_v2_squad.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
-        tokenizer = AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2")
-        pretrained = ''
+        pretrained = 'twmkn9/albert-base-v2-squad2'#"ktrapeznikov/albert-xlarge-v2-squad-v2"
 
     else:
         # di default metto il base albert
         model_config = 'input/transformers_cache/albert_base_v2.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
         namemodel = "albert"
-        pretrained = 'albert-base-v2'
+        pretrained = 'albert-large-v2'
 
     # Set XLA
     # https://github.com/kamalkraj/ALBERT-TF2.0/blob/8d0cc211361e81a648bf846_d8ec84225273db0e4/run_classifer.py#L136
@@ -108,11 +117,8 @@ def main(namemodel,
     tokenizer = tokenizer_class.from_pretrained(pretrained,
         do_lower_case=do_lower_case)
 
-    """
-    tags = dataset_utils.get_add_tokens(do_enumerate=True)
-    num_added = tokenizer.add_tokens(tags)
-    print(f"Added {num_added} tokens")
-    """
+    
+
     print(model_class)
     start_file = 0
     if checkpoint != "":
@@ -141,8 +147,15 @@ def main(namemodel,
         mymodel = model_class.from_pretrained(pretrained, config=config)
         print("model loaded succefully")
 
-    adam = tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon=1e-6)
-
+    """
+    tags = dataset_utils.get_add_tokens(do_enumerate=True)
+    num_added = tokenizer.add_tokens(tags)
+    print(f"Added {num_added} tokens")
+    mymodel.resize_token_embeddings(len(tokenizer))  # Notice: resize_token_embeddings expect to receive the full size of the new vocabulary, i.e. the length of the tokenizer.
+    """
+    
+    #adam = tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon=1e-6)
+    adam = tf.optimizers.Adam(lr = learning_rate)
 
         # this file we implement the training by ourself istead of using keras
     @tf.function
@@ -170,11 +183,16 @@ def main(namemodel,
                 batch["end"], outputs["end"]) 
             acc_3 = tf.keras.metrics.sparse_categorical_accuracy(
                 batch["long"], outputs["long"])  
+            acc_1 = partial_accuracy( batch["start"], outputs["start"])  #tf.keras.metrics.sparse_categorical_accuracy(batch["start"], outputs["start"])          
+            acc_2 = partial_accuracy( batch["end"], outputs["end"]) #tf.keras.metrics.sparse_categorical_accuracy(batch["end"], outputs["end"]) 
+            acc_3 = partial_accuracy( batch["long"], outputs["long"]) #tf.keras.metrics.sparse_categorical_accuracy(batch["long"], outputs["long"])   
 
             acc_1 = tf.math.multiply(acc_1,tf.cast(batch["answerable"], float))
             acc_2 = tf.math.multiply(acc_2,tf.cast(batch["answerable"], float))
             acc_3 = tf.math.multiply(acc_3,tf.cast(batch["answerable"], float))
 
+
+            variance = tf.math.reduce_max( outputs["start"]) -  tf.math.reduce_min( outputs["start"])
             loss = ((tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss) / 2.0) +
                 tf.reduce_mean(long_loss) ) / 2.0 + tf.reduce_mean(type_loss) / 2.0
 
@@ -182,9 +200,12 @@ def main(namemodel,
 
 
 
+                tf.reduce_mean(long_loss)) / 2.0
+            
+            
         grads = tape.gradient(loss, mymodel.trainable_variables)
         adam.apply_gradients(zip(grads, mymodel.trainable_variables))
-        return loss, tf.reduce_mean(acc_1), tf.reduce_mean(acc_2), tf.reduce_mean(acc_3), tf.reduce_mean(type_loss)
+        return loss, tf.reduce_mean(acc_1), tf.reduce_mean(acc_2), tf.reduce_mean(acc_3), tf.reduce_mean(variance)
 
     all_files = os.listdir(train_dir)  # list of all the files from the directory
     all_files = sorted(all_files, key=lambda file1: int(file1[:-6]))
@@ -199,7 +220,7 @@ def main(namemodel,
     global_step = 1
     num_samples = 0
     smooth = 0.99
-    smooth_acc = 0.66
+    smooth_acc = 0.99
     running_loss = 0.0
     running_accuracy_1 = 0.0
     running_accuracy_2 = 0.0
@@ -227,7 +248,18 @@ def main(namemodel,
         epoch_iterator = tqdm(range(num_steps_per_epoch))
         for step in epoch_iterator:
             batch = next(train_ds)
-            loss, accuracy_1, accuracy_2, accuracy_3, type_loss = train_step(batch)
+            # Create writer
+            writer = tf.summary.create_file_writer(logs)
+
+            loss, accuracy_1, accuracy_2, accuracy_3, variance = train_step(batch)
+            #print('===================================')
+            #print(tf.reshape(loss, []).numpy())
+            with writer.as_default():
+                tf.summary.scalar('loss', loss, step=global_step)
+                tf.summary.scalar('acc_1', accuracy_1, step=global_step)
+                tf.summary.scalar('acc_2', accuracy_2, step=global_step)
+                tf.summary.scalar('acc_3', accuracy_3, step=global_step)
+                tf.summary.scalar('delta', variance, step=global_step)
         
             global_step += 1
             num_samples += batch_size
