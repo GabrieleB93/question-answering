@@ -85,7 +85,7 @@ def main(namemodel,
         model_config = 'input/transformers_cache/albert_base_v2.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
         # this is the only usefull 
-        pretrained = 'albert-large-v2'
+        pretrained = 'albert-base-v2'
 
 
     elif namemodel == 'roberta':
@@ -173,39 +173,24 @@ def main(namemodel,
             long_loss = tf.keras.losses.sparse_categorical_crossentropy(batch["long"], outputs["long"], from_logits=True)
             
             # Idea: if not answerable we not optimize for the start, end long losses
-            start_loss = tf.math.multiply(start_loss,tf.cast(batch["answerable"], float))
-            end_loss = tf.math.multiply(end_loss, tf.cast(batch["answerable"], float))
-            long_loss = tf.math.multiply(long_loss, tf.cast(batch["answerable"], float))
-
-            acc_1 = tf.keras.metrics.sparse_categorical_accuracy(
-                batch["start"], outputs["start"])          
-            acc_2 = tf.keras.metrics.sparse_categorical_accuracy(
-                batch["end"], outputs["end"]) 
-            acc_3 = tf.keras.metrics.sparse_categorical_accuracy(
-                batch["long"], outputs["long"])  
+            start_loss = tf.math.multiply(start_loss, tf.cast(tf.cast(batch["start"], bool), float))
+            end_loss = tf.math.multiply(end_loss,  tf.cast(tf.cast(batch["end"], bool), float))
+            long_loss = tf.math.multiply(long_loss,  tf.cast(tf.cast(batch["long"], bool), float))
+ 
             acc_1 = partial_accuracy( batch["start"], outputs["start"])  #tf.keras.metrics.sparse_categorical_accuracy(batch["start"], outputs["start"])          
             acc_2 = partial_accuracy( batch["end"], outputs["end"]) #tf.keras.metrics.sparse_categorical_accuracy(batch["end"], outputs["end"]) 
             acc_3 = partial_accuracy( batch["long"], outputs["long"]) #tf.keras.metrics.sparse_categorical_accuracy(batch["long"], outputs["long"])   
-
-            acc_1 = tf.math.multiply(acc_1,tf.cast(batch["answerable"], float))
-            acc_2 = tf.math.multiply(acc_2,tf.cast(batch["answerable"], float))
-            acc_3 = tf.math.multiply(acc_3,tf.cast(batch["answerable"], float))
+            type_acc = tf.keras.metrics.binary_accuracy(tf.cast(batch["answerable"], float), outputs["answerable"], threshold=0.5) 
 
 
             variance = tf.math.reduce_max( outputs["start"]) -  tf.math.reduce_min( outputs["start"])
             loss = ((tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss) / 2.0) +
                 tf.reduce_mean(long_loss) ) / 2.0 + tf.reduce_mean(type_loss) / 2.0
-
-        type_loss = tf.keras.metrics.binary_accuracy(tf.cast(batch["answerable"], float), outputs["answerable"], threshold=0.5) 
-
-
-
-                tf.reduce_mean(long_loss)) / 2.0
             
             
         grads = tape.gradient(loss, mymodel.trainable_variables)
         adam.apply_gradients(zip(grads, mymodel.trainable_variables))
-        return loss, tf.reduce_mean(acc_1), tf.reduce_mean(acc_2), tf.reduce_mean(acc_3), tf.reduce_mean(variance)
+        return loss, tf.reduce_mean(acc_1), tf.reduce_mean(acc_2), tf.reduce_mean(acc_3), tf.reduce_mean(type_acc)
 
     all_files = os.listdir(train_dir)  # list of all the files from the directory
     all_files = sorted(all_files, key=lambda file1: int(file1[:-6]))
@@ -251,7 +236,7 @@ def main(namemodel,
             # Create writer
             writer = tf.summary.create_file_writer(logs)
 
-            loss, accuracy_1, accuracy_2, accuracy_3, variance = train_step(batch)
+            loss, accuracy_1, accuracy_2, accuracy_3, accuracy_4 = train_step(batch)
             #print('===================================')
             #print(tf.reshape(loss, []).numpy())
             with writer.as_default():
@@ -259,7 +244,7 @@ def main(namemodel,
                 tf.summary.scalar('acc_1', accuracy_1, step=global_step)
                 tf.summary.scalar('acc_2', accuracy_2, step=global_step)
                 tf.summary.scalar('acc_3', accuracy_3, step=global_step)
-                tf.summary.scalar('delta', variance, step=global_step)
+                tf.summary.scalar('type_acc', accuracy_4, step=global_step)
         
             global_step += 1
             num_samples += batch_size
@@ -267,7 +252,7 @@ def main(namemodel,
             running_accuracy_1 =  smooth_acc * running_accuracy_1 + (1. - smooth_acc) * float(accuracy_1)
             running_accuracy_2 =  smooth_acc * running_accuracy_2 + (1. - smooth_acc) * float(accuracy_2)
             running_accuracy_3 =  smooth_acc * running_accuracy_3 + (1. - smooth_acc) * float(accuracy_3)
-            running_type_loss = smooth_acc * running_type_loss + (1. - smooth_acc) * float(type_loss)
+            running_type_loss = smooth_acc * running_type_loss + (1. - smooth_acc) * float(accuracy_4)
 
             if global_step % checkpoint_interval == 0:
                 # Save model checkpoint
