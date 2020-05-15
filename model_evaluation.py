@@ -44,19 +44,23 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     do_lower_case = 'uncased'
     if namemodel == "bert":  # base
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
-        vocab = 'bert_base_uncased_vocab.txt'
+        vocab = 'vocab.txt'
         pretrained = 'bert-base-uncased'
 
     elif namemodel == 'albert':  # base v2
         model_config = 'input/transformers_cache/albert_base_v2.json'
         vocab = 'spiece.model'
+        pretrained = 'albert-base-v2'
+
     elif namemodel == 'roberta':
         do_lower_case = False
         model_config = 'lo aggiungero in futuro'
         vocab = 'lo aggiungero in futuro'
+
     elif namemodel == "albert_squad":
         model_config = 'input/transformers_cache/albert_base_v2_squad.json'
         vocab = 'spiece.model'
+
     elif namemodel == "bert_large":
         model_config = 'input/transformers_cache/bert_large_uncased_config.json'
         vocab = 'input/transformers_cache/bert_large_uncased_vocab.txt'
@@ -73,7 +77,10 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     tf.config.optimizer.set_experimental_options({'pin_to_host_optimization': False})
 
     config_class, model_class, tokenizer_class = MODEL_CLASSES[namemodel]
-    config = config_class.from_json_file(model_config)
+    config = config_class.from_pretrained(pretrained)
+
+    # load tokenizer from the directory
+    tokenizer = tokenizer_class(os.path.join(checkpoint,vocab), do_lower_case='uncased')
 
     mymodel = model_class(config)
 
@@ -83,8 +90,6 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     print("Checkpoint loaded succefully")
 
     print("***** Running evaluation *****")
-    # load tokenizer from the directory
-    tokenizer = tokenizer_class(os.path.join(checkpoint,vocab), do_lower_case='uncased')
 
     #tokenizer = tokenizer_class.from_pretrained(pretrained,do_lower_case=do_lower_case)
     #tags = get_add_tokens(do_enumerate=args.do_enumerate)
