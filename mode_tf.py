@@ -191,7 +191,7 @@ def main(namemodel,
     global_step = 1
     num_samples = 0
     smooth = 0.99
-    smooth_acc = 0.3
+    smooth_acc = 0.99
     running_loss = 0.0
     running_accuracy_1 = 0.0
     running_accuracy_2 = 0.0
