@@ -77,6 +77,7 @@ def main(namemodel,
     do_lower_case = 'uncased'
 
     if namemodel == "bert":  # base
+        print('\n\n LOAD BERT\n\n')
         pretrained = 'bert-base-uncased'
 
     elif namemodel == 'albert':  # base v2
@@ -140,17 +141,17 @@ def main(namemodel,
         mymodel = model_class.from_pretrained(pretrained, config=config)
         print("model loaded succefully")
 
-    """
-    tags = dataset_utils.get_add_tokens(do_enumerate=True)
-    num_added = tokenizer.add_tokens(tags)
-    print(f"Added {num_added} tokens")
-    mymodel.resize_token_embeddings(len(tokenizer))  # Notice: resize_token_embeddings expect to receive the full size of the new vocabulary, i.e. the length of the tokenizer.
-    """
+    if namemodel == "bert":  # base
+        tags = dataset_utils.get_add_tokens(do_enumerate=True)
+        num_added = tokenizer.add_tokens(tags)
+        print(f"Added {num_added} tokens")
+        mymodel.resize_token_embeddings(len(tokenizer))  # Notice: resize_token_embeddings expect to receive the full size of the new vocabulary, i.e. the length of the tokenizer.
+        
     
     #adam = tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon=1e-6)
     adam = tf.optimizers.Adam(lr = learning_rate)
 
-        # this file we implement the training by ourself istead of using keras
+    # this file we implement the training by ourself istead of using keras
     @tf.function
     def train_step(batch):
         with tf.GradientTape() as tape:
