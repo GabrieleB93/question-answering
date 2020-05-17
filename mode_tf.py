@@ -77,15 +77,14 @@ def main(namemodel,
     do_lower_case = 'uncased'
 
     if namemodel == "bert":  # base
-        model_config = 'input/transformers_cache/bert_base_uncased_config.json'
-        vocab = 'input/transformers_cache/bert_base_uncased_vocab.txt'
+        print("\n\n BERT \n\n")
         pretrained = 'bert-base-uncased'
 
     elif namemodel == 'albert':  # base v2
         model_config = 'input/transformers_cache/albert_base_v2.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
         # this is the only usefull 
-        pretrained = 'albert-large-v2'
+        pretrained = 'albert-base-v2'
 
 
     elif namemodel == 'roberta':
@@ -143,13 +142,13 @@ def main(namemodel,
         initial_epoch = 0
         config = config_class.from_pretrained(pretrained)
         mymodel = model_class.from_pretrained(pretrained, config=config)
-
-    """
-    tags = dataset_utils.get_add_tokens(do_enumerate=True)
-    num_added = tokenizer.add_tokens(tags)
-    print(f"Added {num_added} tokens")
-    mymodel.resize_token_embeddings(len(tokenizer))  # Notice: resize_token_embeddings expect to receive the full size of the new vocabulary, i.e. the length of the tokenizer.
-    """
+    
+    if namemodel == 'bert':
+        tags = dataset_utils.get_add_tokens(do_enumerate=True)
+        num_added = tokenizer.add_tokens(tags)
+        print(f"Added {num_added} tokens")
+        mymodel.resize_token_embeddings(len(tokenizer))  # Notice: resize_token_embeddings expect to receive the full size of the new vocabulary, i.e. the length of the tokenizer.
+        
     
     #adam = tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon=1e-6)
     adam = tf.optimizers.Adam(lr = learning_rate)
