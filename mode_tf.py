@@ -196,66 +196,67 @@ def main(namemodel,
     running_accuracy_1 = 0.0
     running_accuracy_2 = 0.0
     running_accuracy_3 = 0.0
-    for i, file in enumerate(all_files):
-        # load file 
-        train_dataset = dataset_utils.getTokenizedDataset(  tokenizer,
-                                                            os.path.join(train_dir, file),
-                                                            verbose,
-                                                            max_num_samples)
+    for j in range(epoch):
+        for i, file in enumerate(all_files):
+            # load file 
+            train_dataset = dataset_utils.getTokenizedDataset(  tokenizer,
+                                                                os.path.join(train_dir, file),
+                                                                verbose,
+                                                                max_num_samples)
 
-        # how many epochs iterations we do in this file
-        num_steps_per_epoch = len(train_dataset['input_ids']) // batch_size
+            # how many epochs iterations we do in this file
+            num_steps_per_epoch = len(train_dataset['input_ids']) // batch_size
 
-        opt = tf.data.Options()
-        opt.experimental_deterministic = True
-        # use tf.Data in order to create an efficent pipeLine
-        train_ds = tf.data.Dataset.from_tensor_slices(train_dataset).with_options(opt)
-        train_ds = train_ds.repeat()
-        train_ds = train_ds.shuffle(buffer_size=100, seed=12)
-        train_ds = train_ds.batch(batch_size=batch_size, drop_remainder=True)
-        train_ds = iter(train_ds)
+            opt = tf.data.Options()
+            opt.experimental_deterministic = True
+            # use tf.Data in order to create an efficent pipeLine
+            train_ds = tf.data.Dataset.from_tensor_slices(train_dataset).with_options(opt)
+            train_ds = train_ds.repeat()
+            train_ds = train_ds.shuffle(buffer_size=100, seed=12)
+            train_ds = train_ds.batch(batch_size=batch_size, drop_remainder=True)
+            train_ds = iter(train_ds)
 
-        epoch_iterator = tqdm(range(num_steps_per_epoch))
-        for step in epoch_iterator:
-            batch = next(train_ds)
-            # Create writer
-            writer = tf.summary.create_file_writer(logs)
+            epoch_iterator = tqdm(range(num_steps_per_epoch))
+            for step in epoch_iterator:
+                batch = next(train_ds)
+                # Create writer
+                writer = tf.summary.create_file_writer(logs)
 
-            loss, accuracy_1, accuracy_2, accuracy_3, variance = train_step(batch)
-            #print('===================================')
-            #print(tf.reshape(loss, []).numpy())
-            with writer.as_default():
-                tf.summary.scalar('loss', loss, step=global_step)
-                tf.summary.scalar('acc_1', accuracy_1, step=global_step)
-                tf.summary.scalar('acc_2', accuracy_2, step=global_step)
-                tf.summary.scalar('acc_3', accuracy_3, step=global_step)
-                tf.summary.scalar('delta', variance, step=global_step)
-        
-            global_step += 1
-            num_samples += batch_size
-            running_loss = smooth * running_loss + (1. - smooth) * float(loss)
-            running_accuracy_1 =  smooth_acc * running_accuracy_1 + (1. - smooth_acc) * float(accuracy_1)
-            running_accuracy_2 =  smooth_acc * running_accuracy_1 + (1. - smooth_acc) * float(accuracy_2)
-            running_accuracy_3 =  smooth_acc * running_accuracy_1 + (1. - smooth_acc) * float(accuracy_3)
-
-            if global_step % checkpoint_interval == 0:
-                # Save model checkpoint
-                step_str = '%06d' % global_step
-                ckpt_dir = os.path.join(checkpoint_dir, 'checkpoint-{}'.format(step_str))
-                os.makedirs(ckpt_dir, exist_ok=True)
-                weights_fn = os.path.join(ckpt_dir, 'weights.h5')
-                mymodel.save_weights(weights_fn)
-                tokenizer.save_pretrained(ckpt_dir)
-
-                # remove too many checkpoints
-                checkpoint_fns = sorted(glob.glob(os.path.join(checkpoint_dir, 'checkpoint-*')))
-                for fn in checkpoint_fns[:-2]:
-                    rmtree(fn)
-                
+                loss, accuracy_1, accuracy_2, accuracy_3, variance = train_step(batch)
+                #print('===================================')
+                #print(tf.reshape(loss, []).numpy())
+                with writer.as_default():
+                    tf.summary.scalar('loss', loss, step=global_step)
+                    tf.summary.scalar('acc_1', accuracy_1, step=global_step)
+                    tf.summary.scalar('acc_2', accuracy_2, step=global_step)
+                    tf.summary.scalar('acc_3', accuracy_3, step=global_step)
+                    tf.summary.scalar('delta', variance, step=global_step)
             
-            epoch_iterator.set_postfix({'file': '%d/%d' % (i, len(all_files)),
-                    'samples': num_samples, 'global_loss': round(running_loss, 4), 
-                    "Accuracy": "%.2f:%.2f:%.2f" % (running_accuracy_1, running_accuracy_2, running_accuracy_3) })
+                global_step += 1
+                num_samples += batch_size
+                running_loss = smooth * running_loss + (1. - smooth) * float(loss)
+                running_accuracy_1 =  smooth_acc * running_accuracy_1 + (1. - smooth_acc) * float(accuracy_1)
+                running_accuracy_2 =  smooth_acc * running_accuracy_1 + (1. - smooth_acc) * float(accuracy_2)
+                running_accuracy_3 =  smooth_acc * running_accuracy_1 + (1. - smooth_acc) * float(accuracy_3)
+
+                if global_step % checkpoint_interval == 0:
+                    # Save model checkpoint
+                    step_str = '%06d' % global_step
+                    ckpt_dir = os.path.join(checkpoint_dir, 'checkpoint-{}'.format(step_str))
+                    os.makedirs(ckpt_dir, exist_ok=True)
+                    weights_fn = os.path.join(ckpt_dir, 'weights.h5')
+                    mymodel.save_weights(weights_fn)
+                    tokenizer.save_pretrained(ckpt_dir)
+
+                    # remove too many checkpoints
+                    checkpoint_fns = sorted(glob.glob(os.path.join(checkpoint_dir, 'checkpoint-*')))
+                    for fn in checkpoint_fns[:-2]:
+                        rmtree(fn)
+                    
+                
+                epoch_iterator.set_postfix({'file': '%d/%d' % (i, len(all_files)),
+                        'samples': num_samples, 'global_loss': round(running_loss, 4), 
+                        "Accuracy": "%.2f:%.2f:%.2f" % (running_accuracy_1, running_accuracy_2, running_accuracy_3) })
 
 
 
