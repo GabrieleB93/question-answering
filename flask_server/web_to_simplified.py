@@ -121,7 +121,7 @@ def replace_back_blanks(string):
     return string
 
 def clean_html(page_html, name = None):
-    with open(page_html, 'r') as myfile:
+    with open(page_html, 'r', encoding="utf-8") as myfile:
         string = myfile.read()
         string = clean_wiki_page(string)
         string = filter_html_tags(string)
@@ -132,7 +132,7 @@ def clean_html(page_html, name = None):
         string = replace_back_blanks(string)
     #print(string)
     if name:
-        with open(name + ".html", 'w') as outfile:
+        with open(name + ".html", 'w', encoding="utf-8") as outfile:
             outfile.write(string)
     return string
 
@@ -141,7 +141,7 @@ def clean_html(page_html, name = None):
 def create_simplified_input(question_text, page_url, page_html, name):
     """Under the assumption that html_file is 'clean enough'
     this function creates the data structure of an example"""
-    with open('boh.html', 'w+') as html_file:
+    with open('boh.html', 'w+', encoding="utf-8") as html_file:
         html_file.write(page_html)
     page_html_cleaned = clean_html('boh.html', name = name)
     simplified_input = {

@@ -571,11 +571,12 @@ def check_is_max_context(doc_spans, cur_span_index, position):
     return cur_span_index == best_span_index
 
 
-# Not used for now
 def clean_text(tok_text):
     # De-tokenize WordPieces that have been split off.
     tok_text = tok_text.replace(" ##", "")
     tok_text = tok_text.replace("##", "")
+    tok_text = tok_text.replace("<p>", " ")
+    tok_text = tok_text.replace("</p>", " ")
 
     # Clean whitespace
     tok_text = tok_text.strip()
@@ -583,7 +584,6 @@ def clean_text(tok_text):
     return tok_text
 
 
-# Not used for now
 def get_nbest(prelim_predictions, crops, example, n_best_size):
     seen, nbest = set(), []
     for pred in prelim_predictions:
@@ -596,7 +596,16 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
         if pred.start_index > 0:
             # Long answer has no end_index. We still generate some text to check
             if pred.end_index == -1:
-                tok_tokens = crop.tokens[pred.start_index: pred.start_index + 11]
+                array_tmp = np.array(crop.tokens)
+                indx_array = np.where(array_tmp == '</p>')
+                try:
+                    end_indx = indx_array[0][indx_array[0] > pred.start_index][0] + 1  # Prendo il primo indice più
+                    # grande di start
+                except:
+                    end_indx = pred.start_index + 11
+                tok_tokens = crop.tokens[
+                             pred.start_index: end_indx]  # AAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                print(tok_tokens)
             else:
                 tok_tokens = crop.tokens[pred.start_index: pred.end_index + 1]
             tok_text = " ".join(tok_tokens)
@@ -635,7 +644,6 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
     return nbest
 
 
-# Not used for now
 def write_predictions(examples_gen, all_crops, all_results, n_best_size,
                       max_answer_length, output_prediction_file,
                       output_nbest_file, output_null_log_odds_file, verbose_logging,
@@ -771,7 +779,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
                 final_pred = (short_best_non_null.text, short_best_non_null.orig_doc_start,
                               short_best_non_null.orig_doc_end)
         except Exception as e:
-            print("Exception in write prediction: " +str(e))
+            print("Exception in write prediction: " + str(e))
             final_pred = ("", -1, -1)
             short_num_empty += 1
 
@@ -861,7 +869,8 @@ def convert_preds_to_df(preds, candidates, question, tokenizer):
 
     df = pd.DataFrame(df)
     print(df.astype(bool).sum(axis=0))
-    print(f'Found number of long answered: {num_found_long} of number of long searched: {num_searched_long} (total {len(preds)})')
+    print(
+        f'Found number of long answered: {num_found_long} of number of long searched: {num_searched_long} (total {len(preds)})')
     return df
 
 
@@ -1365,7 +1374,7 @@ def getTokenizedDataset(tokenizer, namefile, verbose, max_num_samples):
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--p_keep_impossible', type=float,
                         default=0.03, help="The fraction of impossible"
-                                          " samples to keep.")
+                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
     args, _ = parser.parse_known_args()
@@ -1437,7 +1446,7 @@ def getDatasetForEvaluation(args, tokenizer, namefile, verbose, max_num_samples,
     return eval_ds, crops, entries, eval_dataset_length
 
 
-def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer):
+def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer, app=False):
     csv_fn = 'submission.csv'
     padded_length = math.ceil(eval_dataset_length / args.eval_batch_size) * args.eval_batch_size
 
@@ -1462,9 +1471,9 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cach
             example_indexes = batch['example_index']
             # outputs = strategy.experimental_run_v2(predict_step, args=(batch, ))
             outputs = predict_step(batch)
-            batched_start_logits = outputs[0].numpy()
-            batched_end_logits = outputs[1].numpy()
-            batched_long_logits = outputs[2].numpy()
+            batched_start_logits = outputs['start'].numpy()
+            batched_end_logits = outputs['end'].numpy()
+            batched_long_logits = outputs['long'].numpy()
 
             for i, example_index in enumerate(example_indexes):
                 # filter out padded samples
@@ -1497,9 +1506,11 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cach
                               args.short_null_score_diff_threshold, args.long_null_score_diff_threshold)
     del crops, all_results
     gc.collect()
-    candidates, question = read_candidates([namefile], do_cache=False)
-    sub = convert_preds_to_df(preds, candidates, question, tokenizer).sort_values('example_id')
-    sub.to_csv(csv_fn, index=False, columns=['example_id', 'PredictionString', 'question', 'answer'])
-    print(f'***** Wrote submission to {csv_fn} *****')
-    result = {}
-    return result
+    if not app:
+        candidates, question = read_candidates([namefile], do_cache=False)
+        sub = convert_preds_to_df(preds, candidates, question, tokenizer).sort_values('example_id')
+        sub.to_csv(csv_fn, index=False, columns=['example_id', 'PredictionString', 'question', 'answer'])
+        print(f'***** Wrote submission to {csv_fn} *****')
+        return preds
+    else:
+        return preds

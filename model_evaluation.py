@@ -4,10 +4,8 @@ from __future__ import print_function
 from datetime import datetime
 from sys import platform
 from dataset_utils import *
-
 from model_stuff.TFAlbertForNaturalQuestionAnswering import TFAlbertForNaturalQuestionAnswering
 from model_stuff.TFBertForNaturalQuestionAnswering import TFBertForNaturalQuestionAnswering
-from model_stuff import model_utils as mu
 
 
 def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1_000_000, do_cache=False):
@@ -31,7 +29,6 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     if not os.path.exists(logs):
         os.makedirs(logs)
 
-
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'bert_large': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
@@ -46,11 +43,13 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
         vocab = 'vocab.txt'
         pretrained = 'bert-base-uncased'
+        vocab = 'bert-base-uncased'
 
     elif namemodel == 'albert':  # base v2
         model_config = 'input/transformers_cache/albert_base_v2.json'
         vocab = 'spiece.model'
         pretrained = 'albert-base-v2'
+        vocab = 'albert-base-v2'
 
     elif namemodel == 'roberta':
         do_lower_case = False
@@ -64,6 +63,9 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     elif namemodel == "bert_large":
         model_config = 'input/transformers_cache/bert_large_uncased_config.json'
         vocab = 'input/transformers_cache/bert_large_uncased_vocab.txt'
+        vocab = 'bert-base-uncased'
+        pretrained = 'bert-large-uncased'
+
     else:
         # di default metto il base albert
         model_config = 'input/transformers_cache/albert_base_v2.json'
@@ -78,28 +80,31 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
 
     config_class, model_class, tokenizer_class = MODEL_CLASSES[namemodel]
     config = config_class.from_pretrained(pretrained)
-
+    print(tokenizer_class)
     # load tokenizer from the directory
-    tokenizer = tokenizer_class(os.path.join(checkpoint,vocab), do_lower_case='uncased')
+    # tokenizer = tokenizer_class(os.path.join(checkpoint, vocab), do_lower_case='uncased')
+    # load tokenizer from pretrained
+    tokenizer = tokenizer_class.from_pretrained(vocab)
+    tags = get_add_tokens(do_enumerate=args.do_enumerate)
+    num_added = tokenizer.add_tokens(tags)
+    print(f"Added {num_added} tokens")
 
     mymodel = model_class(config)
 
     mymodel(mymodel.dummy_inputs, training=False)
-
-    mymodel.load_weights(os.path.join(checkpoint, "weights.h5"), by_name=True)
+    # mymodel.load_weights(os.path.join(checkpoint, "weights.h5"), by_name=True)
+    mymodel.load_weights(checkpoint, by_name=True)
     print("Checkpoint loaded succefully")
 
-    print("***** Running evaluation *****")
-
-    #tokenizer = tokenizer_class.from_pretrained(pretrained,do_lower_case=do_lower_case)
-    #tags = get_add_tokens(do_enumerate=args.do_enumerate)
-    #num_added = tokenizer.add_tokens(tags)
-    #print(f"Added {num_added} tokens")
-    eval_ds, crops, entries, eval_dataset_length = getDatasetForEvaluation(args, tokenizer, namefile, verbose,
-                                                                           max_num_samples, do_cache)
-    print("***** Getting results *****")
-    result = getResult(args, mymodel, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile,tokenizer)
-    print("Result: {}".format(result))
+    if namefile != '':
+        print("***** Running evaluation *****")
+        eval_ds, crops, entries, eval_dataset_length = getDatasetForEvaluation(args, tokenizer, namefile, verbose,
+                                                                               max_num_samples, do_cache)
+        print("***** Getting results *****")
+        result = getResult(args, mymodel, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer)
+        print("Result: {}".format(result))
+    else:
+        return mymodel, tokenizer
 
 
 if __name__ == "__main__":
@@ -121,7 +126,8 @@ if __name__ == "__main__":
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
-    parser.add_argument("--checkpoint", default="checkpoints/checkpoint-092000/", type=str, help="The file we will use as checkpoint")
+    parser.add_argument("--checkpoint", default="checkpoints/checkpoint-092000/", type=str,
+                        help="The file we will use as checkpoint")
 
     parser.add_argument('--test_dir', type=str, default='TestData/simplified-nq-test.jsonl',
                         help='Directory were all the traing data splitted in smaller junks are stored')

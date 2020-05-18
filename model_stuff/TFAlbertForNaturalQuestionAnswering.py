@@ -5,7 +5,7 @@ import tensorflow as tf
 from transformers import TFAlbertPreTrainedModel
 # from transformers.modeling_tf_utils import get_initializer
 # from model_stuff.AlbertTransformer.modeling_tf_albert import TFALBertMainLayer
-from transformers import TFAlbertMainLayer
+from transformers import TFAlbertMainLayer, TFAlbertForQuestionAnswering
 from transformers.modeling_tf_utils import get_initializer
 
 

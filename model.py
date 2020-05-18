@@ -47,6 +47,7 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
 
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
+        'bert_large': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'albert': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AlbertTokenizer),  # V2
         'albert_squad': (AlbertConfig, TFAlbertForNaturalQuestionAnswering,
                          AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2"))
@@ -86,6 +87,10 @@ def main(namemodel, batch_size, train_dir, val_dir, epoch, checkpoint_dir, do_ca
         model_config = 'input/transformers_cache/albert_base_v2.json'
         vocab = 'input/transformers_cache/albert-base-v2-spiece.model'
         pretrained = 'albert-base-v2'
+    elif namemodel == 'bert_large':  # base v2
+        model_config = 'input/transformers_cache/bert_large_uncased.json'
+        vocab = 'input/transformers_cache/bert_large_uncased.txt'
+        pretrained = 'bert-large'
 
     elif namemodel == 'roberta':
         do_lower_case = False
