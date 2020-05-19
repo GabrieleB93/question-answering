@@ -19,6 +19,8 @@
 \usepackage{bbding}
 \usepackage{booktabs}
 
+\usepackage[labelfont={bf,sf,footnotesize,color=pblue},textfont={footnotesize}, margin={40pt,40pt}]{caption}
+
 \usepackage{eurosym}
 
 \usepackage[T1]{fontenc}
@@ -94,11 +96,7 @@
 \newcommand{\github}{\texttt{https://github.com/magemma/question-answering}}
 \newcommand{\app}{\texttt{https://link-alla-app}}
 
-
-
 \pgfplotsset{compat=1.15}
-
-\captionsetup[figure]{labelfont={color=pdarkblue, bf},textfont={it, small}}
 
 \sectionfont{\bf \Large \color{pblue}}
 \subsectionfont{\bf \color{pdarkblue}}
@@ -236,16 +234,22 @@ Moreover, we uploaded a Python implementation on \href{cia}{this} \footnote{ciap
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Before digging into the details of the machine learning core of our BERT-based QA system, let us define the outline of the responsive QA tool we developed.
 
-In \Cref{fig:application_dataflow} there is a pictorial representation of how the user interacts with the system and how it processes the information (server side) and how it prompts the results.
+In \Cref{fig:application_dataflow} there is a pictorial representation of how the user interacts with the system, how it processes the information (server side) and how it prompts the results.
 
 \begin{figure}[ht!]
     \centering
-    \includegraphics[width=\textwidth]{report/pics/tool_dataflow.pdf}
-    \caption{.}
+    \includegraphics[width=0.9\textwidth]{report/pics/tool_dataflow.pdf}
+    \caption{The full functioning of \nomefico, combined with an effective user interface.}
     \label{fig:application_dataflow}
 \end{figure}
 
-The broad architecture of \nomefico is shown in \Cref{fig:broad_architecture}.
+\todo[inline]{Aggiungere descrizione con immagini del workflow dell'applicazione, con un esempio che funziona, magari creando una sottosezione.}
+
+\subsection{\nomefico}\label{subsec:nomefico}
+We are now ready to discuss the implementation of \nomefico.
+
+We decided to tackle the open domain QA task problem creating a stack of two neural networks, forming a two-layer architecture, see \Cref{fig:broad_architecture}.
+The first layer is built using BERT's \cite{devlin2018bert} checkpoints, while the second layer is a neural networks that uses BERT's embeddings and the Natural Questions (NQ) \cite{kwiatowski} dataset \footnote{Some qualities of NQ are the following: (1) the questions were formulated by people out of genuine curiosity or out of need for an answer to complete another task, (2) the questions were formulated by people before they had seen the document that might contain the answer, (3) the documents in which the answer is to be found are much longer than the documents used in some of the existing question answering challenges.} with the aim of obtaining the start position and end position of the answer in the given paragraph.
 
 \begin{figure}[ht!]
     \centering
@@ -254,7 +258,7 @@ The broad architecture of \nomefico is shown in \Cref{fig:broad_architecture}.
     \label{fig:broad_architecture}
 \end{figure}
 
-We decided to tackle the open domain QA task problem creating a stack of two neural networks, forming a two-layer architecture. The first layer is built using BERT's \cite{devlin2018bert} checkpoints, while the second layer is a neural networks that uses BERT's embeddings and the Natural Questions (NQ) \cite{kwiatowski} dataset \footnote{Some qualities of NQ are the following: (1) the questions were formulated by people out of genuine curiosity or out of need for an answer to complete another task, (2) the questions were formulated by people before they had seen the document that might contain the answer, (3) the documents in which the answer is to be found are much longer than the documents used in some of the existing question answering challenges.} with the aim of obtaining the start position and end position of the answer in the given paragraph.
+
 
 Let us dig into details a bit more and explain how the BERT layer works.
 
