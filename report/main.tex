@@ -1,7 +1,7 @@
 %chktex-file 1 
 %chktex-file 8
 
-\documentclass[12pt,a4paper,hidelinks]{article}
+\documentclass[11pt,hidelinks]{article}
 \usepackage[british]{babel}
 
 %%MUST STAY HERE
@@ -19,22 +19,30 @@
 \usepackage{bbding}
 \usepackage{booktabs}
 
-\usepackage[labelfont={bf,sf,footnotesize,color=pblue},textfont={footnotesize}, margin={40pt,40pt}]{caption}
-
-\usepackage{eurosym}
-
-\usepackage[T1]{fontenc}
-\usepackage{fullpage}
-\usepackage{graphicx}
-
 \usepackage[colorlinks = true,
             linkcolor = pdarkerblue,
             urlcolor  = gblue,
             citecolor = gblue,
             anchorcolor = blue]{hyperref}%%Must stay here
-\usepackage{caption}
-\usepackage{cleveref}
 %%
+
+\usepackage[labelfont={bf,sf,footnotesize,color=pblue},textfont={footnotesize}, margin={40pt,40pt}]{caption}
+\usepackage{cleveref}
+
+\usepackage{eurosym}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhead{}
+\fancyhead[R]{\color{pblue} \sc \nomefico}
+\lhead{\includegraphics[width=1cm]{pics/Cherubino.jpg}}
+\usepackage[T1]{fontenc}
+\usepackage{fullpage}
+
+\usepackage{geometry}
+
+\usepackage{graphicx}
+
 \usepackage{hhline}
 \usepackage{listings}
 \usepackage{lipsum}
@@ -56,6 +64,7 @@
 \usepackage{pgfplotstable}
 \usepackage{placeins}
 
+\usepackage{showframe}
 \usepackage{sectsty}
 \usepackage{siunitx}
 \usepackage{subfig}
@@ -132,11 +141,14 @@
 
 \begin{mydisclaimer}{{\large \ding{74}} \,  Osservazioni}
 \begin{itemize}
+    \item I retangoli che vedete ai bordi servono per vedere quanto sono grandi i margini scrivibili della pagina, si possono togliere commentando la riga \texttt{\textbackslash usepackage\{showframe\}}
     \item Gli errori qui sopra e di compilazione sono dovuti a questo rettangolo blu, che tanto sparisce
     \item L'abstract adesso conta 267 parole. Di solito gli abstract non sono piu' lunghi di 300
     \item Il nome del nostro strumento di QA sta in una macro, per usarlo nel report scrivere \texttt{\textbackslash nomefico}
     \item Il link al repo github sta in una macro, per usarlo scrivere \texttt{\textbackslash github}
     \item Il link alla pagina web per QA (ancora da definire) sta in una macro, chiamata \texttt{\textbackslash app}
+    \item le immagini sono solo una bozza, vorrei che fossero approvate al 100\% prima di realizzarle in latex
+    \item h
 \end{itemize}
 \end{mydisclaimer}
 
@@ -144,29 +156,24 @@
 
 \begin{titlepage}
     \centering
-    \begin{minipage}{0.22\textwidth}%
-        \includegraphics[width=\linewidth]{pics/Cherubino.jpg}
-    \end{minipage}\hspace{10pt}
-    \begin{minipage}{0.6\textwidth}%
-        \flushright
-        \large
-        \vspace{0.8cm}
-        \textsc{\color{pblue}%
-        \nomefico\\
-        a Bert-based, open domain\\
-        question answering system}
-        \begin{tikzpicture}%
-            \draw[thick, brown] (0.1,0)--(0.99\textwidth,0);%   
-        \end{tikzpicture}%
-    \end{minipage}%
+    \scalebox{0.7} {
+        \begin{minipage}{0.22\textwidth}%
+            \includegraphics[width=\linewidth]{pics/Cherubino.jpg}
+        \end{minipage}\hspace{10pt}
+        \begin{minipage}{0.9\textwidth}%
+            \flushright
+            \large
+            \vspace{0.8cm}
+            \textsc{\color{pblue}%
+            \nomefico\\
+            a Bert-based, open domain\\
+            question answering system}
+            \begin{tikzpicture}%
+                \draw[thick, brown] (0.1,0)--(0.99\textwidth,0);%   
+            \end{tikzpicture}%
+        \end{minipage}%
+    }
 
-    
-    %{\color{pblue} \textsc{ \Large Human Language Techonlogies}}
-    
-    %\vspace{0.5cm}
-    
-    %{\color{pblue} \textsc{ A.Y. 2018-2019}}
-    
     \vspace{0.3cm}
     
     Gabriele Barreca, Mario Bonsembiante {\small and} Gemma Martini
@@ -175,7 +182,7 @@
     
     {\scriptsize University of Pisa}
     
-    \vspace{0.5cm}
+    \vspace{0.2cm}
     
     \abstract{
     \scriptsize
@@ -201,10 +208,11 @@
         \draw[thick, brown] (0,0)--(0.8\textwidth,0);%   
     \end{tikzpicture}%
     
-    \vspace{-0.5cm}
-    \tableofcontents
+    %\vspace{-0.5cm}
+    \scalebox{0.8}{\vbox{\tableofcontents}}
+    %\tableofcontents
 
-    \vspace{0.36cm}
+    \vspace{0.3cm}
 
     \begin{tikzpicture}%    
         \draw[thick, brown] (0,0)--(0.8\textwidth,0);%   
@@ -218,14 +226,19 @@
 
 %\thispagestyle{empty}
 \newpage
+\newgeometry{
+	right=50mm,
+	left=45mm,
+	top=40mm,
+	bottom=45mm
+}
 \setcounter{page}{1}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}\label{sec:intro}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Moreover, we uploaded a Python implementation on \href{cia}{this} \footnote{ciap} GitHub repository and we integrated it with a straightforward UI, available at \href{www.gemmamartini.it}{www.gemmamartini.it}.
-
+\todo[inline]{Aggiungere introduzione}
 \todo[inline]{aggiungere una frase in cui si dice che cosa si trova in quali sezioni}
 
 
@@ -234,13 +247,12 @@ Moreover, we uploaded a Python implementation on \href{cia}{this} \footnote{ciap
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Before digging into the details of the machine learning core of our BERT-based QA system, let us define the outline of the responsive QA tool we developed.
 
-In \Cref{fig:application_dataflow} there is a pictorial representation of how the user interacts with the system, how it processes the information (server side) and how it prompts the results.
+In \Cref{fig:tool_dataflow} there is a pictorial representation of how the user interacts with the system, how it processes the information (server side) and how it prompts the results.
 
 \begin{figure}[ht!]
     \centering
     \includegraphics[width=0.9\textwidth]{report/pics/tool_dataflow.pdf}
-    \caption{The full functioning of \nomefico, combined with an effective user interface.}
-    \label{fig:application_dataflow}
+    \caption{The full functioning of \nomefico, combined with an effective user interface.}\label{fig:tool_dataflow}
 \end{figure}
 
 \todo[inline]{Aggiungere descrizione con immagini del workflow dell'applicazione, con un esempio che funziona, magari creando una sottosezione.}
@@ -248,19 +260,30 @@ In \Cref{fig:application_dataflow} there is a pictorial representation of how th
 \subsection{\nomefico}\label{subsec:nomefico}
 We are now ready to discuss the implementation of \nomefico.
 
-We decided to tackle the open domain QA task problem creating a stack of two neural networks, forming a two-layer architecture, see \Cref{fig:broad_architecture}.
-The first layer is built using BERT's \cite{devlin2018bert} checkpoints, while the second layer is a neural networks that uses BERT's embeddings and the Natural Questions (NQ) \cite{kwiatowski} dataset \footnote{Some qualities of NQ are the following: (1) the questions were formulated by people out of genuine curiosity or out of need for an answer to complete another task, (2) the questions were formulated by people before they had seen the document that might contain the answer, (3) the documents in which the answer is to be found are much longer than the documents used in some of the existing question answering challenges.} with the aim of obtaining the start position and end position of the answer in the given paragraph.
+We decided to tackle the open domain QA task problem by creating a stack of two neural networks, forming a two-layer architecture, see \Cref{fig:broad_architecture}.
 
 \begin{figure}[ht!]
     \centering
-    \includegraphics[scale=.9]{pics/broad_architecture.png}
+    \includegraphics[width=0.3\textwidth]{pics/broad_architecture.pdf}
     \caption{.}
     \label{fig:broad_architecture}
 \end{figure}
 
+The first layer is built using BERT's \cite{devlin2018bert} checkpoints, while the second layer is a neural network that uses BERT's embeddings and the Natural Questions (NQ) \cite{kwiatowski} dataset \footnote{Some qualities of NQ are the following: (1) the questions were formulated by people out of genuine curiosity or out of need for an answer to complete another task, (2) the questions were formulated by people before they had seen the document that might contain the answer, (3) the documents in which the answer is to be found are much longer than the documents used in some of the existing question answering challenges.} with the aim of obtaining the answer to the question.
 
-
+\subsubsection{BERT}
 Let us dig into details a bit more and explain how the BERT layer works.
+\todo[inline]{Fare digressione sull'utilizzo di BERT o BERT-large o ALBERT}
+
+\subsubsection{Fine-tuning}
+Depending on the flag
+start position and end position of the answer in the given paragraph.
+
+
+
+
+
+
 
 
 
@@ -316,5 +339,7 @@ Use a binary classification layer to check if the answer is ``plausible'' (i.e. 
 
 \bibliographystyle{unsrt}
 \bibliography{references}
+
+
 
 \end{document} 
