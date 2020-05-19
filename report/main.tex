@@ -16,6 +16,7 @@
 \usepackage{amssymb}
 \usepackage{arydshln}
 
+\usepackage{bbding}
 \usepackage{booktabs}
 
 \usepackage{eurosym}
@@ -38,6 +39,7 @@
 
 \usepackage{mathrsfs}
 \usepackage{mathtools}
+\usepackage{mdframed}
 \usepackage{minted}
 \usepackage{multicol}
 \usepackage{multirow}
@@ -57,6 +59,7 @@
 \usepackage{subfig}
 
 \usepackage{tabularx}
+\usepackage[many]{tcolorbox}
 \usepackage{tikz}
 \usepackage{todonotes}
 
@@ -88,6 +91,10 @@
 \usetikzlibrary{fit}
 
 \newcommand{\nomefico}{\textbf{nomeFicoDaScegliere}}
+\newcommand{\github}{\texttt{https://github.com/magemma/question-answering}}
+\newcommand{\app}{\texttt{https://link-alla-app}}
+
+
 
 \pgfplotsset{compat=1.15}
 
@@ -97,10 +104,45 @@
 \subsectionfont{\bf \color{pdarkblue}}
 \subsubsectionfont{\bf \color{pdarkerblue}}
 
+\newtcolorbox{myframe}[3][]{
+  width=\linewidth-20pt,
+  boxrule=0.5pt,
+  fonttitle=\bfseries,
+  colback=#3!20!white,
+  colframe=#3!80,
+  title={#2},
+  center,
+  enlarge top by=2\parsep,%     equivalent to mdframed 'skipabove'
+  enlarge bottom by=2\parsep,%
+  #1
+}%
+
+\newtcolorbox{mydisclaimer}[2][]{
+  width=\linewidth-1pt,
+  boxrule=0.3pt,
+  fonttitle=\bfseries,
+  colback=pdarkblue!20,
+  colframe=pdarkblue,
+  title={#2},
+  #1
+}%
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{document}
+
+\begin{mydisclaimer}{{\large \ding{74}} \,  Osservazioni}
+\begin{itemize}
+    \item Gli errori qui sopra e di compilazione sono dovuti a questo rettangolo blu, che tanto sparisce
+    \item L'abstract adesso conta 267 parole. Di solito gli abstract non sono piu' lunghi di 300
+    \item Il nome del nostro strumento di QA sta in una macro, per usarlo nel report scrivere \texttt{\textbackslash nomefico}
+    \item Il link al repo github sta in una macro, per usarlo scrivere \texttt{\textbackslash github}
+    \item Il link alla pagina web per QA (ancora da definire) sta in una macro, chiamata \texttt{\textbackslash app}
+\end{itemize}
+\end{mydisclaimer}
+
+\newpage
 
 \begin{titlepage}
     \centering
@@ -127,7 +169,7 @@
     
     %{\color{pblue} \textsc{ A.Y. 2018-2019}}
     
-    \vspace{1.2cm}
+    \vspace{0.3cm}
     
     Gabriele Barreca, Mario Bonsembiante {\small and} Gemma Martini
     
@@ -137,7 +179,23 @@
     
     \vspace{0.5cm}
     
-    \abstract{\lipsum[3]}
+    \abstract{
+    \scriptsize
+    Question answering (QA) systems can be seen as information retrieval systems which aim is to respond to queries, stated in natural language, by returning short answers or long sentences.
+    The ``so-called'' \emph{open domain QA task} adds the challenge of understanding if the answer to the selected question may or may not be found in a given paragraph, which content has been buried within large text corpora, such as Wikipedia.
+
+    \vspace{0.1cm}
+
+    Building such systems for practical applications has historically been quite challenging and involved.
+    The spectrum of possible answers given a question and a paragraph, moves from the ``simple'' \emph{yes/no answers} to the longer and more articulated \emph{long answers}, to then get to a trade-off between expressive power and succinctness, the ``so-called'' \emph{short answers}, which aim to enclose the answer in a single and possibly short sentence.
+    
+    \vspace{0.1cm}
+    
+    In this paper, we present a BERT-based implementation that solves an open domain QA task, providing all the three categories of answers listed above, with particular attention on the most widely studied kind, i.e. short answers.
+    We achieve pretty good results, although not as good as the state-of-the-art, that was not the purpose of this work.
+    
+    As expected and already stated in previous work, we conclude that predicting long answers per se is pretty unreliable, while much better results are achieved if the short answer is predicted and then enlarged with the whole paragraph it lies in, from the original text.
+}
     
     \vspace{1cm}
     
@@ -165,21 +223,21 @@
 \setcounter{page}{1}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 \section{Introduction}\label{sec:intro}
-Question answering (QA) systems can be seen as information retrieval systems which aim is to respond to queries, stated in natural language, by returning short answers or long sentences.
-The ``so-called'' \emph{open domain QA task} adds the challenge of understanding if the answer to the selected question may or may not be found in a paragraph, which content has been buried within large text corpora, such as Wikipedia.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\vspace{0.2cm}
+Moreover, we uploaded a Python implementation on \href{cia}{this} \footnote{ciap} GitHub repository and we integrated it with a straightforward UI, available at \href{www.gemmamartini.it}{www.gemmamartini.it}.
 
-Building such systems for practical applications has historically been quite challenging and involved.
-In this paper, we present a BERT-based implementation that solves an open domain QA task and we provide some performances study about it.
+\todo[inline]{aggiungere una frase in cui si dice che cosa si trova in quali sezioni}
 
-Moreover, we uploaded a Python implementation on   \href{www.google.com}{this} GitHub repository and we integrated it with a straightforward UI, available at \href{www.gemmamartini.it}{www.gemmamartini.it}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{The task}\label{sec:task}
+\section{The architecture}\label{sec:model}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Before digging into the details of the machine learning core of our BERT-based QA system, let us define the outline of the responsive QA tool we developed.
+
+In \Cref{fig:application_dataflow} the full
+
 The aim of our application is to provide an answer to a custom user's query. Such data-flow can be observed in \Cref{fig:application_dataflow}.
 
 \begin{figure}[ht!]
@@ -188,12 +246,6 @@ The aim of our application is to provide an answer to a custom user's query. Suc
     \caption{.}
     \label{fig:application_dataflow}
 \end{figure}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{The architecture}\label{sec:model}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 The broad architecture of \nomefico is shown in \Cref{fig:broad_architecture}.
 
