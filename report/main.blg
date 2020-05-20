@@ -1,55 +1,55 @@
 This is BibTeX, Version 0.99d (TeX Live 2019/Arch Linux)
 Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
 The top-level auxiliary file: main.aux
-The style file: plain.bst
+The style file: unsrt.bst
 Database file #1: references.bib
-Warning--empty journal in alberti
-Warning--empty journal in weston-reading
-Warning--empty booktitle in chen
-Warning--empty journal in weston-tracking
-Warning--empty journal in liu-yellow
-Warning--empty journal in liu-purple
-Warning--empty journal in roberta
 Warning--empty journal in coqa
-You've used 12 entries,
-            2118 wiz_defined-function locations,
-            556 strings with 6406 characters,
-and the built_in function-call counts, 5253 in all, are:
-= -- 452
-> -- 429
+Warning--empty journal in weston-tracking
+Warning--empty journal in weston-reading
+Warning--empty journal in alberti
+Warning--empty booktitle in chen
+Warning--empty journal in liu-purple
+Warning--empty journal in liu-yellow
+Warning--empty journal in roberta
+You've used 15 entries,
+            1791 wiz_defined-function locations,
+            518 strings with 6563 characters,
+and the built_in function-call counts, 3846 in all, are:
+= -- 253
+> -- 320
 < -- 2
-+ -- 168
-- -- 155
-* -- 444
-:= -- 930
-add.period$ -- 37
-call.type$ -- 12
-change.case$ -- 110
++ -- 111
+- -- 96
+* -- 296
+:= -- 665
+add.period$ -- 45
+call.type$ -- 15
+change.case$ -- 15
 chr.to.int$ -- 0
-cite$ -- 20
-duplicate$ -- 152
-empty$ -- 278
-format.name$ -- 155
-if$ -- 1017
+cite$ -- 23
+duplicate$ -- 157
+empty$ -- 310
+format.name$ -- 96
+if$ -- 811
 int.to.chr$ -- 0
-int.to.str$ -- 12
-missing$ -- 12
-newline$ -- 63
-num.names$ -- 26
-pop$ -- 127
+int.to.str$ -- 15
+missing$ -- 14
+newline$ -- 77
+num.names$ -- 17
+pop$ -- 74
 preamble$ -- 1
-purify$ -- 98
+purify$ -- 0
 quote$ -- 0
-skip$ -- 113
+skip$ -- 75
 stack$ -- 0
-substring$ -- 189
-swap$ -- 27
+substring$ -- 128
+swap$ -- 32
 text.length$ -- 2
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 48
+type$ -- 0
 warning$ -- 8
-while$ -- 33
-width$ -- 14
-write$ -- 119
+while$ -- 24
+width$ -- 17
+write$ -- 147
 (There were 8 warnings)

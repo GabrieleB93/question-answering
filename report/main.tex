@@ -2,11 +2,14 @@
 %chktex-file 8
 
 \documentclass[11pt,hidelinks]{article}
+\usepackage[utf8]{inputenc}
 \usepackage[british]{babel}
+\usepackage{mdframed}
 
 %%MUST STAY HERE
 \usepackage[svgnames, table]{xcolor}
 %%
+
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{amsfonts}
@@ -26,8 +29,10 @@
             anchorcolor = blue]{hyperref}%%Must stay here
 %%
 
+\usepackage{calc}
 \usepackage[labelfont={bf,sf,footnotesize,color=pblue},textfont={footnotesize}, margin={40pt,40pt}]{caption}
 \usepackage{cleveref}
+\usepackage{dsfont}
 
 \usepackage{eurosym}
 
@@ -49,7 +54,6 @@
 
 \usepackage{mathrsfs}
 \usepackage{mathtools}
-\usepackage{mdframed}
 \usepackage{minted}
 \usepackage{multicol}
 \usepackage{multirow}
@@ -79,7 +83,6 @@
 \usepackage{wrapfig}
 
 \usepackage{xinttools}
-\usepackage{xcolor}
 
 %%%~~~~~~~~~~~~~~~~~~~~~~~~Fonts~~~~~~~~~~~~~~~~~~~~~~~%%%
 
@@ -111,38 +114,32 @@
 \subsectionfont{\bf \color{pdarkblue}}
 \subsubsectionfont{\bf \color{pdarkerblue}}
 
-\newtcolorbox{myframe}[3][]{
-  width=\linewidth-20pt,
-  boxrule=0.5pt,
-  fonttitle=\bfseries,
-  colback=#3!20!white,
-  colframe=#3!80,
-  title={#2},
-  center,
-  enlarge top by=2\parsep,%     equivalent to mdframed 'skipabove'
-  enlarge bottom by=2\parsep,%
-  #1
-}%
+\mdfdefinestyle{MyFrame}{%
+    linecolor=pdarkblue,
+    fontcolor=white,
+    outerlinewidth=2pt,
+    roundcorner=20pt,
+    innertopmargin=4pt,
+    innerbottommargin=4pt,
+    innerrightmargin=4pt,
+    innerleftmargin=4pt,
+    leftmargin = 4pt,
+    rightmargin = 4pt,
+    backgroundcolor=pdarkerblue
+}
 
-\newtcolorbox{mydisclaimer}[2][]{
-  width=\linewidth-1pt,
-  boxrule=0.3pt,
-  fonttitle=\bfseries,
-  colback=pdarkblue!20,
-  colframe=pdarkblue,
-  title={#2},
-  #1
-}%
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{document}
 
-\begin{mydisclaimer}{{\large \ding{74}} \,  Osservazioni}
+\begin{mdframed}[style=MyFrame,nobreak=true,align=center,userdefinedwidth=30em]
+\textbf{Osservazioni}
+
 \begin{itemize}
     \item I retangoli che vedete ai bordi servono per vedere quanto sono grandi i margini scrivibili della pagina, si possono togliere commentando la riga \texttt{\textbackslash usepackage\{showframe\}}
-    \item Gli errori qui sopra e di compilazione sono dovuti a questo rettangolo blu, che tanto sparisce
     \item L'abstract adesso conta 267 parole. Di solito gli abstract non sono piu' lunghi di 300
     \item Il nome del nostro strumento di QA sta in una macro, per usarlo nel report scrivere \texttt{\textbackslash nomefico}
     \item Il link al repo github sta in una macro, per usarlo scrivere \texttt{\textbackslash github}
@@ -150,7 +147,7 @@
     \item le immagini sono solo una bozza, vorrei che fossero approvate al 100\% prima di realizzarle in latex
     \item h
 \end{itemize}
-\end{mydisclaimer}
+\end{mdframed}
 
 \newpage
 
@@ -196,8 +193,9 @@
     
     \vspace{0.1cm}
     
-    In this paper, we present a BERT-based implementation that solves an open domain QA task, providing all the three categories of answers listed above, with particular attention on the most widely studied kind, i.e. short answers.
+    In this paper, we present a BERT-based implementation that solves an open domain QA task, providing all the three categories of answers listed above, with particular attention on the most widely studied kind, i.e.~short answers.
     We achieve pretty good results, although not as good as the state-of-the-art, that was not the purpose of this work.
+
     
     As expected and already stated in previous work, we conclude that predicting long answers per se is pretty unreliable, while much better results are achieved if the short answer is predicted and then enlarged with the whole paragraph it lies in, from the original text.
 }
@@ -251,7 +249,7 @@ In \Cref{fig:tool_dataflow} there is a pictorial representation of how the user 
 
 \begin{figure}[ht!]
     \centering
-    \includegraphics[width=0.9\textwidth]{report/pics/tool_dataflow.pdf}
+    \includegraphics[width=0.9\textwidth]{pics/tool_dataflow.pdf}
     \caption{The full functioning of \nomefico, combined with an effective user interface.}\label{fig:tool_dataflow}
 \end{figure}
 
@@ -265,11 +263,10 @@ We decided to tackle the open domain QA task problem by creating a stack of two 
 \begin{figure}[ht!]
     \centering
     \includegraphics[width=0.3\textwidth]{pics/broad_architecture.pdf}
-    \caption{.}
-    \label{fig:broad_architecture}
+    \caption{.}\label{fig:broad_architecture}
 \end{figure}
 
-The first layer is built using BERT's \cite{devlin2018bert} checkpoints, while the second layer is a neural network that uses BERT's embeddings and the Natural Questions (NQ) \cite{kwiatowski} dataset \footnote{Some qualities of NQ are the following: (1) the questions were formulated by people out of genuine curiosity or out of need for an answer to complete another task, (2) the questions were formulated by people before they had seen the document that might contain the answer, (3) the documents in which the answer is to be found are much longer than the documents used in some of the existing question answering challenges.} with the aim of obtaining the answer to the question.
+The first layer is built using BERT's~\cite{devlin2018bert} checkpoints, while the second layer is a neural network that uses BERT's embeddings and the Natural Questions (NQ)~\cite{kwiatowski} dataset~\footnote{Some qualities of NQ are the following: (1) the questions were formulated by people out of genuine curiosity or out of need for an answer to complete another task, (2) the questions were formulated by people before they had seen the document that might contain the answer, (3) the documents in which the answer is to be found are much longer than the documents used in some of the existing question answering challenges.} with the aim of obtaining the answer to the question.
 
 \subsubsection{BERT}
 Let us dig into details a bit more and explain how the BERT layer works.
@@ -310,7 +307,7 @@ In this section the tools used in the project are described.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Future work}\label{sec:future_work}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Use a binary classification layer to check if the answer is ``plausible'' (i.e. the meanings in the question are covered in the answer), as done by \cite{Hu2019ReadV} and \cite{Back2020NeurQuRI}.
+Use a binary classification layer to check if the answer is ``plausible'' (i.e.~the meanings in the question are covered in the answer), as done by~\cite{Hu2019ReadV} and~\cite{Back2020NeurQuRI}.
 
 
 

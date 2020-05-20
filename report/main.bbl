@@ -1,38 +1,9 @@
 \begin{thebibliography}{10}
 
-\bibitem{alberti}
-Chris Alberti, Kenton Lee, and Michael Collins.
-\newblock A bert baseline for the natural questions.
-\newblock 01 2019.
-
-\bibitem{weston-reading}
-Danqi Chen, Adam Fisch, Jason Weston, and Antoine Bordes.
-\newblock Reading wikipedia to answer open-domain questions.
-\newblock 03 2017.
-
-\bibitem{chen}
-Yu~Chen, Lingfei Wu, and Mohammed J.~Zaki.
-\newblock Bidirectional attentive memory networks for question answering over
-  knowledge bases.
-\newblock pages 2913--2923, 01 2019.
-
-\bibitem{Collobert}
-Ronan Collobert, Jason Weston, L{\'e}on Bottou, Michael Karlen, Koray
-  Kavukcuoglu, and Pavel Kuksa.
-\newblock Natural language processing (almost) from scratch.
-\newblock {\em J. Mach. Learn. Res.}, 12:2493--2537, November 2011.
-
-\bibitem{kbqa}
-Wanyun Cui, Yanghua Xiao, Haixun Wang, Yangqiu Song, Seung-won Hwang, and Wei
-  Wang.
-\newblock Kbqa: Learning question answering over qa corpora and knowledge
-  bases.
-\newblock {\em Proceedings of the VLDB Endowment}, 10:565--576, 01 2017.
-
-\bibitem{weston-tracking}
-Mikael Henaff, Jason Weston, Arthur Szlam, Antoine Bordes, and Yann Lecun.
-\newblock Tracking the world state with recurrent entity networks.
-\newblock 12 2016.
+\bibitem{devlin2018bert}
+Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova.
+\newblock Bert: Pre-training of deep bidirectional transformers for language
+  understanding, 2018.
 
 \bibitem{kwiatowski}
 Tom Kwiatkowski, Jennimaria Palomaki, Olivia Redfield, Michael Collins, Ankur
@@ -43,27 +14,36 @@ Tom Kwiatkowski, Jennimaria Palomaki, Olivia Redfield, Michael Collins, Ankur
 \newblock {\em Transactions of the Association of Computational Linguistics},
   2019.
 
-\bibitem{liu-yellow}
-Xiaodong Liu, Pengcheng He, Weizhu Chen, and Jianfeng Gao.
-\newblock Improving multi-task deep neural networks via knowledge distillation
-  for natural language understanding.
-\newblock 04 2019.
+\bibitem{Hu2019ReadV}
+Minghao Hu, Furu Wei, Yu~xing Peng, Zhen~Xian Huang, Nan Yang, and Ming Zhou.
+\newblock Read + verify: Machine reading comprehension with unanswerable
+  questions.
+\newblock In {\em AAAI}, 2019.
 
-\bibitem{liu-purple}
-Xiaodong Liu, Pengcheng He, Weizhu Chen, and Jianfeng Gao.
-\newblock Multi-task deep neural networks for natural language understanding.
-\newblock 01 2019.
+\bibitem{Back2020NeurQuRI}
+Seohyun Back, Sai~Chetan Chinthakindi, Akhil Kedia, Haejun Lee, and Jaegul
+  Choo.
+\newblock Neurquri: Neural question requirement inspector for answerability
+  prediction in machine reading comprehension.
+\newblock In {\em International Conference on Learning Representations}, 2020.
 
-\bibitem{roberta}
-Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du, Mandar Joshi, Danqi Chen, Omer
-  Levy, Mike Lewis, Luke Zettlemoyer, and Veselin Stoyanov.
-\newblock Roberta: A robustly optimized bert pretraining approach.
-\newblock 07 2019.
+\bibitem{kbqa}
+Wanyun Cui, Yanghua Xiao, Haixun Wang, Yangqiu Song, Seung-won Hwang, and Wei
+  Wang.
+\newblock Kbqa: Learning question answering over qa corpora and knowledge
+  bases.
+\newblock {\em Proceedings of the VLDB Endowment}, 10:565--576, 01 2017.
 
 \bibitem{coqa}
 Siva Reddy, Danqi Chen, and Christoper Manning.
 \newblock Coqa: A conversational question answering challenge.
 \newblock 08 2018.
+
+\bibitem{Collobert}
+Ronan Collobert, Jason Weston, L{\'e}on Bottou, Michael Karlen, Koray
+  Kavukcuoglu, and Pavel Kuksa.
+\newblock Natural language processing (almost) from scratch.
+\newblock {\em J. Mach. Learn. Res.}, 12:2493--2537, November 2011.
 
 \bibitem{vaswani}
 Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,
@@ -72,5 +52,43 @@ Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,
 \newblock In I.~Guyon, U.~V. Luxburg, S.~Bengio, H.~Wallach, R.~Fergus,
   S.~Vishwanathan, and R.~Garnett, editors, {\em Advances in Neural Information
   Processing Systems 30}, pages 5998--6008. Curran Associates, Inc., 2017.
+
+\bibitem{weston-tracking}
+Mikael Henaff, Jason Weston, Arthur Szlam, Antoine Bordes, and Yann Lecun.
+\newblock Tracking the world state with recurrent entity networks.
+\newblock 12 2016.
+
+\bibitem{weston-reading}
+Danqi Chen, Adam Fisch, Jason Weston, and Antoine Bordes.
+\newblock Reading wikipedia to answer open-domain questions.
+\newblock 03 2017.
+
+\bibitem{alberti}
+Chris Alberti, Kenton Lee, and Michael Collins.
+\newblock A bert baseline for the natural questions.
+\newblock 01 2019.
+
+\bibitem{chen}
+Yu~Chen, Lingfei Wu, and Mohammed J.~Zaki.
+\newblock Bidirectional attentive memory networks for question answering over
+  knowledge bases.
+\newblock pages 2913--2923, 01 2019.
+
+\bibitem{liu-purple}
+Xiaodong Liu, Pengcheng He, Weizhu Chen, and Jianfeng Gao.
+\newblock Multi-task deep neural networks for natural language understanding.
+\newblock 01 2019.
+
+\bibitem{liu-yellow}
+Xiaodong Liu, Pengcheng He, Weizhu Chen, and Jianfeng Gao.
+\newblock Improving multi-task deep neural networks via knowledge distillation
+  for natural language understanding.
+\newblock 04 2019.
+
+\bibitem{roberta}
+Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du, Mandar Joshi, Danqi Chen, Omer
+  Levy, Mike Lewis, Luke Zettlemoyer, and Veselin Stoyanov.
+\newblock Roberta: A robustly optimized bert pretraining approach.
+\newblock 07 2019.
 
 \end{thebibliography}
