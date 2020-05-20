@@ -167,8 +167,18 @@
 \setcounter{page}{1}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+\section{Abstract}\label{sec:abstaract}
+Machine reading comprehension and question answering is an essential task in
+natural language processing. Recently, Pre-trained Contextual Embeddings (PCE)
+models like Embeddings from Language Models (ELMo) \cite{elmo} and Bidirectional
+Encoder Representations from Transformers (BERT) \cite{bert} have attracted lots of attention due to their great performance in a wide range of NLP tasks. \\
+On this project we decided to pick Natural Question\cite{nq} a new question answering dataset by google.  
 \section{Introduction}\label{sec:intro}
+We decided to pick up this dataset because it's build form real query on google.
+Other dataset in Machine Reading Comprehension(MRC) like SQuAD\cite{squad_2} soffer from observational bias: the dataset contatain questions and answer given by people who have read the passage. Natural Question insted is built from real query made on google search engine. Given a query the corpus is the top 5 pages results. The are two different task for the natural question competition: a long answer (typically a paragraph) and a short answer (one or more entities) if present on the page.   \\
+\section{Related Work}
+Most recent MRC systems are predominantly BERT-based
+as is evident on leaderboards for SQuAD v1.1 and v2.0 and Natural Questions.
 
 All references:
 \begin{itemize}
