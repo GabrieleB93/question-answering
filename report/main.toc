@@ -1,12 +1,12 @@
 \babel@toc {british}{}
-\contentsline {section}{\numberline {1}Introduction}{1}{section.1}% 
-\contentsline {section}{\numberline {2}The architecture}{1}{section.2}% 
-\contentsline {subsection}{\numberline {2.1}\textbf {nomeFicoDaScegliere}}{1}{subsection.2.1}% 
-\contentsline {subsubsection}{\numberline {2.1.1}BERT}{2}{subsubsection.2.1.1}% 
-\contentsline {subsubsection}{\numberline {2.1.2}Fine-tuning}{2}{subsubsection.2.1.2}% 
-\contentsline {section}{\numberline {3}Experimental results}{2}{section.3}% 
-\contentsline {subsection}{\numberline {3.1}Hardware}{2}{subsection.3.1}% 
-\contentsline {subsection}{\numberline {3.2}Hyper-parameters values}{3}{subsection.3.2}% 
-\contentsline {section}{\numberline {4}Future work}{3}{section.4}% 
-\contentsline {section}{\numberline {5}Conclusions}{3}{section.5}% 
-\contentsline {subsection}{\numberline {5.1}All references}{3}{subsection.5.1}% 
+\contentsline {section}{\numberline {1}Introduction}{1}{section.1}%
+\contentsline {section}{\numberline {2}The architecture}{1}{section.2}%
+\contentsline {subsection}{\numberline {2.1}\textbf {nomeFicoDaScegliere}}{1}{subsection.2.1}%
+\contentsline {subsubsection}{\numberline {2.1.1}BERT}{2}{subsubsection.2.1.1}%
+\contentsline {subsubsection}{\numberline {2.1.2}Fine-tuning}{2}{subsubsection.2.1.2}%
+\contentsline {section}{\numberline {3}Experimental results}{2}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Hardware}{2}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Hyper-parameters values}{3}{subsection.3.2}%
+\contentsline {section}{\numberline {4}Future work}{3}{section.4}%
+\contentsline {section}{\numberline {5}Conclusions}{3}{section.5}%
+\contentsline {subsection}{\numberline {5.1}All references}{3}{subsection.5.1}%

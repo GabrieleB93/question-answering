@@ -22,6 +22,18 @@ from shutil import rmtree, copy
 logger = logging.getLogger(__name__)
 
 def partial_accuracy(true_value, logits):
+    """
+    This function computes the accuracy, following this reasoning:
+    if the question has no answer in the given paragraph, the accuracy of such
+    example is discarded.
+    OBS: the start position of the answer coincides with the start position (0).
+
+    @param true_value an array of size batch_size of target values for start_position
+    @param logits an array of size batch_size of predicted values for end_position
+
+    @return the accuracy value, computed as the sum of the accuracy values on those
+        example which have an answer, divided by the maximum of the sum of all values
+    """
     acc_1 = tf.keras.metrics.sparse_categorical_accuracy(
                 true_value, logits)    
     # don't count if the true value is the start of the string, because it means that it 
@@ -116,15 +128,13 @@ def main(namemodel,
     tokenizer = tokenizer_class.from_pretrained(pretrained,
         do_lower_case=do_lower_case)
 
-    
-
     print(model_class)
     start_file = 0
     if checkpoint != "":
         config = config_class.from_json_file(model_config)
         mymodel = model_class(config)
 
-        # we do this in order to compile the model, otherwise it will not be able to lead the weights
+        # we do this in order to compile the model, otherwise it will not be able to load the weights
         # mymodel(traingenerator.get_sample_data())
         
         mymodel(mymodel.dummy_inputs)
@@ -153,7 +163,7 @@ def main(namemodel,
     #adam = tfa.optimizers.AdamW(lr=learning_rate, weight_decay=0.01, epsilon=1e-6)
     adam = tf.optimizers.Adam(lr = learning_rate)
 
-        # this file we implement the training by ourself istead of using keras
+    # Follows a reimplementation of the training (substituting keras)
     @tf.function
     def train_step(batch):
         with tf.GradientTape() as tape:
@@ -169,7 +179,7 @@ def main(namemodel,
 
 
             variance = tf.math.reduce_max( outputs["start"]) -  tf.math.reduce_min( outputs["start"])
-            loss = ((tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss) / 2.0) +
+            loss = ((tf.reduce_mean(start_loss) + tf.reduce_mean(end_loss)) / 2.0 +
                 tf.reduce_mean(long_loss)) / 2.0
             
             
