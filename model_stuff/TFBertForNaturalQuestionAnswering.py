@@ -18,9 +18,15 @@ class TFBertForNaturalQuestionAnswering(TFBertPreTrainedModel):
         self.long_outputs = tf.keras.layers.Dense(1, kernel_initializer=self.initializer,
                                     name='long_outputs')
 
+        self.answerable = tf.keras.layers.Dense(1, kernel_initializer=self.initializer,
+            name='answerable', activation = "sigmoid")
+        
+
     def call(self, inputs, **kwargs):
         outputs = self.bert(inputs, **kwargs)
         sequence_output = outputs[0]
+        pooling_layer = sequence_output[:,0,:]#outputs[1]
+
         logits = self.qa_outputs(sequence_output)
         start_logits, end_logits = tf.split(logits, 2, axis=-1)
         start_logits = tf.squeeze(start_logits, -1)
@@ -28,4 +34,6 @@ class TFBertForNaturalQuestionAnswering(TFBertPreTrainedModel):
 
         long_logits = tf.squeeze(self.long_outputs(sequence_output), -1)
 
-        return {"start": start_logits, "end": end_logits, "long":long_logits}
+        answerable = tf.squeeze(self.answerable(pooling_layer), -1)
+
+        return {"start": start_logits, "end": end_logits, "long":long_logits, "answerable": answerable}

@@ -44,7 +44,7 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     do_lower_case = 'uncased'
     if namemodel == "bert":  # base
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
-        vocab = 'bert_base_uncased_vocab.txt'
+        vocab = 'vocab.txt'
         pretrained = 'bert-base-uncased'
 
     elif namemodel == 'albert':  # base v2
