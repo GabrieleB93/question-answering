@@ -5,6 +5,19 @@ Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova.
 \newblock Bert: Pre-training of deep bidirectional transformers for language
   understanding, 2018.
 
+\bibitem{albert}
+Zhenzhong Lan, Mingda Chen, Sebastian Goodman, Kevin Gimpel, Piyush Sharma, and
+  Radu Soricut.
+\newblock Albert: A lite bert for self-supervised learning of language
+  representations.
+\newblock In {\em International Conference on Learning Representations}, 2020.
+
+\bibitem{roberta}
+Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du, Mandar Joshi, Danqi Chen, Omer
+  Levy, Mike Lewis, Luke Zettlemoyer, and Veselin Stoyanov.
+\newblock Roberta: A robustly optimized bert pretraining approach.
+\newblock 07 2019.
+
 \bibitem{kwiatowski}
 Tom Kwiatkowski, Jennimaria Palomaki, Olivia Redfield, Michael Collins, Ankur
   Parikh, Chris Alberti, Danielle Epstein, Illia Polosukhin, Matthew Kelcey,
@@ -84,11 +97,5 @@ Xiaodong Liu, Pengcheng He, Weizhu Chen, and Jianfeng Gao.
 \newblock Improving multi-task deep neural networks via knowledge distillation
   for natural language understanding.
 \newblock 04 2019.
-
-\bibitem{roberta}
-Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du, Mandar Joshi, Danqi Chen, Omer
-  Levy, Mike Lewis, Luke Zettlemoyer, and Veselin Stoyanov.
-\newblock Roberta: A robustly optimized bert pretraining approach.
-\newblock 07 2019.
 
 \end{thebibliography}

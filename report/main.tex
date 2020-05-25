@@ -3,7 +3,7 @@
 % !TeX TXS-program:compile = txs:///pdflatex/[--shell-escape]
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\documentclass[11pt,hidelinks]{article}
+\documentclass[10pt,hidelinks]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[british]{babel}
 \usepackage{mdframed}
@@ -34,6 +34,7 @@
 \usepackage{calc}
 \usepackage[labelfont={bf,sf,footnotesize,color=pblue},textfont={footnotesize}, margin={40pt,40pt}]{caption}
 \usepackage{cleveref}
+\usepackage{csquotes}
 \usepackage{dsfont}
 
 \usepackage{eurosym}
@@ -73,7 +74,8 @@
 \usepackage{showframe}
 \usepackage{sectsty}
 \usepackage{siunitx}
-\usepackage{subfig}
+%\usepackage{subfig}
+\usepackage{subcaption}
 
 \usepackage{tabularx}
 \usepackage[many]{tcolorbox}
@@ -130,7 +132,14 @@
     backgroundcolor=pdarkerblue
 }
 
+ \renewcommand{\labelitemi}{$\textcolor{pblue}{\diamond}$}
 
+\DeclareMathOperator*{\avg}{avg}
+
+
+\def\colOne{white}
+\def\colTwo{pblue!10}
+\def\colHea{pblue!35}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -147,7 +156,7 @@
     \item Il link al repo github sta in una macro, per usarlo scrivere \texttt{\textbackslash github}
     \item Il link alla pagina web per QA (ancora da definire) sta in una macro, chiamata \texttt{\textbackslash app}
     \item le immagini sono solo una bozza, vorrei che fossero approvate al 100\% prima di realizzarle in latex
-    \item h
+    \item Ho truccato il json di emepio (che e' in questa cartella in formato \texttt{.jsonl}), perche' aveva 36 long answer candidates e non veniva bene l'immagine del json. Se si decide di cambiare esempio, cambiarlo coerentemente
 \end{itemize}
 \end{mdframed}
 
@@ -260,37 +269,103 @@ In \Cref{fig:tool_dataflow} there is a pictorial representation of how the user 
 \subsection{\nomefico}\label{subsec:nomefico}
 We are now ready to discuss the implementation of \nomefico.
 
-We decided to tackle the open domain QA task problem by creating a stack of two neural networks, forming a two-layer architecture, see \Cref{fig:broad_architecture}.
+We decided to tackle the open domain QA task by creating a stack of two neural networks, forming a two-layer architecture, as shown in \Cref{fig:broad_architecture}.
 
 \begin{figure}[ht!]
     \centering
     \includegraphics[width=0.3\textwidth]{pics/broad_architecture.pdf}
-    \caption{.}\label{fig:broad_architecture}
+    \caption{Sketch of the architecture of \nomefico.}\label{fig:broad_architecture}
 \end{figure}
 
-The first layer is built using BERT's~\cite{devlin2018bert} checkpoints, while the second layer is a neural network that uses BERT's embeddings and the Natural Questions (NQ)~\cite{kwiatowski} dataset~\footnote{Some qualities of NQ are the following: (1) the questions were formulated by people out of genuine curiosity or out of need for an answer to complete another task, (2) the questions were formulated by people before they had seen the document that might contain the answer, (3) the documents in which the answer is to be found are much longer than the documents used in some of the existing question answering challenges.} with the aim of obtaining the answer to the question.
+The first layer is built using BERT's~\cite{devlin2018bert} checkpoints~\footnote{In practice, we run experiments using also ALBERT~\cite{albert} and BERT Large. In the future also RoBERTa's~\cite{roberta} checkpoints will be used.} from Hugging Face, while the second layer is a neural network that uses BERT's embeddings and the Natural Questions (NQ)~\cite{kwiatowski} dataset~\footnote{Some qualities of NQ are the following: (1) the questions were formulated by people out of genuine curiosity or out of need for an answer to complete another task, (2) the questions were formulated by people before they had seen the document that might contain the answer, (3) the documents in which the answer is to be found are much longer than the documents used in some of the existing question answering challenges.} with the aim of obtaining the answer to the question.
 
-\subsubsection{BERT}
+In the following paragraphs, the reader can find a more detailed explanation of the two layers.
+
+\subsubsection{BERT}\label{subsubsec:bert}
+Bidirectional Encoder Representations from Transformers (BERT)~\cite{devlin2018bert}  has been introduced by Google in 2018 and it has been defined as the biggest leap forward in the past five years.
+
 Let us dig into details a bit more and explain how the BERT layer works.
+
+BERT is an embedder, i.e.~a neural network that translates words (more generally sentences and whole paragraphs) into sets of $512$-dimensional vectors\todo{siamo sicuri sul 512?}.
+One of the main advantages introduced by this technology is the way BERT splits words into tokens (tokenization process): it allows to split words into smaller pieces, before mapping them into vectors.
+This choice has the advantage of allowing the encoding of words that are not present in the dictionary and to represent all the words that share a prefix using a root vector and different representations for suffixes.
+
+The second and more crucial advantage introduced by BERT is the bidirectional self attention mechanism, that takes into account not only all the words that precede the target word, but also the rightmost part, giving to every word a context.
+
+
+
+
 \todo[inline]{Fare digressione sull'utilizzo di BERT o BERT-large o ALBERT}
 
-\subsubsection{Fine-tuning}
+As a recap, BERT (or BERT-based models) provides word-piece tokenization, a masked language model and  the ``next sentence'' prediction, but it needs to be fine-tuned for a specific task, such as QA.
+
+\subsubsection{Fine-tuning}\label{subsubsec:finetuning}
+In this work the authors decided to fine tune the model on Natural Questions dataset.
+
+Each training pattern is a \texttt{json} object, it is stored in a line and it has the following structure (see \Cref{fig:json}):
+
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[width=0.5\textwidth]{pics/json.png}
+	\caption{Broad structure of an input pattern.}\label{fig:json}
+\end{figure}
+
+\begin{itemize}
+	\item {\tt document\_text}: the HTML (cleaned of some tags) of the paragraph that may contain the answer;
+	\item {\tt long\_answer candidates}: contains the original question and a list of start and end positions of candidates for the answer (an example in \Cref{fig:long_answer_candidates});
+	\item {\tt annotations}: contains three sub-objects, that represent if the question allows a ``yes-no'' answer, the information about the short answer and the information about the long answer respectively (as shown in \Cref{fig:annotations}). It is possible that a question does not allow to be answered looking at the paragraph given as input. In that case the fields in the \texttt{long\_answer} object have value $-1$ and the list \texttt{short\_answers} is empty.
+\end{itemize}
+
+\begin{figure}[ht]
+	\begin{subfigure}{.45\textwidth}
+		\centering
+		\includegraphics[width=0.55\textwidth]{pics/long_answer_candidates.png}
+		\caption{\texttt{long\_answer candidates}.}\label{fig:long_answer_candidates}
+	\end{subfigure}
+	\begin{subfigure}{.55\textwidth}
+		\centering
+		\includegraphics[width=0.95\textwidth]{pics/annotations.png}
+		\caption{\texttt{annotations}.}\label{fig:annotations}
+	\end{subfigure}
+	\caption{More details about the fields of an input pattern.}
+	\label{fig:json_zoomed}
+\end{figure}
+
+\todo[inline]{Cercare di capire che cosa rappresenta il campo \texttt{top\_level} di \texttt{long\_answer candidates}}
+
+\todo[inline]{Ho capito che cosa rappresenta \texttt{candidate\_index}, e' l'indice della long answer vincente nell'elenco, vedi json di esempio}
+
+The NQ training set has on average, input patterns with size of $10$MB and the whole training set is stored in a \texttt{.jsonl} file of size $\approx 17$ GB.
+It goes without saying that loading both BERT's checkpoints and such file into RAM is not possible, so we managed to overcome this problem by splitting the file into chunks with size smaller than $100$MB.
+
+Another crucial characteristic of this dataset is that is strongly unbalanced towards the questions that are unanswerable:
+\blockquote{\it In total, annotators identify a long answer for $49\%$ of the examples, and short answer spans or a yes/no answer for $36\%$ of the examples. We consider the choice of whether or not to answer a question a core part of the question answering task, and do not discard the remaining $51\%$ that have no answer labeled.\cite{kwiatowski}}
+	
+This issue of unbalanced data needs some more reasoning: as already discussed in \Cref{subsubsec:bert}, the BERT-based embedder maps the input text into vectors. It also performs another operation, namely it splits the paragraph in the so-called ``crops'', containing $512$ tokens.
+It is easy to conclude that most of these crops do not contain the answer to the original question, hence the umbalancing becomes even more severe ($\approx 95\%$ of the crops do not contain the answer).
+
+The authors overcame this issue by selecting only the $3\%$ of the so-called ``impossible questions''\footnote{The code is available on GitHub, we set the value $0.03$ to the parameter called \texttt{p\_kepp\_impossible} in \texttt{dataset\_utils\_version2.py}.} and by designing an effective yet simple loss function.
+
+\todo[inline]{Rifare figura}
+
+On a batch of examples, we computed the loss as follows:
+\[
+\begin{cases}
+\frac{\frac{\biggl ( \avg\limits_{\text{batch}} \text{start\_loss} + \avg\limits_{\text{batch}} \text{end\_loss}  \biggr )}{2} + \avg\limits_{\text{batch}} \text{long\_loss}}{2} \hspace{0.5cm}\text{if answerable}\\
+0 \hspace{5.3cm} \text{otherwise}
+\end{cases}
+\]
+ 
+ where *\_loss is the categorical cross-entropy between the position of the true answer and the position of the guess, as shown in \Cref{fig:loss}.
+
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[width=0.4\textwidth]{pics/loss.jpg}
+	\caption{A pictorial representation of how the position of the first token of the answer may vary between target and predicted value.}\label{fig:loss}
+\end{figure}
+
 Depending on the flag
 start position and end position of the answer in the given paragraph.
-
-
-
-
-
-
-
-
-
-At this point, we assume that the system receives as input two textual items, the first one is the question and the second one is the paragraph that is supposed to contain the answer
-
-\todo[inline]{short?long?}
-
-In this section the tools used in the project are described.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Experimental results}\label{sec:experimental_results}
@@ -306,15 +381,31 @@ In this section the tools used in the project are described.
 \subsection{Hyper-parameters values}
 %%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Future work}\label{sec:future_work}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Use a binary classification layer to check if the answer is ``plausible'' (i.e.~the meanings in the question are covered in the answer), as done by~\cite{Hu2019ReadV} and~\cite{Back2020NeurQuRI}.
+\begin{table}[ht!]
+	\footnotesize\centering
+	\rowcolors{2}{\colOne}{\colTwo}
+	\begin{tabular}{|l|p{60mm}|}
+		%HEADER
+		\hline\rowcolor{\colHea} Parameter & Values\\\hline\hline
+		$ \eta $ (``learning rate'') & $ 1e-4$, $1e-5$, $1e-6$ \\
+		$\beta_1$ & $0.9$\\
+		$\beta_2$ & $0.999$\\
+		$\varepsilon$ & $1e-7$\\
+		batch size & $8$ (ALBERT), $4$ (BERT)\\
+		\end{tabular}
+	\caption{Hyperparameters values.}\label{tab:gridSearchParamCl}
+\end{table}
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusions and future work}\label{sec:conclusions_and_future_work}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+We describe \nomefico as an interactive question answering platform that sees its application in various contexts, such as domotics or education.
+We performed experimental results and validations techniques that assess the goodness of this model, although we highlight some issues that could be solved more effectively in the future, such as the problem of the presence of a typo in the query (both human error in typing or machine speech-to-text misunderstanding)\footnote{One could try to use library already implemented in Python for auto-correction, such as \texttt{auto-correct} available on Pypy, or a more involved and more accurate dictionary-based auto-correct strategy.}.
+Moreover, we would like to stress that choosing to force the model to learn only the answerable question was only a first approach to solve the problem and that another technique worth deepening in the future may be using a binary classification layer to check if the answer is ``plausible'' (i.e.~the meanings in the question are covered in the answer), as done by~\cite{Hu2019ReadV} and~\cite{Back2020NeurQuRI}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Conclusions}\label{sec:conclusions}
+%\section{Conclusions}\label{sec:conclusions}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%%%%%%%%%%%
@@ -333,6 +424,7 @@ Use a binary classification layer to check if the answer is ``plausible'' (i.e.~
   \item liu purple~\cite{liu-purple}
   \item liu yellow~\cite{liu-yellow}
   \item RoBERTa~\cite{roberta}
+  \item ALBERT~\cite{albert}
 \end{itemize}
 
 
@@ -342,3 +434,4 @@ Use a binary classification layer to check if the answer is ``plausible'' (i.e.~
 
 
 \end{document} 
+

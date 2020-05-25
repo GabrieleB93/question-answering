@@ -3,6 +3,7 @@ Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: main.aux
 The style file: unsrt.bst
 Database file #1: references.bib
+Warning--empty journal in roberta
 Warning--empty journal in coqa
 Warning--empty journal in weston-tracking
 Warning--empty journal in weston-reading
@@ -10,46 +11,45 @@ Warning--empty journal in alberti
 Warning--empty booktitle in chen
 Warning--empty journal in liu-purple
 Warning--empty journal in liu-yellow
-Warning--empty journal in roberta
-You've used 15 entries,
+You've used 16 entries,
             1791 wiz_defined-function locations,
-            518 strings with 6563 characters,
-and the built_in function-call counts, 3846 in all, are:
-= -- 253
-> -- 320
+            521 strings with 6748 characters,
+and the built_in function-call counts, 4077 in all, are:
+= -- 265
+> -- 340
 < -- 2
-+ -- 111
-- -- 96
-* -- 296
-:= -- 665
-add.period$ -- 45
-call.type$ -- 15
-change.case$ -- 15
++ -- 118
+- -- 102
+* -- 311
+:= -- 704
+add.period$ -- 48
+call.type$ -- 16
+change.case$ -- 16
 chr.to.int$ -- 0
-cite$ -- 23
-duplicate$ -- 157
-empty$ -- 310
-format.name$ -- 96
-if$ -- 811
+cite$ -- 24
+duplicate$ -- 169
+empty$ -- 335
+format.name$ -- 102
+if$ -- 862
 int.to.chr$ -- 0
-int.to.str$ -- 15
-missing$ -- 14
-newline$ -- 77
-num.names$ -- 17
-pop$ -- 74
+int.to.str$ -- 16
+missing$ -- 15
+newline$ -- 82
+num.names$ -- 18
+pop$ -- 81
 preamble$ -- 1
 purify$ -- 0
 quote$ -- 0
-skip$ -- 75
+skip$ -- 78
 stack$ -- 0
 substring$ -- 128
-swap$ -- 32
+swap$ -- 34
 text.length$ -- 2
 text.prefix$ -- 0
 top$ -- 0
 type$ -- 0
 warning$ -- 8
-while$ -- 24
-width$ -- 17
-write$ -- 147
+while$ -- 25
+width$ -- 18
+write$ -- 157
 (There were 8 warnings)
