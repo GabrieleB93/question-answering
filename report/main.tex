@@ -71,7 +71,7 @@
 \usepackage{pgfplotstable}
 \usepackage{placeins}
 
-\usepackage{showframe}
+%\usepackage{showframe}
 \usepackage{sectsty}
 \usepackage{siunitx}
 %\usepackage{subfig}
@@ -236,8 +236,8 @@
 %\thispagestyle{empty}
 \newpage
 \newgeometry{
-	right=50mm,
-	left=45mm,
+	right=45mm,
+	left=40mm,
 	top=40mm,
 	bottom=45mm
 }
@@ -306,7 +306,7 @@ Each training pattern is a \texttt{json} object, it is stored in a line and it h
 
 \begin{figure}[ht!]
 	\centering
-	\includegraphics[width=0.5\textwidth]{pics/json.png}
+	\includegraphics[width=0.8\textwidth]{pics/json.png}
 	\caption{Broad structure of an input pattern.}\label{fig:json}
 \end{figure}
 
@@ -317,12 +317,12 @@ Each training pattern is a \texttt{json} object, it is stored in a line and it h
 \end{itemize}
 
 \begin{figure}[ht]
-	\begin{subfigure}{.45\textwidth}
+	\begin{subfigure}{.47\textwidth}
 		\centering
-		\includegraphics[width=0.55\textwidth]{pics/long_answer_candidates.png}
+		\includegraphics[width=0.95\textwidth]{pics/long_answer_candidates.png}
 		\caption{\texttt{long\_answer candidates}.}\label{fig:long_answer_candidates}
 	\end{subfigure}
-	\begin{subfigure}{.55\textwidth}
+	\begin{subfigure}{.53\textwidth}
 		\centering
 		\includegraphics[width=0.95\textwidth]{pics/annotations.png}
 		\caption{\texttt{annotations}.}\label{fig:annotations}
