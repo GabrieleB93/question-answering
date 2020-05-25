@@ -960,8 +960,6 @@ def convert_nq_to_squad(verbose, is_train, args=None):
             document_text = data['document_text']
             document_text_split = document_text.split(' ')
             if verbose: print("DOCUMENT TEXT AND SPLIT")
-            # if verbose: print(document_text)
-            # if verbose: print(document_text_split)
             # trim super long
             if len(document_text_split) > args.num_max_tokens:
                 num_trimmed += 1

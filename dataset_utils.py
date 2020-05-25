@@ -1467,9 +1467,15 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cach
             example_indexes = batch['example_index']
             # outputs = strategy.experimental_run_v2(predict_step, args=(batch, ))
             outputs = predict_step(batch)
-            batched_start_logits = outputs["start"].numpy()
-            batched_end_logits = outputs["end"].numpy()
-            batched_long_logits = outputs["long"].numpy()
+            batched_start_logits = outputs[0].numpy()
+            batched_end_logits = outputs[1].numpy()
+            batched_long_logits = outputs[2].numpy()
+            print("##########START#############")
+            print(batched_start_logits)
+            print("##########END#############")
+            print(batched_end_logits)
+            print("##########LONG#############")
+            print(batched_long_logits)
 
             for i, example_index in enumerate(example_indexes):
                 # filter out padded samples
