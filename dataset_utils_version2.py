@@ -590,7 +590,6 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
         if len(nbest) >= n_best_size:
             break
         crop = crops[pred.crop_index]
-        orig_doc_start, orig_doc_end = -1, -1
         # non-null
         orig_doc_start, orig_doc_end = -1, -1
         if pred.start_index > 0:
@@ -605,9 +604,11 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
                     end_indx = pred.start_index + 11
                 tok_tokens = crop.tokens[
                              pred.start_index: end_indx]  # AAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-                print(tok_tokens)
+                print(f"LONG: {tok_tokens} with logits: {pred.start_logit}")
             else:
                 tok_tokens = crop.tokens[pred.start_index: pred.end_index + 1]
+                print(f"SHORT: {tok_tokens} with logits: {pred.start_logit} and end logits: {pred.end_logit}" )
+
             tok_text = " ".join(tok_tokens)
             tok_text = clean_text(tok_text)
 
@@ -728,6 +729,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
 
         short_nbest = get_nbest(short_prelim_predictions, crops,
                                 example, n_best_size)
+        print(f" short n_best : {short_nbest}")
         short_best_non_null = None
         for entry in short_nbest:
             if short_best_non_null is None:
@@ -769,10 +771,15 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             start_score_null = unique_id_to_result[crop_unique_id].start_logits[CLS_INDEX]
             end_score_null = unique_id_to_result[crop_unique_id].end_logits[CLS_INDEX]
             short_score_null = start_score_null + end_score_null
-            short_score_diff = short_score_null - (short_best_non_null.start_logit +
+            short_score_diff = short_score_null - (short_best_non_null.start_logit + #bbbbbbbbbbbbbb
                                                    short_best_non_null.end_logit)
 
+            print(f"short_score: {short_score_diff} and short_null: {short_null_score_diff}")
             if short_score_diff > short_null_score_diff:
+                # if short_best_non_null.text in long_best_non_null.text:
+                #     final_pred = (short_best_non_null.text, short_best_non_null.orig_doc_start, #trick ma capita che non sia dentro la long come token
+                #                   short_best_non_null.orig_doc_end)
+                # else:
                 final_pred = ("", -1, -1)
                 short_num_empty += 1
             else:
@@ -789,7 +796,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             long_score_diff = long_score_null - long_best_non_null.start_logit
             scores_diff_json[example.qas_id] = {'short_score_diff': short_score_diff,
                                                 'long_score_diff': long_score_diff}
-
+            print(f"long_score: {long_score_diff} and long_null: {long_null_score_diff}")
             if long_score_diff > long_null_score_diff:
                 final_pred += ("", -1)
                 long_num_empty += 1
@@ -1457,7 +1464,7 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cach
 
     all_results = []
     tic = time.time()
-
+    i = 0
     cached_results = 'cache/results_test.pkl'
     if os.path.exists(cached_results) and do_cache:
         print("Loading results from cached file ", cached_results)

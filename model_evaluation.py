@@ -3,7 +3,7 @@ from __future__ import division
 from __future__ import print_function
 from datetime import datetime
 from sys import platform
-from dataset_utils import *
+from dataset_utils_version2 import *
 from model_stuff.TFAlbertForNaturalQuestionAnswering import TFAlbertForNaturalQuestionAnswering
 from model_stuff.TFBertForNaturalQuestionAnswering import TFBertForNaturalQuestionAnswering
 
@@ -81,20 +81,24 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     config_class, model_class, tokenizer_class = MODEL_CLASSES[namemodel]
     config = config_class.from_pretrained(pretrained)
     print(tokenizer_class)
+
     # load tokenizer from the directory
     # tokenizer = tokenizer_class(os.path.join(checkpoint, vocab), do_lower_case='uncased')
+
     # load tokenizer from pretrained
     tokenizer = tokenizer_class.from_pretrained(vocab)
-    tags = get_add_tokens(do_enumerate=args.do_enumerate)
-    num_added = tokenizer.add_tokens(tags)
-    print(f"Added {num_added} tokens")
 
     mymodel = model_class(config)
-
     mymodel(mymodel.dummy_inputs, training=False)
-    # mymodel.load_weights(os.path.join(checkpoint, "weights.h5"), by_name=True)
-    mymodel.load_weights(checkpoint, by_name=True)
+    mymodel.load_weights(os.path.join(checkpoint, "weights.h5"), by_name=True)
+    # mymodel.load_weights(checkpoint, by_name=True)
     print("Checkpoint loaded succefully")
+
+    if namemodel == 'bert':
+        tags = get_add_tokens(do_enumerate=args.do_enumerate)
+        num_added = tokenizer.add_tokens(tags)
+        print(f"Added {num_added} tokens")
+        # mymodel.resize_token_embeddings(len(tokenizer))
 
     if namefile != '':
         print("***** Running evaluation *****")

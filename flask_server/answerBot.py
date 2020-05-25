@@ -11,7 +11,7 @@ class AnswerBot:
         self.namemodel = namemodel
         self.checkpoint = checkpoint
         self.args = args
-        self.model, self.tokenizer = model_evaluation.main(namemodel, args, checkpoint, '', )
+        self.model, self.tokenizer = model_evaluation.main(namemodel, args, checkpoint, '')
 
     """def __init__(self, model_path):
         super().__init__()

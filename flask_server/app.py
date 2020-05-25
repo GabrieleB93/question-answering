@@ -47,8 +47,8 @@ if __name__ == "__main__":
     parser.add_argument("--doc_stride", default=256, type=int)
     parser.add_argument("--max_query_length", default=64, type=int)
     parser.add_argument("--per_tpu_eval_batch_size", default=4, type=int)
-    parser.add_argument("--n_best_size", default=10, type=int)
-    parser.add_argument("--max_answer_length", default=30, type=int)
+    parser.add_argument("--n_best_size", default=5, type=int)
+    parser.add_argument("--max_answer_length", default=40, type=int)
     parser.add_argument("--verbose_logging", action='store_true')
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--p_keep_impossible', type=float,
@@ -56,7 +56,7 @@ if __name__ == "__main__":
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
-    parser.add_argument("--checkpoint", default="../checkpoints/BERT1EPOCH1e-5/weights.h5", type=str,
+    parser.add_argument("--checkpoint", default="../checkpoints/BERTWITHTOKEN2EPOCHSCHP/checkpoint-194000", type=str,
                         help="The file we will use as checkpoint")
 
     parser.add_argument('--test_dir', type=str, default='TestData/simplified-nq-test.jsonl',
