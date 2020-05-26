@@ -338,9 +338,9 @@ Another crucial characteristic of this dataset is that is strongly unbalanced to
 \blockquote{\it In total, annotators identify a long answer for $49\%$ of the examples, and short answer spans or a yes/no answer for $36\%$ of the examples. We consider the choice of whether or not to answer a question a core part of the question answering task, and do not discard the remaining $51\%$ that have no answer labeled.\cite{kwiatowski}}
 	
 This issue of unbalanced data needs some more reasoning: as already discussed in \Cref{subsubsec:bert}, the BERT-based embedder maps the input text into vectors. It also performs another operation, namely it splits the paragraph in the so-called ``crops'', containing $512$ tokens.
-It is easy to conclude that most of these crops do not contain the answer to the original question, hence the umbalancing becomes even more severe ($\approx 95\%$ of the crops do not contain the answer).
+It is easy to conclude that most of these crops do not contain the answer to the original question, hence the unbalancing becomes even more severe ($\approx 95\%$ of the crops do not contain the answer).
 
-The authors overcame this issue by selecting only the $3\%$ of the so-called ``impossible questions''\footnote{The code is available on GitHub, we set the value $0.03$ to the parameter called \texttt{p\_kepp\_impossible} in \texttt{dataset\_utils\_version2.py}.} and by designing an effective yet simple loss function.
+The authors overcame this issue by selecting only the $3\%$ of the so-called ``impossible questions''\footnote{The code is available on GitHub, we set the value $0.03$ to the parameter called \texttt{p\_keep\_impossible} in \texttt{dataset\_utils\_version2.py}.} and by designing an effective yet simple loss function.
 
 On a batch of examples, we computed the loss as follows:
 \[
@@ -398,7 +398,7 @@ As usual, when dealing with machine learning models, we need to try different va
 		$\varepsilon$ & $1e-7$\\
 		batch size & $8$ (ALBERT), $4$ (BERT)\\
 		\end{tabular}
-	\caption{Hyperparameters values.}\label{tab:grid_search}
+	\caption{Hyper-parameters values.}\label{tab:grid_search}
 \end{table}
 
 %%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%
@@ -408,6 +408,21 @@ Before showing the results achieved in both training, validation and test phases
 However, since we decided to split the training set into smaller chunks, we sometimes refer to ``small epochs'' that account for the number of times the patterns in a single chunks are processed.
 
 \todo[inline]{Scegliere plot significativi ed inserirli}
+
+\begin{figure}[ht]
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=0.95\textwidth]{pics/loss_lr_005.pdf}
+		\caption{1.}\label{fig:loss1}
+	\end{subfigure}
+	\begin{subfigure}{.5\textwidth}
+		\centering
+		\includegraphics[width=0.95\textwidth]{pics/acc_3_lr_005.pdf}
+		\caption{2.}\label{fig:loss2}
+	\end{subfigure}
+	\caption{Boh}
+	\label{fig:loss_pdf}
+\end{figure}
 
 During the training phase we realized that the use of Keras and a \texttt{generator} class \todo{spiegare meglio} could have been responsible for poor time performances.
 For this intuition, the library was dropped and the body of the training step has been implemented from scratches in Python (using TensorFlow library) and this choice led to a huge performances improvement, as shown in \Cref{fig:performances}
