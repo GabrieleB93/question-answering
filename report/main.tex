@@ -331,10 +331,6 @@ Each training pattern is a \texttt{json} object, it is stored in a line and it h
 	\label{fig:json_zoomed}
 \end{figure}
 
-\todo[inline]{Cercare di capire che cosa rappresenta il campo \texttt{top\_level} di \texttt{long\_answer candidates}}
-
-\todo[inline]{Ho capito che cosa rappresenta \texttt{candidate\_index}, e' l'indice della long answer vincente nell'elenco, vedi json di esempio}
-
 The NQ training set has on average, input patterns with size of $10$MB and the whole training set is stored in a \texttt{.jsonl} file of size $\approx 17$ GB.
 It goes without saying that loading both BERT's checkpoints and such file into RAM is not possible, so we managed to overcome this problem by splitting the file into chunks with size smaller than $100$MB.
 
@@ -364,8 +360,7 @@ On a batch of examples, we computed the loss as follows:
 	\caption{A pictorial representation of how the position of the first token of the answer may vary between target and predicted value.}\label{fig:loss}
 \end{figure}
 
-Depending on the flag
-start position and end position of the answer in the given paragraph.
+\todo[inline]{Scrivere cosa dei token aggiunti \texttt{    tags = ['Dd', 'Dl', 'Dt', 'H1', 'H2', 'H3', 'Li', 'Ol', 'P', 'Table', 'Td', 'Th', 'Tr', 'Ul']}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Experimental results}\label{sec:experimental_results}
