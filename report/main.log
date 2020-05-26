@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.5.19)  26 MAY 2020 12:55
+This is pdfTeX, Version 3.14159265-2.6-1.40.21 (TeX Live 2020) (preloaded format=pdflatex 2020.5.19)  26 MAY 2020 19:29
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -1936,105 +1936,137 @@ ray>); ignored.
 pdfTeX warning: /Library/TeX/texbin/pdflatex (file ./pics/broad_architecture.pd
 f): PDF inclusion: invalid other resource which is no dict (key 'ProcSets', typ
 e <array>); ignored.
->]
-<pics/json_cut.png, id=148, 1030.85126pt x 525.965pt>
+>] [2]
+<pics/json_cut.png, id=161, 1030.85126pt x 525.965pt>
 File: pics/json_cut.png Graphic file (type png)
 <use pics/json_cut.png>
-Package pdftex.def Info: pics/json_cut.png  used on input line 309.
+Package pdftex.def Info: pics/json_cut.png  used on input line 311.
 (pdftex.def)             Requested size: 335.19965pt x 171.02487pt.
- [2]
-<pics/long_answer_candidates.png, id=166, 423.5825pt x 357.335pt>
+<pics/long_answer_candidates.png, id=165, 423.5825pt x 357.335pt>
 File: pics/long_answer_candidates.png Graphic file (type png)
 <use pics/long_answer_candidates.png>
 Package pdftex.def Info: pics/long_answer_candidates.png  used on input line 32
-2.
+4.
 (pdftex.def)             Requested size: 166.29729pt x 140.287pt.
-<pics/annotations.png, id=167, 442.65375pt x 310.15875pt>
+<pics/annotations.png, id=166, 442.65375pt x 310.15875pt>
 File: pics/annotations.png Graphic file (type png)
 <use pics/annotations.png>
-Package pdftex.def Info: pics/annotations.png  used on input line 327.
+Package pdftex.def Info: pics/annotations.png  used on input line 329.
 (pdftex.def)             Requested size: 187.5258pt x 131.39688pt.
 
-Overfull \hbox (1.90001pt too wide) in paragraph at lines 320--330
+Overfull \hbox (1.90001pt too wide) in paragraph at lines 322--332
 []$[]$ $[]$ 
  []
 
-[3 <./pics/json_cut.png> <./pics/long_answer_candidates.png> <./pics/annotation
-s.png>]
-<pics/loss.pdf, id=182, 385.44pt x 209.8239pt>
+[3 <./pics/json_cut.png>]
+<pics/loss.pdf, id=180, 385.44pt x 209.8239pt>
 File: pics/loss.pdf Graphic file (type pdf)
 <use pics/loss.pdf>
-Package pdftex.def Info: pics/loss.pdf  used on input line 357.
+Package pdftex.def Info: pics/loss.pdf  used on input line 359.
 (pdftex.def)             Requested size: 223.47021pt x 121.64992pt.
- [4 <./pics/loss.pdf
+ [4 <./pics/long_answer_candidates.png> <./pics/annotations.png>]
+
+LaTeX Warning: Marginpar on page 5 moved.
+
+
+LaTeX Warning: Marginpar on page 5 moved.
+
+[5 <./pics/loss.pdf
 
 pdfTeX warning: /Library/TeX/texbin/pdflatex (file ./pics/loss.pdf): PDF inclus
 ion: invalid other resource which is no dict (key 'ProcSets', type <array>); ig
 nored.
 >]
+<pics/loss_lr_005.pdf, id=250, 270.3012pt x 193.47874pt>
+File: pics/loss_lr_005.pdf Graphic file (type pdf)
+<use pics/loss_lr_005.pdf>
+Package pdftex.def Info: pics/loss_lr_005.pdf  used on input line 417.
+(pdftex.def)             Requested size: 159.21931pt x 113.96841pt.
+<pics/acc_1_lr_005.pdf, id=251, 263.48438pt x 188.20313pt>
+File: pics/acc_1_lr_005.pdf Graphic file (type pdf)
+<use pics/acc_1_lr_005.pdf>
+Package pdftex.def Info: pics/acc_1_lr_005.pdf  used on input line 422.
+(pdftex.def)             Requested size: 159.21931pt x 113.73256pt.
+<pics/acc_2_lr_005.pdf, id=252, 263.48438pt x 197.23688pt>
+File: pics/acc_2_lr_005.pdf Graphic file (type pdf)
+<use pics/acc_2_lr_005.pdf>
+Package pdftex.def Info: pics/acc_2_lr_005.pdf  used on input line 428.
+(pdftex.def)             Requested size: 159.21931pt x 119.19173pt.
+<pics/acc_3_lr_005.pdf, id=253, 271.0125pt x 184.43906pt>
+File: pics/acc_3_lr_005.pdf Graphic file (type pdf)
+<use pics/acc_3_lr_005.pdf>
+Package pdftex.def Info: pics/acc_3_lr_005.pdf  used on input line 433.
+(pdftex.def)             Requested size: 159.21931pt x 108.36217pt.
+ [6 <./pics/loss_lr_005.pdf> <./pics/acc_1_lr_005.pdf
 
-LaTeX Warning: Marginpar on page 5 moved.
+pdfTeX warning: /Library/TeX/texbin/pdflatex (file ./pics/acc_1_lr_005.pdf): PD
+F inclusion: multiple pdfs with page group included in a single page
+> <./pics/acc_2_lr_005.pdf
 
+pdfTeX warning: /Library/TeX/texbin/pdflatex (file ./pics/acc_2_lr_005.pdf): PD
+F inclusion: multiple pdfs with page group included in a single page
+> <./pics/acc_3_lr_005.pdf
 
-LaTeX Warning: Marginpar on page 5 moved.
-
-[5]
-<pics/performances.JPG, id=249, 3754.025pt x 2659.9375pt>
+pdfTeX warning: /Library/TeX/texbin/pdflatex (file ./pics/acc_3_lr_005.pdf): PD
+F inclusion: multiple pdfs with page group included in a single page
+>]
+<pics/performances.JPG, id=608, 3754.025pt x 2659.9375pt>
 File: pics/performances.JPG Graphic file (type jpg)
 <use pics/performances.JPG>
-Package pdftex.def Info: pics/performances.JPG  used on input line 418.
+Package pdftex.def Info: pics/performances.JPG  used on input line 450.
 (pdftex.def)             Requested size: 186.22328pt x 131.94939pt.
 
-Underfull \hbox (badness 2744) in paragraph at lines 428--428
+Underfull \hbox (badness 2744) in paragraph at lines 460--460
 [][][]\T1/ppl/m/n/8 One could try to use lib-rary already im-ple-men-ted in Py-
 thon for auto-correction, such as
  []
 
 
-Overfull \hbox (0.28944pt too wide) in paragraph at lines 427--430
+Overfull \hbox (0.28944pt too wide) in paragraph at lines 459--462
 \T1/ppl/m/n/10 We de-scribe \T1/ppl/b/n/10 nome-Fico-DaSce-gliere\T1/ppl/m/n/10
  as an in-ter-act-ive ques-tion an-swer-ing plat-form that
  []
 
-[6 <./pics/performances.JPG>] (./main.bbl [7]) [8]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 460.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 460.
+[7 <./pics/performances.JPG>] (./main.bbl [8]) [9]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 492.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 492.
  (./main.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 460.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 460.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 492.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 492.
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 9D9D7605886769CE6E3C3F0B86942463;682.
  ) 
 Here is how much of TeX's memory you used:
- 51608 strings out of 480608
- 1213769 string characters out of 5903630
- 1797273 words of memory out of 5000000
- 66456 multiletter control sequences out of 15000+600000
+ 51644 strings out of 480608
+ 1214515 string characters out of 5903630
+ 1797703 words of memory out of 5000000
+ 66486 multiletter control sequences out of 15000+600000
  577982 words of font info for 112 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 69i,14n,119p,895b,1083s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 69i,14n,119p,880b,1089s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2020/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/t
 exlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/te
 xlive/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/tex
 live/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/local/texli
-ve/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive
-/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/2
-020/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/202
-0/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/local/texlive/2020/t
-exmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2020/texm
-f-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2020/texmf-d
-ist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2020/texmf-dist
-/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2020/texmf-dist/
-fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2020/texmf-dist/fo
-nts/type1/urw/courier/ucrr8a.pfb></usr/local/texlive/2020/texmf-dist/fonts/type
-1/urw/helvetic/uhvb8a.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/urw/p
-alatino/uplb8a.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/urw/palatino
-/uplr8a.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/urw/palatino/uplri8
-a.pfb>
-Output written on main.pdf (10 pages, 4255570 bytes).
+ve/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/local/texlive
+/2020/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2
+020/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></usr/local/texlive/202
+0/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2020/
+texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb></usr/local/texlive/2020/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></usr/local/texlive/2020/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2020/texmf-dis
+t/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2020/texmf-dist/f
+onts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2020/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2020/texmf-dist/font
+s/type1/urw/courier/ucrr8a.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/
+urw/helvetic/uhvb8a.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/urw/pal
+atino/uplb8a.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/urw/palatino/u
+plr8a.pfb></usr/local/texlive/2020/texmf-dist/fonts/type1/urw/palatino/uplri8a.
+pfb>
+Output written on main.pdf (11 pages, 4430978 bytes).
 PDF statistics:
- 368 PDF objects out of 1000 (max. 8388607)
- 296 compressed objects within 3 object streams
- 63 named destinations out of 1000 (max. 500000)
- 257 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 733 PDF objects out of 1000 (max. 8388607)
+ 539 compressed objects within 6 object streams
+ 65 named destinations out of 1000 (max. 500000)
+ 277 words of extra memory for PDF output out of 10000 (max. 10000000)
 
