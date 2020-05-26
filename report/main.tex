@@ -37,6 +37,7 @@
 \usepackage{csquotes}
 \usepackage{dsfont}
 
+\usepackage{enumitem}
 \usepackage{eurosym}
 
 \usepackage{fancyhdr}
@@ -290,10 +291,9 @@ BERT is an embedder, i.e.~a neural network that translates words (more generally
 One of the main advantages introduced by this technology is the way BERT splits words into tokens (tokenization process): it allows to split words into smaller pieces, before mapping them into vectors.
 This choice has the advantage of allowing the encoding of words that are not present in the dictionary and to represent all the words that share a prefix using a root vector and different representations for suffixes.
 
+During the development phase some new tokens have been added to BERT's dictionary, by the authors, following this reasoning: since the paragraphs fed to the model are HTML files, stripped of some tags, adding the remaining tags came in handy. The tags that have been added are: \texttt{'Dd', 'Dl', 'Dt', 'H1', 'H2', 'H3', 'Li', 'Ol', 'P', 'Table', 'Td', 'Th', 'Tr', 'Ul'}.
+
 The second and more crucial advantage introduced by BERT is the bidirectional self attention mechanism, that takes into account not only all the words that precede the target word, but also the rightmost part, giving to every word a context.
-
-
-
 
 \todo[inline]{Fare digressione sull'utilizzo di BERT o BERT-large o ALBERT}
 
@@ -306,7 +306,7 @@ Each training pattern is a \texttt{json} object, it is stored in a line and it h
 
 \begin{figure}[ht!]
 	\centering
-	\includegraphics[width=0.8\textwidth]{pics/json.png}
+	\includegraphics[width=0.9\textwidth]{pics/json_cut.png}
 	\caption{Broad structure of an input pattern.}\label{fig:json}
 \end{figure}
 
@@ -342,39 +342,49 @@ It is easy to conclude that most of these crops do not contain the answer to the
 
 The authors overcame this issue by selecting only the $3\%$ of the so-called ``impossible questions''\footnote{The code is available on GitHub, we set the value $0.03$ to the parameter called \texttt{p\_kepp\_impossible} in \texttt{dataset\_utils\_version2.py}.} and by designing an effective yet simple loss function.
 
-\todo[inline]{Rifare figura}
-
 On a batch of examples, we computed the loss as follows:
 \[
 \begin{cases}
-\frac{\frac{\biggl ( \avg\limits_{\text{batch}} \text{start\_loss} + \avg\limits_{\text{batch}} \text{end\_loss}  \biggr )}{2} + \avg\limits_{\text{batch}} \text{long\_loss}}{2} \hspace{0.5cm}\text{if answerable}\\
-0 \hspace{5.3cm} \text{otherwise}
+\frac{\frac{\biggl ( \avg\limits_{\text{batch}} l_\text{start} + \avg\limits_{\text{batch}} l_\text{end}  \biggr )}{2} + \avg\limits_{\text{batch}} l_\text{long}}{2} \hspace{1cm}\text{if answerable}\\
+0 \hspace{4.65cm} \text{otherwise}
 \end{cases}
 \]
  
- where *\_loss is the categorical cross-entropy between the position of the true answer and the position of the guess, as shown in \Cref{fig:loss}.
+ where $l_{\text{start}}$ ($l_{\text{end}}$)  is the categorical cross-entropy between the start (end) position of the short answer in the target and the predicted start (end) position (\Cref{fig:loss}); $l_{\text{long}}$ is the categorical cross-entropy between the start position of the true answer and the position of the guess in the long answer.
 
 \begin{figure}[ht!]
 	\centering
-	\includegraphics[width=0.4\textwidth]{pics/loss.jpg}
-	\caption{A pictorial representation of how the position of the first token of the answer may vary between target and predicted value.}\label{fig:loss}
+	\includegraphics[width=0.6\textwidth]{pics/loss.pdf}
+	\caption{How the categorical cross entropy of the start position is computed.}\label{fig:loss}
 \end{figure}
 
-\todo[inline]{Scrivere cosa dei token aggiunti \texttt{    tags = ['Dd', 'Dl', 'Dt', 'H1', 'H2', 'H3', 'Li', 'Ol', 'P', 'Table', 'Td', 'Th', 'Tr', 'Ul']}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Experimental results}\label{sec:experimental_results}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+This section describes how the experimental phase of \nomefico was carried out. We tried many different parameters' configurations and slightly different implementation choices for achieving better results or to reach reasonable trade-offs in the fine-tuning phase.
 
 %%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%
 \subsection{Hardware}
 %%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%
+The model have been tested on the following computing infrastructures:
 
+\begin{enumerate}[label=\upshape-\Roman*-]
+	\item\label{item:1} Il computer di Mario \todo{aggiungere specifiche}
+	\item\label{item:2} Google Colaboratory \todo{aggiungere specifiche}
+	\item\label{item:3} Serverone di Attardi \todo{aggiungere specifiche}
+\end{enumerate} 
+
+The first hardware choice has been solely used to test locally the functioning of the platform after the introduction of new features and did not allow to run the code on the huge training set we have been given.
+
+The choice of using \Cref{item:2} has the advantage of requiring very little set up of the machine (installing modules and libraries), but offers relatively poor performances as well.
+
+The last choice (\Cref{item:3}) allows for faster executions, but required a longer initialization process.
 
 %%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%
-\subsection{Hyper-parameters values}
+\subsection{Hyper-parameters' values}
 %%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%
+As usual, when dealing with machine learning models, we need to try different values of the hyper-parameters. Due to time constraints, the brief grid-search shown in \Cref{tab:grid_search} have been performed.
 
 \begin{table}[ht!]
 	\footnotesize\centering
@@ -388,9 +398,28 @@ On a batch of examples, we computed the loss as follows:
 		$\varepsilon$ & $1e-7$\\
 		batch size & $8$ (ALBERT), $4$ (BERT)\\
 		\end{tabular}
-	\caption{Hyperparameters values.}\label{tab:gridSearchParamCl}
+	\caption{Hyperparameters values.}\label{tab:grid_search}
 \end{table}
 
+%%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%
+\subsection{Results of fine-tuning}
+%%%%%%%%%~~~~~~~~~~~~~~~~~~~~~~~~~~%%%%%%%%%%
+Before showing the results achieved in both training, validation and test phases it is important to make the reader aware of an abuse of notation: the term ``epoch'' usually, such a word accounts for the number of times the whole training set is scanned in the training phase.
+However, since we decided to split the training set into smaller chunks, we sometimes refer to ``small epochs'' that account for the number of times the patterns in a single chunks are processed.
+
+\todo[inline]{Scegliere plot significativi ed inserirli}
+
+During the training phase we realized that the use of Keras and a \texttt{generator} class \todo{spiegare meglio} could have been responsible for poor time performances.
+For this intuition, the library was dropped and the body of the training step has been implemented from scratches in Python (using TensorFlow library) and this choice led to a huge performances improvement, as shown in \Cref{fig:performances}
+
+
+\begin{figure}[ht!]
+	\centering
+	\includegraphics[width=0.5\textwidth]{pics/performances.JPG}
+	\caption{The performances of the Keras and Keras-free implementations over the three different computing infrastructure on a single batch.}\label{fig:performances}
+\end{figure}
+
+\todo[inline]{Fare le prove con i dati veri e, perchè no, anche su un'intera epoca (in cui il gap è molto maggiore e fa figo.)}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions and future work}\label{sec:conclusions_and_future_work}
