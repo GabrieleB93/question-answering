@@ -56,9 +56,7 @@ CLS_INDEX = 0
 def get_add_tokens(do_enumerate):
     """
        This function crea array con tutti i tag più gli speciali
-
        @param do_enumerate se è TRUE sono aggiunti anche i flag speciali
-
        @return array di tokens
        """
 
@@ -124,12 +122,9 @@ def read_nq_examples(input_file_or_data,
     """
     Read a NQ json file into a list of NQExample. Refer to `nq_to_squad.py`
     to convert the `simplified-nq-t*.jsonl` files to NQ json.
-
        This function returns NQExample
-
        @param input_file_or_data entries from jsonfile
        @param is_training boolean to Train or Evaluate
-
        @return a collection of NQ Examples
        """
 
@@ -272,7 +267,6 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
                               sep_token_extra=False):
     """
            Trasforma gli NQExample in Crops
-
            @param examples_gen gli example da convertire in crops
            @param tokenizer
            @param max_seq_length lunghezza massima (FORSE) fra domanda+risposta
@@ -571,11 +565,12 @@ def check_is_max_context(doc_spans, cur_span_index, position):
     return cur_span_index == best_span_index
 
 
-# Not used for now
 def clean_text(tok_text):
     # De-tokenize WordPieces that have been split off.
     tok_text = tok_text.replace(" ##", "")
     tok_text = tok_text.replace("##", "")
+    tok_text = tok_text.replace("<p>", " ")
+    tok_text = tok_text.replace("</p>", " ")
 
     # Clean whitespace
     tok_text = tok_text.strip()
@@ -583,22 +578,31 @@ def clean_text(tok_text):
     return tok_text
 
 
-# Not used for now
 def get_nbest(prelim_predictions, crops, example, n_best_size):
     seen, nbest = set(), []
     for pred in prelim_predictions:
         if len(nbest) >= n_best_size:
             break
         crop = crops[pred.crop_index]
-        orig_doc_start, orig_doc_end = -1, -1
         # non-null
         orig_doc_start, orig_doc_end = -1, -1
         if pred.start_index > 0:
             # Long answer has no end_index. We still generate some text to check
             if pred.end_index == -1:
-                tok_tokens = crop.tokens[pred.start_index: pred.start_index + 11]
+                array_tmp = np.array(crop.tokens)
+                indx_array = np.where(array_tmp == '</p>')
+                try:
+                    end_indx = indx_array[0][indx_array[0] > pred.start_index][0] + 1  # Prendo il primo indice più
+                    # grande di start
+                except:
+                    end_indx = pred.start_index + 11
+                tok_tokens = crop.tokens[
+                             pred.start_index: end_indx]  # AAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                # print(f"LONG: {tok_tokens} with logits: {pred.start_logit}")
             else:
                 tok_tokens = crop.tokens[pred.start_index: pred.end_index + 1]
+                # print(f"SHORT: {tok_tokens} with logits: {pred.start_logit} and end logits: {pred.end_logit}")
+
             tok_text = " ".join(tok_tokens)
             tok_text = clean_text(tok_text)
 
@@ -635,12 +639,17 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
     return nbest
 
 
-# Not used for now
 def write_predictions(examples_gen, all_crops, all_results, n_best_size,
                       max_answer_length, output_prediction_file,
                       output_nbest_file, output_null_log_odds_file, verbose_logging,
                       short_null_score_diff, long_null_score_diff, method):
-    """Write final predictions to the json file and log-odds of null if needed."""
+    """
+    Write final predictions to the json file and log-odds of null if needed.
+    method:
+        1) '' = default
+        2) 'restoring' = if rejected and short IN long text ->taken
+        3) 'matching' = taking the best short IN long token
+    """
     logger.info("Writing predictions to: %s" % output_prediction_file)
     logger.info("Writing nbest to: %s" % output_nbest_file)
 
@@ -721,6 +730,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
         short_nbest = get_nbest(short_prelim_predictions, crops,
                                 example, n_best_size)
 
+        # Segna posto short:best_non_null, era qui
 
         long_prelim_predictions = sorted(long_prelim_predictions,
                                          key=lambda x: x.start_logit, reverse=True)
@@ -768,9 +778,10 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             start_score_null = unique_id_to_result[crop_unique_id].start_logits[CLS_INDEX]
             end_score_null = unique_id_to_result[crop_unique_id].end_logits[CLS_INDEX]
             short_score_null = start_score_null + end_score_null
-            short_score_diff = short_score_null - (short_best_non_null.start_logit +
+            short_score_diff = short_score_null - (short_best_non_null.start_logit +  # bbbbbbbbbbbbbb
                                                    short_best_non_null.end_logit)
 
+            # print(f"short_score: {short_score_diff} and short_null: {short_null_score_diff}")
             if short_score_diff > short_null_score_diff:
                 if method == 'restoring' or method == 'mixed':
                     if short_best_non_null.text in long_best_non_null.text:
@@ -787,7 +798,8 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
                 final_pred = (short_best_non_null.text, short_best_non_null.orig_doc_start,
                               short_best_non_null.orig_doc_end)
         except Exception as e:
-            print("Exception in write prediction: " +str(e))
+            print("Exception in write prediction: " + str(e))
+            print(short_best_non_null)
             final_pred = ("", -1, -1)
             short_num_empty += 1
 
@@ -797,7 +809,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             long_score_diff = long_score_null - long_best_non_null.start_logit
             scores_diff_json[example.qas_id] = {'short_score_diff': short_score_diff,
                                                 'long_score_diff': long_score_diff}
-
+            # print(f"long_score: {long_score_diff} and long_null: {long_null_score_diff}")
             if long_score_diff > long_null_score_diff:
                 final_pred += ("", -1)
                 long_num_empty += 1
@@ -833,7 +845,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
 
 # Not used for now
 def convert_preds_to_df(preds, candidates, question, tokenizer):
-    num_found_long, num_searched_long = 0, 0
+    num_found_long, num_searched_long, num_searched_short = 0, 0, 0
     df = {'example_id': [], 'PredictionString': [], 'question': [], 'answer': []}
     for example_id, pred in preds.items():
         short_text, start_token, end_token, long_text, long_token = pred
@@ -844,6 +856,7 @@ def convert_preds_to_df(preds, candidates, question, tokenizer):
         if start_token != -1:
             # +1 is required to make the token inclusive
             short_answer = f'{start_token}:{end_token + 1}'
+            num_searched_short += 1
 
         df['PredictionString'].append(short_answer)
         df['answer'].append(short_text)
@@ -877,14 +890,14 @@ def convert_preds_to_df(preds, candidates, question, tokenizer):
 
     df = pd.DataFrame(df)
     print(df.astype(bool).sum(axis=0))
-    print(f'Found number of long answered: {num_found_long} of number of long searched: {num_searched_long} (total {len(preds)})')
+    print(f"Number of long question answered: {num_searched_long} \n Number of long correct answers: {num_found_long}"
+          f"\n Number of total questions {len(preds)} \n Number of short answers: {num_searched_short}")
     return df
 
 
 def enumerate_tags(text_split):
     """Reproduce the preprocessing from:
     A BERT Baseline for the Natural Questions (https://arxiv.org/pdf/1901.08634.pdf)
-
     We introduce special markup tokens in the doc-ument  to  give  the  model
     a  notion  of  which  partof the document it is reading.  The special
     tokenswe introduced are of the form “[Paragraph=N]”,“[Table=N]”, and “[List=N]”
@@ -893,7 +906,6 @@ def enumerate_tags(text_split):
     few paragraphs and tables inthe document are much more likely than the rest
     ofthe document to contain the annotated answer andso the model could benefit
     from knowing whetherit is processing one of these passages.
-
     We deviate as follows: Tokens are only created for the first 10 times. All other
     tokens are the same. We only add `special_tokens`. These two are added as they
     make 72.9% + 19.0% = 91.9% of long answers.
@@ -916,7 +928,6 @@ def convert_nq_to_squad(verbose, is_train, args=None):
     """
     Converte il jsonl in un formato compatibile con il Q&A Squad.
     Squad non contiene YES/NO answer(certo 95%)
-
     :param is_train: flag che indica se siamo in fase di training o evaluation. Training di default
     :param verbose: flag per stampare o meno varei informazioni durante le trasformazioni(solo la prima)
     :param args: None di Default, attualmente passati tramite la funzione getParams1(da cambiare?)
@@ -976,6 +987,8 @@ def convert_nq_to_squad(verbose, is_train, args=None):
             document_text = data['document_text']
             document_text_split = document_text.split(' ')
             if verbose: print("DOCUMENT TEXT AND SPLIT")
+            # if verbose: print(document_text)
+            # if verbose: print(document_text_split)
             # trim super long
             if len(document_text_split) > args.num_max_tokens:
                 num_trimmed += 1
@@ -1258,9 +1271,7 @@ def get_convert_args1(namefile, max_num_samples):
 def toMatrixTensor(crop_or_position, len):
     """
     Genera il target per ogni elemento del crop nel giusto formato, compatibile con il modello
-
         [yes,no,short,long,no_answer] or [0...1...0]
-
     :param crop_or_position: una intera entry del crop oppure direttamente start_position o end_position
     :param len: dimensione del vettore da restituire
     :return: singolo vettore Target corrispondente ad una entry
@@ -1278,17 +1289,10 @@ def toMatrixTensor(crop_or_position, len):
         m[crop_or_position] = 1
     return tf.convert_to_tensor(m, dtype=tf.int32)
 
-def set_value(crop):
-    if crop.long_is_impossible and crop.short_is_impossible:
-        return 0
-    else:
-        return 1
-
 
 def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_samples, do_cache=False):
     """
     Load data crops from cache or dataset file
-
     :param do_cache:
     :param max_num_samples:
     :param args: variabili varie ed eventuali
@@ -1352,11 +1356,8 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
         all_start_positions = tf.convert_to_tensor([f.start_position for f in crops], dtype=tf.int32)
         all_end_positions = tf.convert_to_tensor([f.end_position for f in crops], dtype=tf.int32)
         all_long_positions = tf.convert_to_tensor([f.long_position for f in crops], dtype=tf.int32)
-        all_type_answer = tf.convert_to_tensor([set_value(f) for f in crops], dtype=tf.int32)
-
-
         dataset = [all_input_ids, all_attention_mask, all_token_type_ids,
-                   all_start_positions, all_end_positions, all_long_positions, all_type_answer]
+                   all_start_positions, all_end_positions, all_long_positions]
 
     return dataset, crops, entries
 
@@ -1364,7 +1365,6 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
 def getTokenizedDataset(tokenizer, namefile, verbose, max_num_samples):
     """
     La funzione crea input e target per il modello da allenare
-
     :param max_num_samples: massimo numero di oggetti da prendere in considerazione (1mil Default)
     :param model_type: tipo del modello da utilizzare per tokenizzare
     :param vocab: path del vocabolario del modello
@@ -1382,19 +1382,18 @@ def getTokenizedDataset(tokenizer, namefile, verbose, max_num_samples):
     parser.add_argument("--doc_stride", default=256, type=int)
     parser.add_argument("--max_query_length", default=64, type=int)
     parser.add_argument("--per_tpu_eval_batch_size", default=4, type=int)
-    parser.add_argument("--n_best_size", default=10, type=int)
+    parser.add_argument("--n_best_size", default=5, type=int)
     parser.add_argument("--max_answer_length", default=30, type=int)
     parser.add_argument("--verbose_logging", action='store_true')
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--p_keep_impossible', type=float,
                         default=0.03, help="The fraction of impossible"
-                                          " samples to keep.")
+                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
     args, _ = parser.parse_known_args()
     """
     print(model_type)
-
     _, tokenizer_class = MODEL_CLASSES[model_type]
     if model_type != "albert_squad":
         tokenizer_class = tokenizer_class(vocab, do_lower_case=do_lower_case)
@@ -1422,7 +1421,6 @@ def getTokenizedDataset(tokenizer, namefile, verbose, max_num_samples):
         'start': eval_dataset[3],
         'end': eval_dataset[4],
         'long': eval_dataset[5],
-        'answerable': eval_dataset[6]
     }
     return ret
 
@@ -1461,7 +1459,7 @@ def getDatasetForEvaluation(args, tokenizer, namefile, verbose, max_num_samples,
     return eval_ds, crops, entries, eval_dataset_length
 
 
-def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer):
+def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer, app=False):
     csv_fn = 'submission' + args.eval_method +'.csv'
     padded_length = math.ceil(eval_dataset_length / args.eval_batch_size) * args.eval_batch_size
 
@@ -1485,9 +1483,9 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cach
             example_indexes = batch['example_index']
             # outputs = strategy.experimental_run_v2(predict_step, args=(batch, ))
             outputs = predict_step(batch)
-            batched_start_logits = outputs[0].numpy()
-            batched_end_logits = outputs[1].numpy()
-            batched_long_logits = outputs[2].numpy()
+            batched_start_logits = outputs['start'].numpy()
+            batched_end_logits = outputs['end'].numpy()
+            batched_long_logits = outputs['long'].numpy()
 
             for i, example_index in enumerate(example_indexes):
                 # filter out padded samples
@@ -1517,12 +1515,15 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cach
                               args.max_answer_length,
                               None, None, None,
                               args.verbose_logging,
-                              args.short_null_score_diff_threshold, args.long_null_score_diff_threshold, args.eval_method)
+                              args.short_null_score_diff_threshold, args.long_null_score_diff_threshold,
+                              args.eval_method)
     del crops, all_results
     gc.collect()
-    candidates, question = read_candidates([namefile], do_cache=False)
-    sub = convert_preds_to_df(preds, candidates, question, tokenizer).sort_values('example_id')
-    sub.to_csv(csv_fn, index=False, columns=['example_id', 'PredictionString', 'question', 'answer'])
-    print(f'***** Wrote submission to {csv_fn} *****')
-    result = {}
-    return result
+    if not app:
+        candidates, question = read_candidates([namefile], do_cache=False)
+        sub = convert_preds_to_df(preds, candidates, question, tokenizer).sort_values('example_id')
+        sub.to_csv(csv_fn, index=False, columns=['example_id', 'PredictionString', 'question', 'answer'])
+        print(f'***** Wrote submission to {csv_fn} *****')
+        return preds
+    else:
+        return preds
