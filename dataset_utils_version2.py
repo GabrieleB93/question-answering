@@ -604,10 +604,10 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
                     end_indx = pred.start_index + 11
                 tok_tokens = crop.tokens[
                              pred.start_index: end_indx]  # AAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-                print(f"LONG: {tok_tokens} with logits: {pred.start_logit}")
+                # print(f"LONG: {tok_tokens} with logits: {pred.start_logit}")
             else:
                 tok_tokens = crop.tokens[pred.start_index: pred.end_index + 1]
-                print(f"SHORT: {tok_tokens} with logits: {pred.start_logit} and end logits: {pred.end_logit}" )
+                # print(f"SHORT: {tok_tokens} with logits: {pred.start_logit} and end logits: {pred.end_logit}")
 
             tok_text = " ".join(tok_tokens)
             tok_text = clean_text(tok_text)
@@ -648,8 +648,14 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
 def write_predictions(examples_gen, all_crops, all_results, n_best_size,
                       max_answer_length, output_prediction_file,
                       output_nbest_file, output_null_log_odds_file, verbose_logging,
-                      short_null_score_diff, long_null_score_diff):
-    """Write final predictions to the json file and log-odds of null if needed."""
+                      short_null_score_diff, long_null_score_diff, method):
+    """
+    Write final predictions to the json file and log-odds of null if needed.
+    method:
+        1) '' = default
+        2) 'restoring' = if rejected and short IN long text ->taken
+        3) 'matching' = taking the best short IN long token
+    """
     logger.info("Writing predictions to: %s" % output_prediction_file)
     logger.info("Writing nbest to: %s" % output_nbest_file)
 
@@ -729,12 +735,8 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
 
         short_nbest = get_nbest(short_prelim_predictions, crops,
                                 example, n_best_size)
-        print(f" short n_best : {short_nbest}")
-        short_best_non_null = None
-        for entry in short_nbest:
-            if short_best_non_null is None:
-                if entry.text != "":
-                    short_best_non_null = entry
+
+        # Segna posto short:best_non_null, era qui
 
         long_prelim_predictions = sorted(long_prelim_predictions,
                                          key=lambda x: x.start_logit, reverse=True)
@@ -747,6 +749,17 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             if long_best_non_null is None:
                 if entry.text != "":
                     long_best_non_null = entry
+
+        short_best_non_null = None
+        for entry in short_nbest:
+            if short_best_non_null is None:
+                if entry.text != "":
+                    if method == 'matching' or method == 'mixed':
+                        if entry.orig_doc_start >= long_best_non_null.orig_doc_start:
+                            short_best_non_null = entry
+                    else:
+                        short_best_non_null = entry
+
         nbest_json = {'short': [], 'long': []}
         for kk, entries in [('short', short_nbest), ('long', long_nbest)]:
             for i, entry in enumerate(entries):
@@ -771,22 +784,28 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             start_score_null = unique_id_to_result[crop_unique_id].start_logits[CLS_INDEX]
             end_score_null = unique_id_to_result[crop_unique_id].end_logits[CLS_INDEX]
             short_score_null = start_score_null + end_score_null
-            short_score_diff = short_score_null - (short_best_non_null.start_logit + #bbbbbbbbbbbbbb
+            short_score_diff = short_score_null - (short_best_non_null.start_logit +  # bbbbbbbbbbbbbb
                                                    short_best_non_null.end_logit)
 
-            print(f"short_score: {short_score_diff} and short_null: {short_null_score_diff}")
+            # print(f"short_score: {short_score_diff} and short_null: {short_null_score_diff}")
             if short_score_diff > short_null_score_diff:
-                # if short_best_non_null.text in long_best_non_null.text:
-                #     final_pred = (short_best_non_null.text, short_best_non_null.orig_doc_start, #trick ma capita che non sia dentro la long come token
-                #                   short_best_non_null.orig_doc_end)
-                # else:
-                final_pred = ("", -1, -1)
-                short_num_empty += 1
+                if method == 'restoring' or method == 'mixed':
+                    if short_best_non_null.text in long_best_non_null.text:
+                        final_pred = (short_best_non_null.text, short_best_non_null.orig_doc_start,
+                                      # trick ma capita che non sia dentro la long come token
+                                      short_best_non_null.orig_doc_end)
+                    else:
+                        final_pred = ("", -1, -1)
+                        short_num_empty += 1
+                else:
+                    final_pred = ("", -1, -1)
+                    short_num_empty += 1
             else:
                 final_pred = (short_best_non_null.text, short_best_non_null.orig_doc_start,
                               short_best_non_null.orig_doc_end)
         except Exception as e:
             print("Exception in write prediction: " + str(e))
+            print(short_best_non_null)
             final_pred = ("", -1, -1)
             short_num_empty += 1
 
@@ -796,7 +815,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             long_score_diff = long_score_null - long_best_non_null.start_logit
             scores_diff_json[example.qas_id] = {'short_score_diff': short_score_diff,
                                                 'long_score_diff': long_score_diff}
-            print(f"long_score: {long_score_diff} and long_null: {long_null_score_diff}")
+            # print(f"long_score: {long_score_diff} and long_null: {long_null_score_diff}")
             if long_score_diff > long_null_score_diff:
                 final_pred += ("", -1)
                 long_num_empty += 1
@@ -832,7 +851,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
 
 # Not used for now
 def convert_preds_to_df(preds, candidates, question, tokenizer):
-    num_found_long, num_searched_long = 0, 0
+    num_found_long, num_searched_long, num_searched_short = 0, 0, 0
     df = {'example_id': [], 'PredictionString': [], 'question': [], 'answer': []}
     for example_id, pred in preds.items():
         short_text, start_token, end_token, long_text, long_token = pred
@@ -843,6 +862,7 @@ def convert_preds_to_df(preds, candidates, question, tokenizer):
         if start_token != -1:
             # +1 is required to make the token inclusive
             short_answer = f'{start_token}:{end_token + 1}'
+            num_searched_short += 1
 
         df['PredictionString'].append(short_answer)
         df['answer'].append(short_text)
@@ -876,8 +896,8 @@ def convert_preds_to_df(preds, candidates, question, tokenizer):
 
     df = pd.DataFrame(df)
     print(df.astype(bool).sum(axis=0))
-    print(
-        f'Found number of long answered: {num_found_long} of number of long searched: {num_searched_long} (total {len(preds)})')
+    print(f"Number of long question answered: {num_searched_long} \n Number of long correct answers: {num_found_long}"
+          f"\n Number of total questions {len(preds)} \n Number of short answers: {num_searched_short}")
     return df
 
 
@@ -1375,7 +1395,7 @@ def getTokenizedDataset(tokenizer, namefile, verbose, max_num_samples):
     parser.add_argument("--doc_stride", default=256, type=int)
     parser.add_argument("--max_query_length", default=64, type=int)
     parser.add_argument("--per_tpu_eval_batch_size", default=4, type=int)
-    parser.add_argument("--n_best_size", default=10, type=int)
+    parser.add_argument("--n_best_size", default=5, type=int)
     parser.add_argument("--max_answer_length", default=30, type=int)
     parser.add_argument("--verbose_logging", action='store_true')
     parser.add_argument('--seed', type=int, default=42)
@@ -1454,7 +1474,7 @@ def getDatasetForEvaluation(args, tokenizer, namefile, verbose, max_num_samples,
 
 
 def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer, app=False):
-    csv_fn = 'submission.csv'
+    csv_fn = 'submission' + args.eval_method +'.csv'
     padded_length = math.ceil(eval_dataset_length / args.eval_batch_size) * args.eval_batch_size
 
     @tf.function
@@ -1464,8 +1484,7 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cach
 
     all_results = []
     tic = time.time()
-    i = 0
-    cached_results = 'cache/results_test.pkl'
+    cached_results = 'cache/results_test' + args.eval_method + '.pkl'
     if os.path.exists(cached_results) and do_cache:
         print("Loading results from cached file ", cached_results)
         with open(cached_results, "rb") as f:
@@ -1510,7 +1529,8 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cach
                               args.max_answer_length,
                               None, None, None,
                               args.verbose_logging,
-                              args.short_null_score_diff_threshold, args.long_null_score_diff_threshold)
+                              args.short_null_score_diff_threshold, args.long_null_score_diff_threshold,
+                              args.eval_method)
     del crops, all_results
     gc.collect()
     if not app:

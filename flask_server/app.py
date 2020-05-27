@@ -65,6 +65,8 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, default='bert')
     parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--verbose', type=bool, default=False)
+    parser.add_argument('--eval_method', type=str, default='')
+
 
     args, _ = parser.parse_known_args()
 
