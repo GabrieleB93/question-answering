@@ -3,11 +3,9 @@ from __future__ import division
 from __future__ import print_function
 from datetime import datetime
 from sys import platform
-from dataset_utils import *
-
+from dataset_utils_version2 import *
 from model_stuff.TFAlbertForNaturalQuestionAnswering import TFAlbertForNaturalQuestionAnswering
 from model_stuff.TFBertForNaturalQuestionAnswering import TFBertForNaturalQuestionAnswering
-from model_stuff import model_utils as mu
 
 
 def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1_000_000, do_cache=False):
@@ -31,7 +29,6 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     if not os.path.exists(logs):
         os.makedirs(logs)
 
-
     MODEL_CLASSES = {
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'bert_large': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
@@ -46,20 +43,29 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
         model_config = 'input/transformers_cache/bert_base_uncased_config.json'
         vocab = 'vocab.txt'
         pretrained = 'bert-base-uncased'
+        vocab = 'bert-base-uncased'
 
     elif namemodel == 'albert':  # base v2
         model_config = 'input/transformers_cache/albert_base_v2.json'
         vocab = 'spiece.model'
+        pretrained = 'albert-base-v2'
+        vocab = 'albert-base-v2'
+
     elif namemodel == 'roberta':
         do_lower_case = False
         model_config = 'lo aggiungero in futuro'
         vocab = 'lo aggiungero in futuro'
+
     elif namemodel == "albert_squad":
         model_config = 'input/transformers_cache/albert_base_v2_squad.json'
         vocab = 'spiece.model'
+
     elif namemodel == "bert_large":
         model_config = 'input/transformers_cache/bert_large_uncased_config.json'
         vocab = 'input/transformers_cache/bert_large_uncased_vocab.txt'
+        vocab = 'bert-base-uncased'
+        pretrained = 'bert-large-uncased'
+
     else:
         # di default metto il base albert
         model_config = 'input/transformers_cache/albert_base_v2.json'
@@ -73,28 +79,36 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     tf.config.optimizer.set_experimental_options({'pin_to_host_optimization': False})
 
     config_class, model_class, tokenizer_class = MODEL_CLASSES[namemodel]
-    config = config_class.from_json_file(model_config)
+    config = config_class.from_pretrained(pretrained)
+    print(tokenizer_class)
+
+    # load tokenizer from the directory
+    # tokenizer = tokenizer_class(os.path.join(checkpoint, vocab), do_lower_case='uncased')
+
+    # load tokenizer from pretrained
+    tokenizer = tokenizer_class.from_pretrained(vocab)
 
     mymodel = model_class(config)
-
     mymodel(mymodel.dummy_inputs, training=False)
-
     mymodel.load_weights(os.path.join(checkpoint, "weights.h5"), by_name=True)
+    # mymodel.load_weights(checkpoint, by_name=True)
     print("Checkpoint loaded succefully")
 
-    print("***** Running evaluation *****")
-    # load tokenizer from the directory
-    tokenizer = tokenizer_class(os.path.join(checkpoint,vocab), do_lower_case='uncased')
+    if namemodel == 'bert':
+        tags = get_add_tokens(do_enumerate=args.do_enumerate)
+        num_added = tokenizer.add_tokens(tags)
+        print(f"Added {num_added} tokens")
+        # mymodel.resize_token_embeddings(len(tokenizer))
 
-    #tokenizer = tokenizer_class.from_pretrained(pretrained,do_lower_case=do_lower_case)
-    #tags = get_add_tokens(do_enumerate=args.do_enumerate)
-    #num_added = tokenizer.add_tokens(tags)
-    #print(f"Added {num_added} tokens")
-    eval_ds, crops, entries, eval_dataset_length = getDatasetForEvaluation(args, tokenizer, namefile, verbose,
-                                                                           max_num_samples, do_cache)
-    print("***** Getting results *****")
-    result = getResult(args, mymodel, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile,tokenizer)
-    print("Result: {}".format(result))
+    if namefile != '':
+        print("***** Running evaluation *****")
+        eval_ds, crops, entries, eval_dataset_length = getDatasetForEvaluation(args, tokenizer, namefile, verbose,
+                                                                               max_num_samples, do_cache)
+        print("***** Getting results *****")
+        result = getResult(args, mymodel, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer)
+        print("Result: {}".format(result))
+    else:
+        return mymodel, tokenizer
 
 
 if __name__ == "__main__":
@@ -107,7 +121,7 @@ if __name__ == "__main__":
     parser.add_argument("--doc_stride", default=256, type=int)
     parser.add_argument("--max_query_length", default=64, type=int)
     parser.add_argument("--per_tpu_eval_batch_size", default=4, type=int)
-    parser.add_argument("--n_best_size", default=10, type=int)
+    parser.add_argument("--n_best_size", default=5, type=int)
     parser.add_argument("--max_answer_length", default=30, type=int)
     parser.add_argument("--verbose_logging", action='store_true')
     parser.add_argument('--seed', type=int, default=42)
@@ -116,16 +130,26 @@ if __name__ == "__main__":
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
-    parser.add_argument("--checkpoint", default="checkpoints/checkpoint-092000/", type=str, help="The file we will use as checkpoint")
+    parser.add_argument("--checkpoint", default="checkpoints/BERTWITHTOKEN2EPOCHSCHP/checkpoint-194000", type=str,
+                        help="The file we will use as checkpoint")
 
     parser.add_argument('--test_dir', type=str, default='TestData/simplified-nq-test.jsonl',
                         help='Directory were all the traing data splitted in smaller junks are stored')
 
     parser.add_argument('--epoch', type=int, default=1)
-    parser.add_argument('--model', type=str, default='albert')
+    parser.add_argument('--model', type=str, default='bert')
     parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--verbose', type=bool, default=False)
-    parser.add_argument('--do_cache', type=bool, default=False)
+    parser.add_argument('--do_cache', type=bool, default=True)
+
+    '''
+    method:
+        1) ''          = default
+        2) 'restoring' = if rejected and short IN long text ->taken (text)
+        3) 'matching'  = taking the best short IN long token (token)
+        4) 'mixed'     = 2. and 3. mixed
+    '''
+    parser.add_argument('--eval_method', type=str, default='mixed')
 
     args, _ = parser.parse_known_args()
 
