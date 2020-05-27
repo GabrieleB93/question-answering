@@ -3,9 +3,10 @@
 \contentsline {section}{\numberline {2}The architecture}{1}{section.2}%
 \contentsline {subsection}{\numberline {2.1}\textbf {nomeFicoDaScegliere}}{1}{subsection.2.1}%
 \contentsline {subsubsection}{\numberline {2.1.1}BERT}{2}{subsubsection.2.1.1}%
-\contentsline {subsubsection}{\numberline {2.1.2}Fine-tuning}{2}{subsubsection.2.1.2}%
+\contentsline {subsubsection}{\numberline {2.1.2}Fine-tuning}{3}{subsubsection.2.1.2}%
 \contentsline {section}{\numberline {3}Experimental results}{4}{section.3}%
-\contentsline {subsection}{\numberline {3.1}Hardware}{4}{subsection.3.1}%
-\contentsline {subsection}{\numberline {3.2}Hyper-parameters values}{5}{subsection.3.2}%
-\contentsline {section}{\numberline {4}Conclusions and future work}{5}{section.4}%
-\contentsline {subsection}{\numberline {4.1}All references}{5}{subsection.4.1}%
+\contentsline {subsection}{\numberline {3.1}Hardware}{5}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Hyper-parameters' values}{5}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Results of fine-tuning}{6}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Conclusions and future work}{7}{section.4}%
+\contentsline {subsection}{\numberline {4.1}All references}{8}{subsection.4.1}%
