@@ -130,7 +130,7 @@ if __name__ == "__main__":
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
-    parser.add_argument("--checkpoint", default="checkpoints/BERTWITHTOKEN2EPOCHSCHP/checkpoint-194000", type=str,
+    parser.add_argument("--checkpoint", default="checkpoints/BERT_DIFFERENT_LOSS/checkpoint-097000", type=str,
                         help="The file we will use as checkpoint")
 
     parser.add_argument('--test_dir', type=str, default='TestData/simplified-nq-test.jsonl',
@@ -149,7 +149,7 @@ if __name__ == "__main__":
         3) 'matching'  = taking the best short IN long token (token)
         4) 'mixed'     = 2. and 3. mixed
     '''
-    parser.add_argument('--eval_method', type=str, default='mixed')
+    parser.add_argument('--eval_method', type=str, default='')
 
     args, _ = parser.parse_known_args()
 

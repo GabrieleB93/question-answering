@@ -39,7 +39,8 @@ LongAnswerCandidate = collections.namedtuple('LongAnswerCandidate', [
 DocSpan = collections.namedtuple("DocSpan", ["start", "length"])
 
 PrelimPrediction = collections.namedtuple("PrelimPrediction",
-                                          ["crop_index", "start_index", "end_index", "start_logit", "end_logit"])
+                                          ["crop_index", "start_index", "end_index", "start_logit", "end_logit",
+                                           "answerable_logit"])
 
 NbestPrediction = collections.namedtuple("NbestPrediction", [
     "text", "start_logit", "end_logit",
@@ -47,7 +48,7 @@ NbestPrediction = collections.namedtuple("NbestPrediction", [
     "orig_doc_start", "orig_doc_end", "crop_index"])
 
 RawResult = collections.namedtuple("RawResult", ["unique_id", "start_logits", "end_logits",
-                                                 "long_logits"])
+                                                 "long_logits", "answerable_logits"])
 
 UNMAPPED = -123
 CLS_INDEX = 0
@@ -593,28 +594,41 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
         orig_doc_start, orig_doc_end = -1, -1
         # non-null
         orig_doc_start, orig_doc_end = -1, -1
-        if pred.start_index > 0:
-            # Long answer has no end_index. We still generate some text to check
-            if pred.end_index == -1:
-                tok_tokens = crop.tokens[pred.start_index: pred.start_index + 11]
+        if pred.answerable_logit > 0.5:
+            if pred.start_index > 0:
+                # Long answer has no end_index. We still generate some text to check
+                if pred.end_index == -1:
+                    array_tmp = np.array(crop.tokens)
+                    indx_array = np.where(array_tmp == '</p>')
+                    try:
+                        end_indx = indx_array[0][indx_array[0] > pred.start_index][0] + 1  # Prendo il primo indice più
+                        # grande di start
+                    except:
+                        end_indx = pred.start_index + 11
+                    tok_tokens = crop.tokens[
+                                 pred.start_index: end_indx]  # AAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+                    # print(f"LONG: {tok_tokens} with logits: {pred.start_logit}")
+                else:
+                    tok_tokens = crop.tokens[pred.start_index: pred.end_index + 1]
+                    # print(f"SHORT: {tok_tokens} with logits: {pred.start_logit} and end logits: {pred.end_logit}")
+
+                tok_text = " ".join(tok_tokens)
+                tok_text = clean_text(tok_text)
+
+                orig_doc_start = int(crop.token_to_orig_map[pred.start_index])
+                if pred.end_index == -1:
+                    orig_doc_end = orig_doc_start + 10
+                else:
+                    orig_doc_end = int(crop.token_to_orig_map[pred.end_index])
+
+                final_text = tok_text
+                if final_text in seen:
+                    continue
+
             else:
-                tok_tokens = crop.tokens[pred.start_index: pred.end_index + 1]
-            tok_text = " ".join(tok_tokens)
-            tok_text = clean_text(tok_text)
-
-            orig_doc_start = int(crop.token_to_orig_map[pred.start_index])
-            if pred.end_index == -1:
-                orig_doc_end = orig_doc_start + 10
-            else:
-                orig_doc_end = int(crop.token_to_orig_map[pred.end_index])
-
-            final_text = tok_text
-            if final_text in seen:
-                continue
-
+                final_text = ""
         else:
             final_text = ""
-
         seen.add(final_text)
         nbest.append(NbestPrediction(
             text=final_text,
@@ -639,8 +653,14 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
 def write_predictions(examples_gen, all_crops, all_results, n_best_size,
                       max_answer_length, output_prediction_file,
                       output_nbest_file, output_null_log_odds_file, verbose_logging,
-                      short_null_score_diff, long_null_score_diff):
-    """Write final predictions to the json file and log-odds of null if needed."""
+                      short_null_score_diff, long_null_score_diff, method):
+    """
+    Write final predictions to the json file and log-odds of null if needed.
+    method:
+        1) '' = default
+        2) 'restoring' = if rejected and short IN long text ->taken
+        3) 'matching' = taking the best short IN long token
+    """
     logger.info("Writing predictions to: %s" % output_prediction_file)
     logger.info("Writing nbest to: %s" % output_nbest_file)
 
@@ -652,7 +672,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
     all_predictions = collections.OrderedDict()
     all_nbest_json = collections.OrderedDict()
     scores_diff_json = collections.OrderedDict()
-    short_num_empty, long_num_empty = 0, 0
+    short_num_empty, long_num_empty, answerable_1 = 0, 0, 0
     for example_index, example in enumerate(examples_gen):
         if example_index % 1000 == 0 and example_index > 0:
             logger.info(f'[{example_index}]: {short_num_empty} short and {long_num_empty} long empty')
@@ -670,6 +690,10 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             end_indexes = np.argpartition(result.end_logits, -n_best_size)[-n_best_size:]
             end_indexes = [int(x) for x in end_indexes]
 
+            # answerable_indexes = np.argpartition(result.answerable_logits, -n_best_size)[-n_best_size:]
+            # answerable_indexes = [int(x) for x in answerable_indexes]
+            if result.answerable_logits > 0.5:
+                answerable_1 += 1
             # create short answers
             for start_index in start_indexes:
                 if start_index >= len(crop.tokens):
@@ -696,7 +720,8 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
                         start_index=start_index,
                         end_index=end_index,
                         start_logit=result.start_logits[start_index],
-                        end_logit=result.end_logits[end_index]))
+                        end_logit=result.end_logits[end_index],
+                        answerable_logit=result.answerable_logits))
 
             long_indexes = np.argpartition(result.long_logits, -n_best_size)[-n_best_size:].tolist()
             for long_index in long_indexes:
@@ -713,18 +738,16 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
                     crop_index=crop_index,
                     start_index=long_index, end_index=-1,
                     start_logit=result.long_logits[long_index],
-                    end_logit=result.long_logits[long_index]))
+                    end_logit=result.long_logits[long_index],
+                    answerable_logit=result.answerable_logits))
 
         short_prelim_predictions = sorted(short_prelim_predictions,
                                           key=lambda x: x.start_logit + x.end_logit, reverse=True)
 
         short_nbest = get_nbest(short_prelim_predictions, crops,
                                 example, n_best_size)
-        short_best_non_null = None
-        for entry in short_nbest:
-            if short_best_non_null is None:
-                if entry.text != "":
-                    short_best_non_null = entry
+
+        # Segna posto short:best_non_null, era qui
 
         long_prelim_predictions = sorted(long_prelim_predictions,
                                          key=lambda x: x.start_logit, reverse=True)
@@ -737,6 +760,17 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             if long_best_non_null is None:
                 if entry.text != "":
                     long_best_non_null = entry
+
+        short_best_non_null = None
+        for entry in short_nbest:
+            if short_best_non_null is None:
+                if entry.text != "":
+                    if method == 'matching' or method == 'mixed':
+                        if entry.orig_doc_start >= long_best_non_null.orig_doc_start:
+                            short_best_non_null = entry
+                    else:
+                        short_best_non_null = entry
+
         nbest_json = {'short': [], 'long': []}
         for kk, entries in [('short', short_nbest), ('long', long_nbest)]:
             for i, entry in enumerate(entries):
@@ -761,17 +795,28 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             start_score_null = unique_id_to_result[crop_unique_id].start_logits[CLS_INDEX]
             end_score_null = unique_id_to_result[crop_unique_id].end_logits[CLS_INDEX]
             short_score_null = start_score_null + end_score_null
-            short_score_diff = short_score_null - (short_best_non_null.start_logit +
+            short_score_diff = short_score_null - (short_best_non_null.start_logit +  # bbbbbbbbbbbbbb
                                                    short_best_non_null.end_logit)
 
+            # print(f"short_score: {short_score_diff} and short_null: {short_null_score_diff}")
             if short_score_diff > short_null_score_diff:
-                final_pred = ("", -1, -1)
-                short_num_empty += 1
+                if method == 'restoring' or method == 'mixed':
+                    if short_best_non_null.text in long_best_non_null.text:
+                        final_pred = (short_best_non_null.text, short_best_non_null.orig_doc_start,
+                                      # trick ma capita che non sia dentro la long come token
+                                      short_best_non_null.orig_doc_end)
+                    else:
+                        final_pred = ("", -1, -1)
+                        short_num_empty += 1
+                else:
+                    final_pred = ("", -1, -1)
+                    short_num_empty += 1
             else:
                 final_pred = (short_best_non_null.text, short_best_non_null.orig_doc_start,
                               short_best_non_null.orig_doc_end)
         except Exception as e:
-            print("Exception in write prediction: " +str(e))
+            print("Exception in write prediction: " + str(e))
+            print(short_best_non_null)
             final_pred = ("", -1, -1)
             short_num_empty += 1
 
@@ -781,7 +826,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             long_score_diff = long_score_null - long_best_non_null.start_logit
             scores_diff_json[example.qas_id] = {'short_score_diff': short_score_diff,
                                                 'long_score_diff': long_score_diff}
-
+            # print(f"long_score: {long_score_diff} and long_null: {long_null_score_diff}")
             if long_score_diff > long_null_score_diff:
                 final_pred += ("", -1)
                 long_num_empty += 1
@@ -810,6 +855,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
         with open(output_null_log_odds_file, "w") as writer:
             writer.write(json.dumps(scores_diff_json, indent=2))
 
+    print(f"Answerable to 1 = {answerable_1}")
     logger.info(f'{short_num_empty} short and {long_num_empty} long empty of'
                 f' {example_index}')
     return all_predictions
@@ -817,7 +863,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
 
 # Not used for now
 def convert_preds_to_df(preds, candidates, question, tokenizer):
-    num_found_long, num_searched_long = 0, 0
+    num_found_long, num_searched_long, num_searched_short = 0, 0, 0
     df = {'example_id': [], 'PredictionString': [], 'question': [], 'answer': []}
     for example_id, pred in preds.items():
         short_text, start_token, end_token, long_text, long_token = pred
@@ -828,6 +874,7 @@ def convert_preds_to_df(preds, candidates, question, tokenizer):
         if start_token != -1:
             # +1 is required to make the token inclusive
             short_answer = f'{start_token}:{end_token + 1}'
+            num_searched_short += 1
 
         df['PredictionString'].append(short_answer)
         df['answer'].append(short_text)
@@ -861,7 +908,8 @@ def convert_preds_to_df(preds, candidates, question, tokenizer):
 
     df = pd.DataFrame(df)
     print(df.astype(bool).sum(axis=0))
-    print(f'Found number of long answered: {num_found_long} of number of long searched: {num_searched_long} (total {len(preds)})')
+    print(f"Number of long question answered: {num_searched_long} \n Number of long correct answers: {num_found_long}"
+          f"\n Number of total questions {len(preds)} \n Number of short answers: {num_searched_short}")
     return df
 
 
@@ -1262,6 +1310,7 @@ def toMatrixTensor(crop_or_position, len):
         m[crop_or_position] = 1
     return tf.convert_to_tensor(m, dtype=tf.int32)
 
+
 def set_value(crop):
     if crop.long_is_impossible and crop.short_is_impossible:
         return 0
@@ -1338,7 +1387,6 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
         all_long_positions = tf.convert_to_tensor([f.long_position for f in crops], dtype=tf.int32)
         all_type_answer = tf.convert_to_tensor([set_value(f) for f in crops], dtype=tf.int32)
 
-
         dataset = [all_input_ids, all_attention_mask, all_token_type_ids,
                    all_start_positions, all_end_positions, all_long_positions, all_type_answer]
 
@@ -1372,7 +1420,7 @@ def getTokenizedDataset(tokenizer, namefile, verbose, max_num_samples):
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--p_keep_impossible', type=float,
                         default=0.03, help="The fraction of impossible"
-                                          " samples to keep.")
+                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
     args, _ = parser.parse_known_args()
@@ -1446,7 +1494,7 @@ def getDatasetForEvaluation(args, tokenizer, namefile, verbose, max_num_samples,
 
 
 def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer):
-    csv_fn = 'submission.csv'
+    csv_fn = 'Answerable_submission' + args.eval_method + '.csv'
     padded_length = math.ceil(eval_dataset_length / args.eval_batch_size) * args.eval_batch_size
 
     @tf.function
@@ -1456,8 +1504,7 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cach
 
     all_results = []
     tic = time.time()
-
-    cached_results = 'cache/results_test.pkl'
+    cached_results = 'cache/Answerable_results_test' + args.eval_method + '.pkl'
     if os.path.exists(cached_results) and do_cache:
         print("Loading results from cached file ", cached_results)
         with open(cached_results, "rb") as f:
@@ -1470,9 +1517,10 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cach
             example_indexes = batch['example_index']
             # outputs = strategy.experimental_run_v2(predict_step, args=(batch, ))
             outputs = predict_step(batch)
-            batched_start_logits = outputs[0].numpy()
-            batched_end_logits = outputs[1].numpy()
-            batched_long_logits = outputs[2].numpy()
+            batched_start_logits = outputs['start'].numpy()
+            batched_end_logits = outputs['end'].numpy()
+            batched_long_logits = outputs['long'].numpy()
+            batched_answerable_logits = outputs['answerable'].numpy()
 
             for i, example_index in enumerate(example_indexes):
                 # filter out padded samples
@@ -1484,11 +1532,13 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cach
                 start_logits = batched_start_logits[i].tolist()
                 end_logits = batched_end_logits[i].tolist()
                 long_logits = batched_long_logits[i].tolist()
+                answerable_logits = batched_answerable_logits[i].tolist()
 
                 result = RawResult(unique_id=unique_id,
                                    start_logits=start_logits,
                                    end_logits=end_logits,
-                                   long_logits=long_logits)
+                                   long_logits=long_logits,
+                                   answerable_logits=answerable_logits)
                 all_results.append(result)
         if do_cache:
             with open(cached_results, "wb") as f:
@@ -1502,7 +1552,8 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cach
                               args.max_answer_length,
                               None, None, None,
                               args.verbose_logging,
-                              args.short_null_score_diff_threshold, args.long_null_score_diff_threshold)
+                              args.short_null_score_diff_threshold, args.long_null_score_diff_threshold,
+                              args.eval_method)
     del crops, all_results
     gc.collect()
     candidates, question = read_candidates([namefile], do_cache=False)
