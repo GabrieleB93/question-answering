@@ -1308,7 +1308,8 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
     else:
         args_nq = get_convert_args1(namefile, max_num_samples)
 
-    cached_crops_fn = 'cache/cached_test.pkl'
+    cached_folder = 'cache/'
+    cached_crops_fn = cached_folder + 'cached_test.pkl'
     if os.path.exists(cached_crops_fn) and do_cache:
         print("Loading crops from cached file %s", cached_crops_fn)
         with open(cached_crops_fn, "rb") as f:
@@ -1330,6 +1331,9 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
                                           pad_token_segment_id=0,
                                           p_keep_impossible=args.p_keep_impossible if not evaluate else 1.0)
         if do_cache:
+            #if cached_folder does not exist create it
+            if not os.path.exists(cached_folder):
+                os.makedirs(cached_folder)
             with open(cached_crops_fn, "wb") as f:
                 pickle.dump(crops, f)
 
