@@ -618,25 +618,25 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
                     for closing_tag in tags_dict.values():
                         tag_positions = np.where(crop_tokens == closing_tag)
                         # if the list is not empty take the maximum
-                        if tag_positions:
-                            last_ending_tag = max(tag_positions)
+                        if tag_positions[0].size>0:
+                            last_ending_tag = max(tag_positions[0])
                         # check if there is a corresponding opening tag after
                         # the last closing tag
-                        tag_positions = np.where(crop_tokens == opening_tag)
+                        tag_positions = np.where(crop_tokens == '<p>')
                         # if the list is not empty take the maximum
-                        if tag_positions:
-                            last_starting_tag = max(tag_positions)
+                        if tag_positions[0].size>0:
+                            last_starting_tag = max(tag_positions[0])
                         # if the last opening tag follows the last closing tag
                         # add it to the list of open and not closed tags
                         if last_ending_tag < last_starting_tag:
                             last_positions.append(last_starting_tag)
                     # if there is at least an opening tag that is not followed
                     # by a closing tag take the last one
-                    if last_positions:
-                        start_index = max(last_positions)
+                    if last_positions[0].size>0:
+                        start_index = max(last_positions[0])
                         break
                     start_crop_index = start_crop_index - 1
-            
+
             # the couple (start_crop_index, start_index) uniquely identifies the
             # predicted start position of the long answer
 
@@ -651,7 +651,7 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
             while end_crop_index < len(crops):
                 tag_positions = np.where(crops[end_crop_index].tokens == closing_tag)
                 if tag_positions:
-                    end_index = min(tag_positions)
+                    end_index = min(tag_positions[0])
                     break
                 end_crop_index = end_crop_index + 1
 
@@ -669,11 +669,11 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
                 # take all the tokens in the first crop from start position
                 tokens = crops[start_crop_index].tokens[start_index:]
                 # append all the tokens in subsequent crops
-                for crop_idx in range(start_crop_index+1, end_crop_index):
+                for crop_idx in range(start_crop_index + 1, end_crop_index):
                     tokens.append(crops[crop_idx].tokens)
                 # we are at last crop
                 tokens.append(crops[end_crop_index].tokens[:end_index])
-            
+
             # get the text
             text = " ".join(tokens)
             text = clean_text(text)
@@ -688,8 +688,8 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
 
         # if the selected text is already present in other predictions continue
         if text in seen:
-            continue    
-        # else add it to seen answers and append it to nbest
+            continue
+            # else add it to seen answers and append it to nbest
         seen.add(text)
 
         ###TODO: gli start ed end logit non li ho modificati, quindi non so se è
@@ -702,46 +702,45 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
             start_index=start_index, end_index=end_index,
             orig_doc_start=orig_doc_start, orig_doc_end=orig_doc_end,
             crop_index=start_crop_index))
-        
 
-            """if pred.end_index == -1:
-                array_tmp = np.array(crop.tokens)
-                indx_array = np.where(array_tmp == '</p>')
-                try:
-                    end_indx = indx_array[0][indx_array[0] > pred.start_index][0] + 1  # Prendo il primo indice più
-                    # grande di start
-                except:
-                    end_indx = pred.start_index + 11
-                tok_tokens = crop.tokens[
-                             pred.start_index: end_indx]  # AAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-                # print(f"LONG: {tok_tokens} with logits: {pred.start_logit}")
-            else:
-                tok_tokens = crop.tokens[pred.start_index: pred.end_index + 1]
-                # print(f"SHORT: {tok_tokens} with logits: {pred.start_logit} and end logits: {pred.end_logit}")
-
-            tok_text = " ".join(tok_tokens)
-            tok_text = clean_text(tok_text)
-
-            orig_doc_start = int(crop.token_to_orig_map[pred.start_index])
-            if pred.end_index == -1:
-                orig_doc_end = orig_doc_start + 10
-            else:
-                orig_doc_end = int(crop.token_to_orig_map[pred.end_index])
-
-            final_text = tok_text
-            if final_text in seen:
-                continue
-
-        else:
-            final_text = ""
-
-        seen.add(final_text)
-        nbest.append(NbestPrediction(
-            text=final_text,
-            start_logit=pred.start_logit, end_logit=pred.end_logit,
-            start_index=pred.start_index, end_index=pred.end_index,
-            orig_doc_start=orig_doc_start, orig_doc_end=orig_doc_end,
-            crop_index=pred.crop_index))"""
+        #     if pred.end_index == -1:
+        #         array_tmp = np.array(crop.tokens)
+        #         indx_array = np.where(array_tmp == '</p>')
+        #         try:
+        #             end_indx = indx_array[0][indx_array[0] > pred.start_index][0] + 1  # Prendo il primo indice più
+        #             # grande di start
+        #         except:
+        #             end_indx = pred.start_index + 11
+        #         tok_tokens = crop.tokens[
+        #                      pred.start_index: end_indx]  # AAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+        #         # print(f"LONG: {tok_tokens} with logits: {pred.start_logit}")
+        #     else:
+        #         tok_tokens = crop.tokens[pred.start_index: pred.end_index + 1]
+        #         # print(f"SHORT: {tok_tokens} with logits: {pred.start_logit} and end logits: {pred.end_logit}")
+        #
+        #     tok_text = " ".join(tok_tokens)
+        #     tok_text = clean_text(tok_text)
+        #
+        #     orig_doc_start = int(crop.token_to_orig_map[pred.start_index])
+        #     if pred.end_index == -1:
+        #         orig_doc_end = orig_doc_start + 10
+        #     else:
+        #         orig_doc_end = int(crop.token_to_orig_map[pred.end_index])
+        #
+        #     final_text = tok_text
+        #     if final_text in seen:
+        #         continue
+        #
+        # else:
+        #     final_text = ""
+        #
+        # seen.add(final_text)
+        # nbest.append(NbestPrediction(
+        #     text=final_text,
+        #     start_logit=pred.start_logit, end_logit=pred.end_logit,
+        #     start_index=pred.start_index, end_index=pred.end_index,
+        #     orig_doc_start=orig_doc_start, orig_doc_end=orig_doc_end,
+        #     crop_index=pred.crop_index))
 
     # Degenerate case. I never saw this happen.
     if len(nbest) in (0, 1):
@@ -1447,7 +1446,7 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
                                           pad_token_segment_id=0,
                                           p_keep_impossible=args.p_keep_impossible if not evaluate else 1.0)
         if do_cache:
-            #if cached_folder does not exist create it
+            # if cached_folder does not exist create it
             if not os.path.exists(cached_folder):
                 os.makedirs(cached_folder)
             with open(cached_crops_fn, "wb") as f:
@@ -1580,7 +1579,7 @@ def getDatasetForEvaluation(args, tokenizer, namefile, verbose, max_num_samples,
 
 
 def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer, app=False):
-    csv_fn = 'submission' + args.eval_method +'.csv'
+    csv_fn = 'submission' + args.eval_method + '2.csv'
     padded_length = math.ceil(eval_dataset_length / args.eval_batch_size) * args.eval_batch_size
 
     @tf.function

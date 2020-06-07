@@ -140,7 +140,7 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, default='bert')
     parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--verbose', type=bool, default=False)
-    parser.add_argument('--do_cache', type=bool, default=True)
+    parser.add_argument('--do_cache', type=bool, default=False)
 
     '''
     method:
@@ -149,7 +149,7 @@ if __name__ == "__main__":
         3) 'matching'  = taking the best short IN long token (token)
         4) 'mixed'     = 2. and 3. mixed
     '''
-    parser.add_argument('--eval_method', type=str, default='mixed')
+    parser.add_argument('--eval_method', type=str, default='')
 
     args, _ = parser.parse_known_args()
 
