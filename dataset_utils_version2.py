@@ -579,16 +579,132 @@ def clean_text(tok_text):
 
 
 def get_nbest(prelim_predictions, crops, example, n_best_size):
+    """
+    This function extracts the text for the n_best_size best long 
+    answers from the sorted predictions in prelim_predictions
+
+    @param prelim_predictions list of crop indexes containing the
+        start position of each long answer produced
+    @param crops list of crops
+    @param example index of the current example
+    @param n_best_size number of top predictions to be returned
+    """
     seen, nbest = set(), []
+    # for each prediction (they are already sorted according to confidence)
     for pred in prelim_predictions:
         if len(nbest) >= n_best_size:
             break
+        # take the crop that contains the start position
+
         crop = crops[pred.crop_index]
-        # non-null
+        # initialize start and end position
         orig_doc_start, orig_doc_end = -1, -1
+        # if the start position is -1 it means that the question is considered
+        # as unanswerable
         if pred.start_index > 0:
-            # Long answer has no end_index. We still generate some text to check
-            if pred.end_index == -1:
+            # find the correct start position (possibly in previous crops)
+
+            tags = ['Dd', 'Dl', 'Dt', 'H1', 'H2', 'H3', 'Li', 'Ol', 'P', 'Table', 'Td', 'Th', 'Tr', 'Ul']
+            tags_dict = {f'<{tag}>': f'</{tag}>' for tag in tags}
+            start_index = pred.start_index
+            start_crop_index = pred.crop_index
+            # if the crop does not start with an opening tag
+            if crop.tokens[0] not in tags_dict.keys():
+                # find the backwards the first tag that opens and does not close
+                while start_crop_index >= 0:
+                    # take the LAST occurrence of each closing tag
+                    last_positions = []
+                    crop_tokens = np.array(crop.tokens)
+                    for closing_tag in tags_dict.values():
+                        tag_positions = np.where(crop_tokens == closing_tag)
+                        # if the list is not empty take the maximum
+                        if tag_positions:
+                            last_ending_tag = max(tag_positions)
+                        # check if there is a corresponding opening tag after
+                        # the last closing tag
+                        tag_positions = np.where(crop_tokens == opening_tag)
+                        # if the list is not empty take the maximum
+                        if tag_positions:
+                            last_starting_tag = max(tag_positions)
+                        # if the last opening tag follows the last closing tag
+                        # add it to the list of open and not closed tags
+                        if last_ending_tag < last_starting_tag:
+                            last_positions.append(last_starting_tag)
+                    # if there is at least an opening tag that is not followed
+                    # by a closing tag take the last one
+                    if last_positions:
+                        start_index = max(last_positions)
+                        break
+                    start_crop_index = start_crop_index - 1
+            
+            # the couple (start_crop_index, start_index) uniquely identifies the
+            # predicted start position of the long answer
+
+            # at this point, we want to find the first occurrence of the closing
+            # tag that corresponds to the opening tag
+
+            end_index = pred.start_index
+            end_crop_index = pred.crop_index
+            closing_tag = tags_dict[crops[start_crop_index].tokens[start_index]]
+
+            # take the first occurrence of the target closing tag 
+            while end_crop_index < len(crops):
+                tag_positions = np.where(crops[end_crop_index].tokens == closing_tag)
+                if tag_positions:
+                    end_index = min(tag_positions)
+                    break
+                end_crop_index = end_crop_index + 1
+
+            # the couple (end_crop_index, end_index) uniquely identifies the
+            # predicted end position of the long answer
+
+            # if the closing tag was not found in the whole text take 10 tokens
+            if start_crop_index == end_crop_index and start_index == end_index:
+                end_index = start_index + 10
+
+            # take the tokens
+            if start_crop_index == end_crop_index:
+                tokens = crops[start_crop_index].tokens[start_index:end_index]
+            else:
+                # take all the tokens in the first crop from start position
+                tokens = crops[start_crop_index].tokens[start_index:]
+                # append all the tokens in subsequent crops
+                for crop_idx in range(start_crop_index+1, end_crop_index):
+                    tokens.append(crops[crop_idx].tokens)
+                # we are at last crop
+                tokens.append(crops[end_crop_index].tokens[:end_index])
+            
+            # get the text
+            text = " ".join(tokens)
+            text = clean_text(text)
+
+            # get positions in original document
+            orig_doc_start = int(crops[start_crop_index].token_to_orig_map[start_index])
+            orig_doc_end = int(crops[end_crop_index].token_to_orig_map[end_index])
+
+        # if is unanswerable no text is selected
+        else:
+            final_text = ""
+
+        # if the selected text is already present in other predictions continue
+        if text in seen:
+            continue    
+        # else add it to seen answers and append it to nbest
+        seen.add(text)
+
+        ###TODO: gli start ed end logit non li ho modificati, quindi non so se è
+        ### corretto ritornarli così
+        ### inoltre il parametro "crop_index" è mal definito, in quanto noi abbiamo
+        ### l'indice del primo crop e dell'ultimo crop che potrebbero non coincidere
+        nbest.append(NbestPrediction(
+            text=text,
+            start_logit=pred.start_logit, end_logit=pred.end_logit,
+            start_index=start_index, end_index=end_index,
+            orig_doc_start=orig_doc_start, orig_doc_end=orig_doc_end,
+            crop_index=start_crop_index))
+        
+
+            """if pred.end_index == -1:
                 array_tmp = np.array(crop.tokens)
                 indx_array = np.where(array_tmp == '</p>')
                 try:
@@ -625,7 +741,7 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
             start_logit=pred.start_logit, end_logit=pred.end_logit,
             start_index=pred.start_index, end_index=pred.end_index,
             orig_doc_start=orig_doc_start, orig_doc_end=orig_doc_end,
-            crop_index=pred.crop_index))
+            crop_index=pred.crop_index))"""
 
     # Degenerate case. I never saw this happen.
     if len(nbest) in (0, 1):
