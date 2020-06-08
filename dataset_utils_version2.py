@@ -606,27 +606,33 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
 
             tags = ['Dd', 'Dl', 'Dt', 'H1', 'H2', 'H3', 'Li', 'Ol', 'P', 'Table', 'Td', 'Th', 'Tr', 'Ul']
             tags_dict = {f'<{tag}>': f'</{tag}>' for tag in tags}
+            tags_reverse_dict = {f'</{tag}>': f'<{tag}>' for tag in tags}
             start_index = pred.start_index
             start_crop_index = pred.crop_index
             # if the crop does not start with an opening tag
             if crop.tokens[0] not in tags_dict.keys():
-                # find the backwards the first tag that opens and does not close
+                # find backwards the first tag that opens and does not close
                 while start_crop_index >= 0:
                     # take the LAST occurrence of each closing tag
                     last_positions = []
                     crop_tokens = np.array(crop.tokens)
                     for closing_tag in tags_dict.values():
                         tag_positions = np.where(crop_tokens == closing_tag)
+                        # initialize the position of the last occurence of
+                        # the current closing tag as -1
+                        last_ending_tag = -1
                         # if the list is not empty take the maximum
                         if tag_positions[0].size>0:
                             last_ending_tag = max(tag_positions[0])
                         # check if there is a corresponding opening tag after
                         # the last closing tag
-                        tag_positions = np.where(crop_tokens == '<p>')
+                        opening_tag = tags_reverse_dict[closing_tag]
+                        tag_positions = np.where(crop_tokens == opening_tag)
                         # if the list is not empty take the maximum
-                        if tag_positions[0].size>0:
+                        if tag_positions[0].size > 0:
                             last_starting_tag = max(tag_positions[0])
-                        # if the last opening tag follows the last closing tag
+                        # if the last opening tag follows the last closing tag or
+                        # there is no closing tag in the current crop
                         # add it to the list of open and not closed tags
                         if last_ending_tag < last_starting_tag:
                             last_positions.append(last_starting_tag)
