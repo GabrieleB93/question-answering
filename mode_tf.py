@@ -123,13 +123,13 @@ def main(namemodel,
         # mymodel(traingenerator.get_sample_data())
         
         mymodel(mymodel.dummy_inputs)
-        if starting_epoch == 0:
-            start_file = os.path.split(checkpoint)[-1]
-            start_file = re.sub('weights.', '', start_file)
-            start_file = int(start_file.split("-")[0])
-            start_file = start_file
-        else:
-            start_file = starting_epoch
+        # if starting_epoch == 0:
+        #     start_file = os.path.split(checkpoint)[-1]
+        #     start_file = re.sub('weights.', '', start_file)
+        #     start_file = int(start_file.split("-")[0])
+        #     start_file = start_file
+        # else:
+        #     start_file = starting_epoch
 
         mymodel.load_weights(checkpoint, by_name=True)
         print("checkpoint loaded succefully")
