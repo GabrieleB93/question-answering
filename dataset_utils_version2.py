@@ -628,39 +628,42 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
                     print('entro')
                     # find backwards the first tag that opens and does not close
                     while start_crop_index >= 0:
-                        # take the LAST occurrence of each closing tag
-                        last_positions = []
+                        # take all the LAST occurrences of each opening tag
+                        # in the list of all admittable opening tags
+                        last_opening_positions = []
                         crop_tokens = np.array(crop.tokens)
                         for closing_tag in tags_dict.values():
-                            tag_positions = np.where(crop_tokens == closing_tag)
+                            closing_tag_positions = np.where(crop_tokens == closing_tag)
                             # initialize the position of the last occurence of
                             # the current closing and opening tag as -1
-                            last_ending_tag = -1
-                            last_starting_tag = -1
+                            last_closing_tag = -1
+                            last_opening_tag = -1
                             # if the list is not empty take the maximum
-                            if tag_positions[0].size > 0:
-                                last_ending_tag = max(tag_positions[0])
+                            if closing_tag_positions[0].size > 0:
+                                last_closing_tag = max(closing_tag_positions[0])
                             # check if there is a corresponding opening tag after
                             # the last closing tag
                             opening_tag = tags_reverse_dict[closing_tag]
-                            tag_positions = np.where(crop_tokens == opening_tag)
+                            opening_tag_positions = np.where(crop_tokens == opening_tag)
                             # if the list is not empty take the maximum
-                            if tag_positions[0].size > 0:
-                                last_starting_tag = max(tag_positions[0])
+                            if opening_tag_positions[0].size > 0:
+                                last_opening_tag = max(opening_tag_positions[0])
                             # if the last opening tag follows the last closing tag or
                             # there is no closing tag in the current crop
-                            # add it to the list of open and not closed tags
-                            if last_ending_tag < last_starting_tag:
-                                last_positions.append(last_starting_tag)
+                            # add the opening tag position to the list of open
+                            # and not closed tags
+                            if last_closing_tag < last_opening_tag:
+                                last_opening_positions.append(last_opening_tag)
                         # if there is at least an opening tag that is not followed
-                        # by a closing tag take the last one
-                        if len(last_positions) > 0:
-                            start_index = max(last_positions)
+                        # by a closing tag in this crop take the last one and stop
+                        # the backwards scanning of the crops list
+                        if len(last_opening_positions) > 0:
+                            start_index = max(last_opening_positions)
                             break
                         start_crop_index = start_crop_index - 1
 
                 # at this point, we want to find the first occurrence of the closing
-                # tag that corresponds to the opening tag
+                # tag that corresponds to the opening tag AFTER the predicted start token
 
                 end_index = pred.start_index
                 end_crop_index = pred.crop_index
