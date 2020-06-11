@@ -695,7 +695,12 @@ def get_nbest(prelim_predictions, crops, example, n_best_size):
 
                     # take the first occurrence of the target closing tag
                     while end_crop_index < len(crops):
-                        tag_positions = np.where(np.array(crops[end_crop_index].tokens) == closing_tag)
+                        # if we are in the same crop of the prediction we need to be sure that
+                        # the prediction is contained in the answer
+                        if end_crop_index == pred.crop_index:
+                            tag_positions = np.where(np.array(crops[end_crop_index].tokens[pred.start_index:]) == closing_tag)
+                        else:
+                            tag_positions = np.where(np.array(crops[end_crop_index].tokens) == closing_tag)
                         if tag_positions[0].size > 0:
                             # end_index = min(tag_positions[0])
                             # end_index = min(i for i in tag_positions[0] if i > start_index) #ma se manca ovviamente errore
