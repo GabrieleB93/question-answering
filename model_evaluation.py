@@ -128,7 +128,7 @@ if __name__ == "__main__":
     parser.add_argument('--p_keep_impossible', type=float,
                         default=0.1, help="The fraction of impossible"
                                           " samples to keep.")
-    parser.add_argument('--do_enumerate', action='store_true')
+    parser.add_argument('--do_enumerate', action='store_true') # mettere true
 
     parser.add_argument("--checkpoint", default="checkpoints/BERTWITHTOKEN2EPOCHSCHP/checkpoint-194000", type=str,
                         help="The file we will use as checkpoint")
