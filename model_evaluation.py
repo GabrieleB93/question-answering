@@ -130,7 +130,7 @@ if __name__ == "__main__":
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
-    parser.add_argument("--checkpoint", default="checkpoints/BERT_DIFFERENT_LOSS/checkpoint-097000", type=str,
+    parser.add_argument("--checkpoint", default="checkpoints/tmp/checkpoint-194000", type=str,
                         help="The file we will use as checkpoint")
 
     parser.add_argument('--test_dir', type=str, default='TestData/simplified-nq-test.jsonl',
