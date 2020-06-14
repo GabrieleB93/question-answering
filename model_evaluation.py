@@ -134,7 +134,7 @@ if __name__ == "__main__":
                         help="The file we will use as checkpoint")
 
     parser.add_argument('--test_dir', type=str, default='TestData/simplified-nq-test.jsonl',
-                        help='Directory were all the traing data splitted in smaller junks are stored')
+                        help='Path of test set')
 
     parser.add_argument('--epoch', type=int, default=1)
     parser.add_argument('--model', type=str, default='bert')

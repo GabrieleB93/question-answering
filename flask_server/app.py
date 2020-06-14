@@ -23,8 +23,8 @@ def answer():
     answer = mybot.answer(question)
     print(answer)
     for ex, pred in answer.items():
-        answer_short, start_short, end_short, answer_long, start_long = pred
-        end_long = start_long + len(answer_long)
+        answer_short, start_short, end_short, answer_long, start_long, end_long = pred
+        # end_long = start_long + len(answer_long)
 
     if answer_long == '' and answer_short == '':
         answer_long = 'Not answer found'
@@ -71,4 +71,4 @@ if __name__ == "__main__":
     args, _ = parser.parse_known_args()
 
     mybot = answerBot.AnswerBot(args.batch_size, args.model, args.checkpoint, args, verbose=args.verbose)
-    app.run()
+    app.run(host="localhost",port=5010, ssl_context='adhoc')
