@@ -13,11 +13,6 @@ class AnswerBot:
         self.args = args
         self.model, self.tokenizer = model_evaluation.main(namemodel, args, checkpoint, '')
 
-    """def __init__(self, model_path):
-        super().__init__()
-        # load the model
-        self.model = tf.keras.loadmodel(model_path)"""
-
     def preprocess_page(self, page, name):
         '''
         This function takes a page as input and returns a

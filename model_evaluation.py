@@ -33,48 +33,24 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'bert_large': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'albert': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AlbertTokenizer),  # V2
-        'albert_squad': (AlbertConfig, TFAlbertForNaturalQuestionAnswering,
-                         AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2"))
-        # 'roberta': (RobertaConfig, TFRobertaForNaturalQuestionAnswering, RobertaTokenizer),
     }
 
-    do_lower_case = 'uncased'
     if namemodel == "bert":  # base
-        model_config = 'input/transformers_cache/bert_base_uncased_config.json'
-        vocab = 'vocab.txt'
         pretrained = 'bert-base-uncased'
         vocab = 'bert-base-uncased'
 
     elif namemodel == 'albert':  # base v2
-        model_config = 'input/transformers_cache/albert_base_v2.json'
-        vocab = 'spiece.model'
         pretrained = 'albert-base-v2'
         vocab = 'albert-base-v2'
 
-    elif namemodel == 'roberta':
-        do_lower_case = False
-        model_config = 'lo aggiungero in futuro'
-        vocab = 'lo aggiungero in futuro'
-
-    elif namemodel == "albert_squad":
-        model_config = 'input/transformers_cache/albert_base_v2_squad.json'
-        vocab = 'spiece.model'
-
     elif namemodel == "bert_large":
-        model_config = 'input/transformers_cache/bert_large_uncased_config.json'
-        vocab = 'input/transformers_cache/bert_large_uncased_vocab.txt'
         vocab = 'bert-base-uncased'
         pretrained = 'bert-large-uncased'
 
     else:
-        # di default metto il base albert
-        model_config = 'input/transformers_cache/albert_base_v2.json'
-        vocab = 'spiece.model'
-        namemodel = "albert"
-        print("sei impazzuto?")
+        pretrained = 'bert-base-uncased'
+        vocab = 'bert-base-uncased'
 
-    # Set XLA
-    # https://github.com/kamalkraj/ALBERT-TF2.0/blob/8d0cc211361e81a648bf846_d8ec84225273db0e4/run_classifer.py#L136
     tf.config.optimizer.set_jit(True)
     tf.config.optimizer.set_experimental_options({'pin_to_host_optimization': False})
 
@@ -82,31 +58,25 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     config = config_class.from_pretrained(pretrained)
     print(tokenizer_class)
 
-    # load tokenizer from the directory
-    # tokenizer = tokenizer_class(os.path.join(checkpoint, vocab), do_lower_case='uncased')
-
     # load tokenizer from pretrained
     tokenizer = tokenizer_class.from_pretrained(vocab)
 
     mymodel = model_class(config)
     mymodel(mymodel.dummy_inputs, training=False)
     mymodel.load_weights(os.path.join(checkpoint, "weights.h5"), by_name=True)
-    # mymodel.load_weights(checkpoint, by_name=True)
     print("Checkpoint loaded succefully")
 
     if namemodel == 'bert':
         tags = get_add_tokens(do_enumerate=args.do_enumerate)
         num_added = tokenizer.add_tokens(tags)
         print(f"Added {num_added} tokens")
-        # mymodel.resize_token_embeddings(len(tokenizer))
 
     if namefile != '':
         print("***** Running evaluation *****")
         eval_ds, crops, entries, eval_dataset_length = getDatasetForEvaluation(args, tokenizer, namefile, verbose,
                                                                                max_num_samples, do_cache)
         print("***** Getting results *****")
-        result = getResult(args, mymodel, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer)
-        print("Result: {}".format(result))
+        getResult(args, mymodel, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer)
     else:
         return mymodel, tokenizer
 
@@ -128,7 +98,7 @@ if __name__ == "__main__":
     parser.add_argument('--p_keep_impossible', type=float,
                         default=0.1, help="The fraction of impossible"
                                           " samples to keep.")
-    parser.add_argument('--do_enumerate', action='store_true') # mettere true
+    parser.add_argument('--do_enumerate', action='store_true')
 
     parser.add_argument("--checkpoint", default="checkpoints/BERTWITHTOKEN2EPOCHSCHP/checkpoint-194000", type=str,
                         help="The file we will use as checkpoint")
@@ -152,10 +122,6 @@ if __name__ == "__main__":
     parser.add_argument('--eval_method', type=str, default='')
 
     args, _ = parser.parse_known_args()
-
-    print("File for evaluation: ", args.test_dir)
-    # assert args.checkpoint.endswith('.hdf5'), "Checkpoint not specified"
-    print("Checkpoint for evaluation: ", args.checkpoint)
     print("Evaluation parameters ", args)
 
     main(args.model, args, args.checkpoint, args.test_dir, verbose=args.verbose, do_cache=args.do_cache)
