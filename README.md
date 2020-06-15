@@ -1,9 +1,8 @@
-# question-answering
+# Open Domain Question Answering
 Software for the task of question answering, HTL Unipi project
 
 ## How to run
-In the global system or in a virtual env run ```pip install -r requirement.txt```, then run ```python model.py``` and this corresponds to fine tune bert on natural questions dataset.
-
+In the global system or in a virtual env run ```pip install -r requirement.txt```, then run ```python mode_tf.py``` for training and ```python model_evaluation.py``` for testing.
 ## Authors
 Gabriele Barreca
 Mario Bonsembiante
@@ -12,8 +11,7 @@ Gemma Martini
 ## The folder ```report```
 Contains all the files needed for the report
 
-## The folder ```code```
-Contains the source code of the project
+## Demo Sapientino
+Here a gif of demo
 
-## The folder ```examples```
-Contains some running examples
+<img src="/report/pics/Sequenza%2001_1.gif" width="250" height="250"/>
