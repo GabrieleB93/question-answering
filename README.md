@@ -14,4 +14,4 @@ Contains all the files needed for the report
 ## Demo Sapientino
 Here a gif of demo
 
-<img src="/report/pics/Sequenza%2001_1.gif" width="190" height="405"/>
+<img src="/report/pics/Sequenza%2001_1.gif" width="240" height="512"/>
