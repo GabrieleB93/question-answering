@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tqdm.notebook import tqdm
-from transformers import BertConfig, BertTokenizer, RobertaConfig, RobertaTokenizer, AlbertTokenizer, AlbertConfig
+from transformers import BertConfig, BertTokenizer, AlbertTokenizer, AlbertConfig
 from transformers.tokenization_bert import whitespace_tokenize
 import re
 
@@ -1626,7 +1626,7 @@ def getDatasetForEvaluation(args, tokenizer, namefile, verbose, max_num_samples,
     return eval_ds, crops, entries, eval_dataset_length
 
 
-def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer, app=False):
+def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, app=False):
     csv_fn = '../Results/submission' + args.eval_method + '2.csv'
     padded_length = math.ceil(eval_dataset_length / args.eval_batch_size) * args.eval_batch_size
 

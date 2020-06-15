@@ -76,7 +76,7 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
         eval_ds, crops, entries, eval_dataset_length = getDatasetForEvaluation(args, tokenizer, namefile, verbose,
                                                                                max_num_samples, do_cache)
         print("***** Getting results *****")
-        getResult(args, mymodel, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer)
+        getResult(args, mymodel, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile)
     else:
         return mymodel, tokenizer
 

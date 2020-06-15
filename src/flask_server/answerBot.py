@@ -50,8 +50,7 @@ class AnswerBot:
         eval_ds, crops, entries, eval_dataset_length = getDatasetForEvaluation(self.args, self.tokenizer, tmp_file,
                                                                                self.verbose, 1_000_000, False)
         print("***** Getting results *****")
-        result = getResult(self.args, self.model, eval_ds, crops, entries, eval_dataset_length, False, tmp_file,
-                           self.tokenizer, app=True)
+        result = getResult(self.args, self.model, eval_ds, crops, entries, eval_dataset_length, False, tmp_file, app=True)
         print(result)
         return result
 
