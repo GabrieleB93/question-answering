@@ -59,9 +59,6 @@ if __name__ == "__main__":
     parser.add_argument("--checkpoint", default="../../checkpoints/BERTWITHTOKEN2EPOCHSCHP/checkpoint-194000", type=str,
                         help="The file we will use as checkpoint")
 
-    parser.add_argument('--test_dir', type=str, default='TestData/simplified-nq-test.jsonl',
-                        help='Directory were all the traing data splitted in smaller junks are stored')
-
     parser.add_argument('--model', type=str, default='bert')
     parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--verbose', type=bool, default=False)

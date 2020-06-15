@@ -270,8 +270,6 @@ if __name__ == "__main__":
     parser.add_argument("--checkpoint_interval", type=int, default=1000,
                         help="after how many steps do we have to save the checkpoint")
 
-    # Quelli sopra andrebbero tolti perchè preenti anche dentro dataset_utils, di conseguenza andrebbero passati
-    # tramite generator -> to fix
     parser.add_argument('--epoch', type=int, default=1)
     parser.add_argument('--model', type=str, default='albert')
     parser.add_argument('--batch_size', type=int, default=8)
@@ -289,8 +287,6 @@ if __name__ == "__main__":
          args.epoch,
          args.checkpoint_dir,
          checkpoint=args.checkpoint,
-         do_cache=args.do_cache,
-         evaluate=args.evaluate,
          verbose=args.verbose,
          log_dir=args.log_dir,
          learning_rate=args.learning_rate,
