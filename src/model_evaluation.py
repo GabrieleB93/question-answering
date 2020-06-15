@@ -100,26 +100,26 @@ if __name__ == "__main__":
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
-    parser.add_argument("--checkpoint", default="checkpoints/BERTWITHTOKEN2EPOCHSCHP/checkpoint-194000", type=str,
+    parser.add_argument("--checkpoint", default="../checkpoints/BERTWITHTOKEN2EPOCHSCHP/checkpoint-194000", type=str,
                         help="The file we will use as checkpoint")
 
-    parser.add_argument('--test_dir', type=str, default='TestData/simplified-nq-test.jsonl',
+    parser.add_argument('--test_dir', type=str, default='../TestData/simplified-nq-test.jsonl',
                         help='Path of test set')
 
     parser.add_argument('--epoch', type=int, default=1)
     parser.add_argument('--model', type=str, default='bert')
     parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--verbose', type=bool, default=False)
-    parser.add_argument('--do_cache', type=bool, default=False)
-
-    '''
-    method:
-        1) ''          = default
-        2) 'restoring' = if rejected and short IN long text ->taken (text)
-        3) 'matching'  = taking the best short IN long token (token)
-        4) 'mixed'     = 2. and 3. mixed
-    '''
-    parser.add_argument('--eval_method', type=str, default='')
+    parser.add_argument('--do_cache', type=bool, default=True)
+    parser.add_argument('--true_endToken', type=bool, default=True, help="Approach for end token, True for computed")
+    parser.add_argument('--eval_method', type=str, default='', help='''
+                        method:
+                            1) ''          = default
+                            2) 'restoring' = if rejected and short IN long text ->taken (text)
+                            3) 'matching'  = taking the best short IN long token (token)
+                            4) 'mixed'     = 2. and 3. mixed
+    
+                        ''')
 
     args, _ = parser.parse_known_args()
     print("Evaluation parameters ", args)

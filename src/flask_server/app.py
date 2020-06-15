@@ -56,7 +56,7 @@ if __name__ == "__main__":
                                           " samples to keep.")
     parser.add_argument('--do_enumerate', action='store_true')
 
-    parser.add_argument("--checkpoint", default="../checkpoints/BERTWITHTOKEN2EPOCHSCHP/checkpoint-194000", type=str,
+    parser.add_argument("--checkpoint", default="../../checkpoints/BERTWITHTOKEN2EPOCHSCHP/checkpoint-194000", type=str,
                         help="The file we will use as checkpoint")
 
     parser.add_argument('--test_dir', type=str, default='TestData/simplified-nq-test.jsonl',
@@ -66,9 +66,9 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--verbose', type=bool, default=False)
     parser.add_argument('--eval_method', type=str, default='')
-
+    parser.add_argument('--true_endToken', type=bool, default=True)
 
     args, _ = parser.parse_known_args()
 
     mybot = answerBot.AnswerBot(args.batch_size, args.model, args.checkpoint, args, verbose=args.verbose)
-    app.run(host="localhost",port=5010, ssl_context='adhoc')
+    app.run(host="localhost", port=5010, ssl_context='adhoc')

@@ -81,7 +81,7 @@ def read_candidates(candidate_files, do_cache=True):
     assert isinstance(candidate_files, (tuple, list)), candidate_files
     for fn in candidate_files:
         assert os.path.exists(fn), f'Missing file {fn}'
-    cache_fn = 'cache/candidates.pkl'
+    cache_fn = '../cache/candidates.pkl'
 
     candidates = {}  # Creo il dizionario dei candidati (che sia dalla cache o meno)
     question = {}
@@ -901,24 +901,18 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
         short_prelim_predictions = sorted(short_prelim_predictions,
                                           key=lambda x: x.start_logit + x.end_logit, reverse=True)
 
-        short_nbest = get_nbest_old(short_prelim_predictions, crops,
-                                    n_best_size)
+        short_nbest = get_nbest_old(short_prelim_predictions, crops, n_best_size)
 
         long_prelim_predictions = sorted(long_prelim_predictions,
                                          key=lambda x: x.start_logit, reverse=True)
 
-        long_nbest = get_nbest(long_prelim_predictions, crops,
-                               n_best_size)
+        long_nbest = get_nbest(long_prelim_predictions, crops, n_best_size)
 
-        print(len(long_nbest))
         long_best_non_null = None
         for entry in long_nbest:
-            print(entry.text)
             if long_best_non_null is None:
                 if entry.text != "":
                     long_best_non_null = entry
-        print(
-            f"text: {long_best_non_null.text} start: {long_best_non_null.start_index} end: {long_best_non_null.end_index} start_logits: {long_best_non_null.start_logit} start_doc: {long_best_non_null.orig_doc_start} end_doc: {long_best_non_null.orig_doc_end} crop: {long_best_non_null.crop_index}")
         short_best_non_null = None
         for entry in short_nbest:
             if short_best_non_null is None:
@@ -1015,7 +1009,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
     return all_predictions
 
 
-def convert_preds_to_df(preds, candidates, question, tokenizer):
+def convert_preds_to_df(preds, candidates, question, true_endToken):
     num_found_long, num_searched_long, num_searched_short, found_end = 0, 0, 0, 0
     df = {'example_id': [], 'PredictionString': [], 'question': [], 'answer': []}
     for example_id, pred in preds.items():
@@ -1046,7 +1040,10 @@ def convert_preds_to_df(preds, candidates, question, tokenizer):
                 if dist < min_dist:
                     min_dist = dist
                 if long_token == cstart:
-                    long_answer = f'{long_token}:{long_token_end}'
+                    if true_endToken:
+                        long_answer = f'{long_token}:{long_token_end}'
+                    else:
+                        long_answer = f'{cstart}:{cend}'
                     found_long = True
                     if long_token_end == cend:
                         found_end += 1
@@ -1475,7 +1472,7 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
     else:
         args_nq = get_convert_args1(namefile, max_num_samples)
 
-    cached_folder = 'cache/'
+    cached_folder = '../cache/'
     cached_crops_fn = cached_folder + 'cached_test.pkl'
     if os.path.exists(cached_crops_fn) and do_cache:
         print("Loading crops from cached file %s", cached_crops_fn)
@@ -1485,7 +1482,6 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
 
     else:
         print("NOT loading crops")
-        print("\n\n IMPORTANTE p_keep impossible= ", args.p_keep_impossible, "\n\n")
         entries = convert_nq_to_squad(verbose, args=args_nq, is_train=not evaluate)
         examples_gen = read_nq_examples(entries, is_training=not evaluate)
         crops = convert_examples_to_crops(examples_gen=examples_gen,
@@ -1631,7 +1627,7 @@ def getDatasetForEvaluation(args, tokenizer, namefile, verbose, max_num_samples,
 
 
 def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cache, namefile, tokenizer, app=False):
-    csv_fn = 'submission' + args.eval_method + '2.csv'
+    csv_fn = '../Results/submission' + args.eval_method + '2.csv'
     padded_length = math.ceil(eval_dataset_length / args.eval_batch_size) * args.eval_batch_size
 
     @tf.function
@@ -1641,7 +1637,7 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cach
 
     all_results = []
     tic = time.time()
-    cached_results = 'cache/results_test' + args.eval_method + '.pkl'
+    cached_results = '../cache/results_test' + args.eval_method + '.pkl'
     if os.path.exists(cached_results) and do_cache:
         print("Loading results from cached file ", cached_results)
         with open(cached_results, "rb") as f:
@@ -1692,7 +1688,7 @@ def getResult(args, model, eval_ds, crops, entries, eval_dataset_length, do_cach
     gc.collect()
     if not app:
         candidates, question = read_candidates([namefile], do_cache=False)
-        sub = convert_preds_to_df(preds, candidates, question, tokenizer).sort_values('example_id')
+        sub = convert_preds_to_df(preds, candidates, question, args.true_endToken).sort_values('example_id')
         sub.to_csv(csv_fn, index=False, columns=['example_id', 'PredictionString', 'question', 'answer'])
         print(f'***** Wrote submission to {csv_fn} *****')
         return preds
