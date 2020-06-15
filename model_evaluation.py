@@ -33,45 +33,26 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
         'bert': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'bert_large': (BertConfig, TFBertForNaturalQuestionAnswering, BertTokenizer),
         'albert': (AlbertConfig, TFAlbertForNaturalQuestionAnswering, AlbertTokenizer),  # V2
-        'albert_squad': (AlbertConfig, TFAlbertForNaturalQuestionAnswering,
-                         AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2"))
-        # 'roberta': (RobertaConfig, TFRobertaForNaturalQuestionAnswering, RobertaTokenizer),
     }
 
-    do_lower_case = 'uncased'
     if namemodel == "bert":  # base
-        model_config = 'input/transformers_cache/bert_base_uncased_config.json'
-        vocab = 'vocab.txt'
         pretrained = 'bert-base-uncased'
         vocab = 'bert-base-uncased'
 
     elif namemodel == 'albert':  # base v2
-        model_config = 'input/transformers_cache/albert_base_v2.json'
-        vocab = 'spiece.model'
         pretrained = 'albert-base-v2'
         vocab = 'albert-base-v2'
 
-    elif namemodel == 'roberta':
-        do_lower_case = False
-        model_config = 'lo aggiungero in futuro'
-        vocab = 'lo aggiungero in futuro'
-
     elif namemodel == "albert_squad":
-        model_config = 'input/transformers_cache/albert_base_v2_squad.json'
         vocab = 'spiece.model'
 
     elif namemodel == "bert_large":
-        model_config = 'input/transformers_cache/bert_large_uncased_config.json'
-        vocab = 'input/transformers_cache/bert_large_uncased_vocab.txt'
         vocab = 'bert-base-uncased'
         pretrained = 'bert-large-uncased'
 
     else:
-        # di default metto il base albert
-        model_config = 'input/transformers_cache/albert_base_v2.json'
-        vocab = 'spiece.model'
-        namemodel = "albert"
-        print("sei impazzuto?")
+        pretrained = 'bert-base-uncased'
+        vocab = 'bert-base-uncased'
 
     # Set XLA
     # https://github.com/kamalkraj/ALBERT-TF2.0/blob/8d0cc211361e81a648bf846_d8ec84225273db0e4/run_classifer.py#L136
@@ -82,16 +63,12 @@ def main(namemodel, args, checkpoint, namefile, verbose=False, max_num_samples=1
     config = config_class.from_pretrained(pretrained)
     print(tokenizer_class)
 
-    # load tokenizer from the directory
-    # tokenizer = tokenizer_class(os.path.join(checkpoint, vocab), do_lower_case='uncased')
-
     # load tokenizer from pretrained
     tokenizer = tokenizer_class.from_pretrained(vocab)
 
     mymodel = model_class(config)
     mymodel(mymodel.dummy_inputs, training=False)
     mymodel.load_weights(os.path.join(checkpoint, "weights.h5"), by_name=True)
-    # mymodel.load_weights(checkpoint, by_name=True)
     print("Checkpoint loaded succefully")
 
     if namemodel == 'bert':
@@ -141,21 +118,16 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, default=4)
     parser.add_argument('--verbose', type=bool, default=False)
     parser.add_argument('--do_cache', type=bool, default=True)
-
-    '''
-    method:
-        1) ''          = default
-        2) 'restoring' = if rejected and short IN long text ->taken (text)
-        3) 'matching'  = taking the best short IN long token (token)
-        4) 'mixed'     = 2. and 3. mixed
-    '''
-    parser.add_argument('--eval_method', type=str, default='')
+    parser.add_argument('--eval_method', type=str, default='', help='''
+                        method:
+                            1) ''          = default
+                            2) 'restoring' = if rejected and short IN long text ->taken (text)
+                            3) 'matching'  = taking the best short IN long token (token)
+                            4) 'mixed'     = 2. and 3. mixed
+                        
+                        ''')
 
     args, _ = parser.parse_known_args()
-
-    print("File for evaluation: ", args.test_dir)
-    # assert args.checkpoint.endswith('.hdf5'), "Checkpoint not specified"
-    print("Checkpoint for evaluation: ", args.checkpoint)
     print("Evaluation parameters ", args)
 
     main(args.model, args, args.checkpoint, args.test_dir, verbose=args.verbose, do_cache=args.do_cache)

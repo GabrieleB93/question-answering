@@ -13,8 +13,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 from tqdm.notebook import tqdm
-from transformers import BertConfig, BertTokenizer, RobertaConfig, RobertaTokenizer, AlbertTokenizer, AlbertConfig, \
-    AutoTokenizer
+from transformers import BertConfig, BertTokenizer, AlbertTokenizer, AlbertConfig
 from transformers.tokenization_bert import whitespace_tokenize
 
 tqdm.monitor_interval = 0  # noqa
@@ -466,34 +465,6 @@ def convert_examples_to_crops(examples_gen, tokenizer, max_seq_length,
             if is_training and long_is_impossible:
                 long_position = CLS_INDEX
 
-            if example_index in (0, 10):
-                # too spammy otherwise
-                if doc_span_index in (0, 5):
-                    """
-                    logger.info("*** Example ***")
-                    logger.info("unique_id: %s" % (unique_id))
-                    logger.info("example_index: %s" % (example_index))
-                    logger.info("doc_span_index: %s" % (doc_span_index))
-                    logger.info("tokens: %s" % " ".join(tokens))
-                    # logger.info("token_to_orig_map: %s" % " ".join([
-                    #     "%d:%d" % (x, y) for (x, y) in enumerate(token_to_orig_map)]))
-                    # logger.info("token_is_max_context: %s" % " ".join([
-                    #     "%d:%s" % (x, y) for (x, y) in enumerate(token_is_max_context)
-                    # ]))
-                    logger.info("input_ids: %s" % input_ids)
-                    logger.info("attention_mask: %s" % np.uint8(attention_mask))
-                    logger.info("token_type_ids: %s" % token_type_ids)
-                    if is_training and short_is_impossible:
-                        logger.info("short impossible example")
-                    if is_training and long_is_impossible:
-                        logger.info("long impossible example")
-                    if is_training and not short_is_impossible:
-                        answer_text = " ".join(tokens[start_position: end_position + 1])
-                        logger.info("start_position: %d" % (start_position))
-                        logger.info("end_position: %d" % (end_position))
-                        logger.info("answer: %s" % (answer_text))
-                    """
-
             if short_is_impossible:
                 num_short_neg += 1
             else:
@@ -672,7 +643,7 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
     all_predictions = collections.OrderedDict()
     all_nbest_json = collections.OrderedDict()
     scores_diff_json = collections.OrderedDict()
-    short_num_empty, long_num_empty, answerable_1 = 0, 0, 0
+    short_num_empty, long_num_empty, answerable_1, not_answerable = 0, 0, 0, 0
     for example_index, example in enumerate(examples_gen):
         if example_index % 1000 == 0 and example_index > 0:
             logger.info(f'[{example_index}]: {short_num_empty} short and {long_num_empty} long empty')
@@ -694,6 +665,8 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             # answerable_indexes = [int(x) for x in answerable_indexes]
             if result.answerable_logits > 0.5:
                 answerable_1 += 1
+            else:
+                not_answerable +=1
             # create short answers
             for start_index in start_indexes:
                 if start_index >= len(crop.tokens):
@@ -746,8 +719,6 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
 
         short_nbest = get_nbest(short_prelim_predictions, crops,
                                 example, n_best_size)
-
-        # Segna posto short:best_non_null, era qui
 
         long_prelim_predictions = sorted(long_prelim_predictions,
                                          key=lambda x: x.start_logit, reverse=True)
@@ -826,12 +797,9 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
             long_score_diff = long_score_null - long_best_non_null.start_logit
             scores_diff_json[example.qas_id] = {'short_score_diff': short_score_diff,
                                                 'long_score_diff': long_score_diff}
-            # print(f"long_score: {long_score_diff} and long_null: {long_null_score_diff}")
             if long_score_diff > long_null_score_diff:
                 final_pred += ("", -1)
                 long_num_empty += 1
-                # print(f"LONG EMPTY: {round(long_score_null, 2)} vs "
-                #     f"{round(long_best_non_null.start_logit, 2)} (th {long_null_score_diff})")
 
             else:
                 final_pred += (long_best_non_null.text, long_best_non_null.orig_doc_start)
@@ -855,13 +823,12 @@ def write_predictions(examples_gen, all_crops, all_results, n_best_size,
         with open(output_null_log_odds_file, "w") as writer:
             writer.write(json.dumps(scores_diff_json, indent=2))
 
-    print(f"Answerable to 1 = {answerable_1}")
+    print(f"Answerable to 1 = {answerable_1}, Answerable to 0 = {not_answerable}")
     logger.info(f'{short_num_empty} short and {long_num_empty} long empty of'
                 f' {example_index}')
     return all_predictions
 
 
-# Not used for now
 def convert_preds_to_df(preds, candidates, question, tokenizer):
     num_found_long, num_searched_long, num_searched_short = 0, 0, 0
     df = {'example_id': [], 'PredictionString': [], 'question': [], 'answer': []}
@@ -879,7 +846,6 @@ def convert_preds_to_df(preds, candidates, question, tokenizer):
         df['PredictionString'].append(short_answer)
         df['answer'].append(short_text)
 
-        # print(entry['document_text'].split(' ')[start_token: end_token + 1])
         # find the long answer
         long_answer = ''
         found_long = False
@@ -955,19 +921,6 @@ def convert_nq_to_squad(verbose, is_train, args=None):
     :return: list of entries
     """
     np.random.seed(123)
-    # if args is None:
-    #     parser = argparse.ArgumentParser()
-    #     parser.add_argument('--fn', type=str, default='simplified-nq-train.jsonl')
-    #     parser.add_argument('--version', type=str, default='v1.0.2')
-    #     parser.add_argument('--prefix', type=str, default='nq')
-    #     parser.add_argument('--p_val', type=float, default=0.1)
-    #     parser.add_argument('--crop_len', type=int, default=2_500)
-    #     parser.add_argument('--num_samples', type=int, default=1_000_000)
-    #     parser.add_argument('--val_ids', type=str, default='val_ids.csv')
-    #     parser.add_argument('--do_enumerate', action='store_true')
-    #     parser.add_argument('--do_not_dump', action='store_true')
-    #     parser.add_argument('--num_max_tokens', type=int, default=400_000)
-    #     args = parser.parse_args()
 
     if is_train:
         train_fn = f'{args.prefix}-train-{args.version}.json'
@@ -1232,18 +1185,10 @@ def convert_nq_to_squad(verbose, is_train, args=None):
     return entries
 
 
-# ALL_MODELS = sum((tuple(conf.pretrained_config_archive_map.keys())
-#                   for conf in (BertConfig,)), ())
-
-# ALL_MODELS = sum((tuple(conf.pretrained_config_archive_map.keys())
-#                   for conf in (AlbertConfig,)), ())
-
 MODEL_CLASSES = {
     'bert': (BertConfig, BertTokenizer),
     'bert_large': (BertConfig, BertTokenizer),
     'albert': (AlbertConfig, AlbertTokenizer),
-    'roberta': (RobertaConfig, RobertaTokenizer),
-    # 'albert_squad': (AlbertConfig, AutoTokenizer.from_pretrained("twmkn9/albert-base-v2-squad2"))
 }
 
 
@@ -1346,7 +1291,6 @@ def load_and_cache_crops(args, tokenizer, namefile, verbose, evaluate, max_num_s
 
     else:
         print("NOT loading crops")
-        print("\n\n IMPORTANTE p_keep impossible= ", args.p_keep_impossible, "\n\n")
         entries = convert_nq_to_squad(verbose, args=args_nq, is_train=not evaluate)
         examples_gen = read_nq_examples(entries, is_training=not evaluate)
         crops = convert_examples_to_crops(examples_gen=examples_gen,
@@ -1424,16 +1368,7 @@ def getTokenizedDataset(tokenizer, namefile, verbose, max_num_samples):
     parser.add_argument('--do_enumerate', action='store_true')
 
     args, _ = parser.parse_known_args()
-    """
-    print(model_type)
 
-    _, tokenizer_class = MODEL_CLASSES[model_type]
-    if model_type != "albert_squad":
-        tokenizer_class = tokenizer_class(vocab, do_lower_case=do_lower_case)
-        tags = get_add_tokens(do_enumerate=args.do_enumerate)
-        # num_added = tokenizer_class.add_tokens(tags)
-        # print(f"Added {num_added} tokens")
-    """
     eval_dataset, crops, entries = load_and_cache_crops(args, tokenizer, namefile, verbose, False,
                                                         max_num_samples)
 
